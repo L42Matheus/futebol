@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, X, Clock } from 'lucide-react'
+import { ArrowLeft, Check, X, Clock, Trash2 } from 'lucide-react'
 import { jogosApi, presencasApi } from '../services/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -28,6 +28,17 @@ export default function JogoDetail() {
 
   async function handleConfirmar(atletaId) { await presencasApi.confirmar(jogoId, atletaId); loadData() }
   async function handleRecusar(atletaId) { await presencasApi.recusar(jogoId, atletaId); loadData() }
+  async function handleExcluir() {
+    const ok = window.confirm('Excluir este jogo?')
+    if (!ok) return
+    try {
+      await jogosApi.cancel(jogoId)
+      navigate(`/racha/${jogo.racha_id}/jogos`)
+    } catch (error) {
+      console.error('Erro ao excluir jogo:', error)
+      alert('Erro ao excluir jogo. Tente novamente.')
+    }
+  }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
   if (!jogo || !lista) return <div className="text-center py-12">Jogo não encontrado</div>
@@ -36,7 +47,13 @@ export default function JogoDetail() {
     <div className="space-y-6 pb-20">
       <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button>
-        <div><h1 className="text-xl font-bold text-gray-900">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</h1><p className="text-gray-500">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p></div>
+        <div className="flex-1">
+          <h1 className="text-xl font-bold text-gray-900">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</h1>
+          <p className="text-gray-500">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local n?o definido'}</p>
+        </div>
+        <button onClick={handleExcluir} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Excluir jogo">
+          <Trash2 size={18} />
+        </button>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center py-3"><p className="text-2xl font-bold text-green-600">{lista.total_confirmados}</p><p className="text-xs text-gray-500">Confirmados</p></div>
