@@ -21,7 +21,7 @@ export default function NovoJogo() {
     try {
       const payload = { ...form, racha_id: Number(rachaId) }
       const response = await jogosApi.create(payload)
-      navigate(`/racha/${rachaId}/jogo/${response.data.id}`)
+      navigate(`/racha/${rachaId}/jogos`)
     } catch (error) {
       console.error('Erro ao criar jogo:', error)
       alert('Erro ao criar jogo. Tente novamente.')
