@@ -26,7 +26,7 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <h1 className="text-2xl font-bold text-gray-900">Meus Rachas</h1>
         <Link to="/novo" className="btn-primary flex items-center gap-2"><Plus size={20} />Novo Racha</Link>
       </div>
@@ -41,7 +41,7 @@ export default function Home() {
         <div className="space-y-3">
           {rachas.map((racha) => (
             <Link key={racha.id} to={`/racha/${racha.id}`} className="card flex items-center justify-between hover:shadow-md transition-shadow">
-              <div>
+              <div className="flex-grow">
                 <h2 className="font-semibold text-gray-900">{racha.nome}</h2>
                 <p className="text-sm text-gray-500">{tipoLabels[racha.tipo]} - {racha.total_atletas}/{racha.max_atletas} atletas</p>
               </div>

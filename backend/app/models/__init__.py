@@ -4,7 +4,6 @@ from app.models.jogo import Jogo
 from app.models.presenca import Presenca, StatusPresenca
 from app.models.pagamento import Pagamento, TipoPagamento, StatusPagamento
 from app.models.cartao import Cartao, TipoCartao
-from app.models.user import User
 
 __all__ = [
     "Racha",
@@ -19,5 +18,4 @@ __all__ = [
     "StatusPagamento",
     "Cartao",
     "TipoCartao",
-    "User",
 ]
