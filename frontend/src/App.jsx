@@ -7,6 +7,7 @@ import Atletas from './pages/Atletas'
 import Financeiro from './pages/Financeiro'
 import NovoRacha from './pages/NovoRacha'
 import NovoJogo from './pages/NovoJogo'
+import Jogos from './pages/Jogos'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="novo" element={<NovoRacha />} />
           <Route path="racha/:rachaId" element={<RachaDetail />} />
+          <Route path="racha/:rachaId/jogos" element={<Jogos />} />
           <Route path="racha/:rachaId/novo-jogo" element={<NovoJogo />} />
           <Route path="racha/:rachaId/jogo/:jogoId" element={<JogoDetail />} />
           <Route path="racha/:rachaId/atletas" element={<Atletas />} />
