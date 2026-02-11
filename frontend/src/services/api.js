@@ -5,6 +5,17 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+export function setAuthToken(token) {
+  if (token) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`
+  } else {
+    delete api.defaults.headers.common.Authorization
+  }
+}
+
+const storedToken = localStorage.getItem('auth_token')
+if (storedToken) setAuthToken(storedToken)
+
 function formatDateBR(value) {
   if (!value) return value
   if (value instanceof Date && !isNaN(value)) {
@@ -72,6 +83,12 @@ export const pagamentosApi = {
   aprovar: (id, adminId, aprovado, motivo = null) => api.post(`/pagamentos/${id}/aprovar?admin_id=${adminId}`, { aprovado, motivo_rejeicao: motivo }),
   getPendentes: (rachaId) => api.get(`/pagamentos/pendentes/${rachaId}`),
   gerarMensalidade: (rachaId, referencia) => api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`),
+}
+
+export const authApi = {
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  me: () => api.get('/auth/me'),
 }
 
 export default api

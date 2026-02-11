@@ -1,0 +1,133 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from datetime import datetime
+import uuid
+
+from app.database import get_db
+from app.models import User, Atleta, Invite, InviteStatus, PushToken
+from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
+from app.services.auth import hash_password, verify_password, create_access_token, get_current_user
+
+router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def register(user_in: UserCreate, db: Session = Depends(get_db)):
+    filters = []
+    if user_in.email:
+        filters.append(User.email == user_in.email)
+    if user_in.telefone:
+        filters.append(User.telefone == user_in.telefone)
+    existing = db.query(User).filter(or_(*filters)).first() if filters else None
+    if existing:
+        raise HTTPException(status_code=400, detail="Usuário já existe")
+
+    user = User(
+        nome=user_in.nome,
+        email=user_in.email,
+        telefone=user_in.telefone,
+        senha_hash=hash_password(user_in.senha),
+        ativo=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    if user_in.invite_token:
+        invite = db.query(Invite).filter(Invite.token == user_in.invite_token).first()
+        if invite and invite.status == InviteStatus.PENDENTE:
+            atleta = Atleta(
+                user_id=user.id,
+                racha_id=invite.racha_id,
+                nome=invite.nome or user.nome or "Atleta",
+                telefone=invite.telefone or user.telefone,
+                ativo=True,
+            )
+            db.add(atleta)
+            invite.status = InviteStatus.ACEITO
+            invite.aceito_em = datetime.utcnow()
+            db.commit()
+
+    token = create_access_token({"sub": str(user.id)})
+    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(payload: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        or_(User.email == payload.identificador, User.telefone == payload.identificador)
+    ).first()
+    if not user or not verify_password(payload.senha, user.senha_hash):
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+
+    if payload.push_token:
+        existing = db.query(PushToken).filter(
+            PushToken.user_id == user.id,
+            PushToken.token == payload.push_token
+        ).first()
+        if not existing:
+            db.add(PushToken(user_id=user.id, token=payload.push_token, plataforma=payload.plataforma))
+            db.commit()
+
+    token = create_access_token({"sub": str(user.id)})
+    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+
+
+@router.get("/me", response_model=UserResponse)
+def me(current_user: User = Depends(get_current_user)):
+    return UserResponse.model_validate(current_user)
+
+
+@router.post("/invites", response_model=InviteResponse, status_code=status.HTTP_201_CREATED)
+def criar_invite(invite_in: InviteCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    admin = db.query(Atleta).filter(
+        Atleta.user_id == current_user.id,
+        Atleta.racha_id == invite_in.racha_id,
+        Atleta.is_admin == True
+    ).first()
+    if not admin:
+        raise HTTPException(status_code=403, detail="Somente administradores podem convidar")
+
+    token = uuid.uuid4().hex
+    invite = Invite(
+        token=token,
+        racha_id=invite_in.racha_id,
+        email=invite_in.email,
+        telefone=invite_in.telefone,
+        nome=invite_in.nome,
+        status=InviteStatus.PENDENTE,
+        criado_por_user_id=current_user.id,
+    )
+    db.add(invite)
+    db.commit()
+    db.refresh(invite)
+    return InviteResponse.model_validate(invite)
+
+
+@router.post("/invites/accept", response_model=InviteResponse)
+def aceitar_invite(payload: InviteAccept, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    invite = db.query(Invite).filter(Invite.token == payload.token).first()
+    if not invite or invite.status != InviteStatus.PENDENTE:
+        raise HTTPException(status_code=400, detail="Convite inválido")
+
+    existing = db.query(Atleta).filter(
+        Atleta.user_id == current_user.id,
+        Atleta.racha_id == invite.racha_id
+    ).first()
+    if not existing:
+        atleta = Atleta(
+            user_id=current_user.id,
+            racha_id=invite.racha_id,
+            nome=invite.nome or current_user.nome or "Atleta",
+            telefone=invite.telefone or current_user.telefone,
+            ativo=True,
+        )
+        db.add(atleta)
+
+    invite.status = InviteStatus.ACEITO
+    invite.aceito_em = datetime.utcnow()
+    db.commit()
+    db.refresh(invite)
+    return InviteResponse.model_validate(invite)
