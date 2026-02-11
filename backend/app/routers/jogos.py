@@ -16,7 +16,10 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db)):
     racha = db.query(Racha).filter(Racha.id == jogo.racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
-    db_jogo = Jogo(**jogo.model_dump())
+    data = jogo.model_dump()
+    if data.get("valor_campo") is None:
+        data["valor_campo"] = 0
+    db_jogo = Jogo(**data)
     db.add(db_jogo)
     db.commit()
     db.refresh(db_jogo)
