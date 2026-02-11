@@ -15,19 +15,25 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
+    # Converte strings vazias para None
+    email = user_in.email.strip() if user_in.email else None
+    telefone = user_in.telefone.strip() if user_in.telefone else None
+    email = email or None  # Converte "" para None
+    telefone = telefone or None  # Converte "" para None
+
     filters = []
-    if user_in.email:
-        filters.append(User.email == user_in.email)
-    if user_in.telefone:
-        filters.append(User.telefone == user_in.telefone)
+    if email:
+        filters.append(User.email == email)
+    if telefone:
+        filters.append(User.telefone == telefone)
     existing = db.query(User).filter(or_(*filters)).first() if filters else None
     if existing:
         raise HTTPException(status_code=400, detail="Usuário já existe")
 
     user = User(
         nome=user_in.nome,
-        email=user_in.email,
-        telefone=user_in.telefone,
+        email=email,
+        telefone=telefone,
         senha_hash=hash_password(user_in.senha),
         role=user_in.role,
         ativo=True,
