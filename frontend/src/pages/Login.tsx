@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Trophy, ArrowLeft } from 'lucide-react'
 import { authApi, setAuthToken } from '../services/api'
 import { useAccountType } from '../context/AccountTypeContext'
 
@@ -34,33 +35,80 @@ export default function Login() {
   }
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Entrar</h1>
-        <p className="text-gray-500">Use e-mail ou telefone</p>
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex flex-col">
+      {/* Header */}
+      <div className="pt-6 px-4">
+        <Link
+          to="/perfil"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft size={18} />
+          Voltar
+        </Link>
       </div>
-      <form onSubmit={handleSubmit} className="card space-y-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div>
-          <label className="label">E-mail ou Telefone</label>
-          <input name="identificador" value={form.identificador} onChange={handleChange} className="input" required />
+
+      <div className="pt-8 pb-6 px-6 text-center">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg">
+          <Trophy size={28} />
         </div>
-        <div>
-          <label className="label">Senha</label>
-          <input type="password" name="senha" value={form.senha} onChange={handleChange} className="input" required />
-        </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-        <p className="text-sm text-gray-500 text-center">
-          Não tem conta? <Link className="text-primary-600" to="/register">Cadastre-se</Link>
-        </p>
-        {!accountType && (
-          <p className="text-xs text-gray-500 text-center">
-            <Link to="/perfil" className="text-primary-600">Voltar e escolher perfil</Link>
+        <h1 className="text-2xl font-bold text-gray-900">Entrar</h1>
+        <p className="text-gray-500 mt-1">Use e-mail ou telefone</p>
+      </div>
+
+      {/* Form */}
+      <div className="flex-1 px-4 pb-8">
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-white rounded-2xl p-6 shadow-sm space-y-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-50 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              E-mail ou Telefone
+            </label>
+            <input
+              name="identificador"
+              value={form.identificador}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
+              placeholder="seu@email.com"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Senha
+            </label>
+            <input
+              type="password"
+              name="senha"
+              value={form.senha}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
+              placeholder="Digite sua senha"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-medium rounded-xl transition-colors"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+
+          <p className="text-sm text-gray-500 text-center pt-2">
+            Não tem conta?{' '}
+            <Link className="text-primary-600 font-medium hover:underline" to="/register">
+              Cadastre-se
+            </Link>
           </p>
-        )}
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

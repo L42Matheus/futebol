@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Trophy, ArrowLeft, UserCircle2, ShieldCheck } from 'lucide-react'
 import { authApi, setAuthToken } from '../services/api'
 import { useAccountType, AccountType } from '../context/AccountTypeContext'
 
@@ -61,54 +62,144 @@ export default function Register() {
     navigate('/perfil')
   }
 
+  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
+
   return (
-    <div className="max-w-md mx-auto space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Criar conta</h1>
-        <p className="text-gray-500">E-mail ou telefone obrigatório</p>
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex flex-col">
+      {/* Header */}
+      <div className="pt-6 px-4">
+        <Link
+          to="/perfil"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft size={18} />
+          Voltar
+        </Link>
       </div>
-      <form onSubmit={handleSubmit} className="card space-y-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div>
-          <label className="label">Tipo de conta</label>
-          {accountType ? (
-            <div className="flex items-center justify-between gap-3">
-              <div className="input bg-gray-50">
-                {accountType === 'ATLETA' ? 'Atleta' : 'Administrador'}
-              </div>
-              <button type="button" className="btn-secondary" onClick={handleSwapRole}>
-                Trocar
-              </button>
-            </div>
-          ) : (
-            <div className="text-xs text-gray-500">
-              Nenhum perfil selecionado. <Link className="text-primary-600" to="/perfil">Voltar e escolher perfil</Link>
+
+      <div className="pt-8 pb-6 px-6 text-center">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg">
+          <Trophy size={28} />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Criar conta</h1>
+        <p className="text-gray-500 mt-1">Preencha seus dados</p>
+      </div>
+
+      {/* Form */}
+      <div className="flex-1 px-4 pb-8">
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-white rounded-2xl p-6 shadow-sm space-y-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-50 text-sm text-red-600">
+              {error}
             </div>
           )}
-        </div>
-        <div>
-          <label className="label">Nome</label>
-          <input name="nome" value={form.nome} onChange={handleChange} className="input" />
-        </div>
-        <div>
-          <label className="label">E-mail</label>
-          <input type="email" name="email" value={form.email} onChange={handleChange} className="input" />
-        </div>
-        <div>
-          <label className="label">Telefone</label>
-          <input name="telefone" value={form.telefone} onChange={handleChange} className="input" />
-        </div>
-        <div>
-          <label className="label">Senha</label>
-          <input type="password" name="senha" value={form.senha} onChange={handleChange} className="input" required />
-        </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? 'Criando...' : 'Criar conta'}
-        </button>
-        <p className="text-sm text-gray-500 text-center">
-          Já tem conta? <Link className="text-primary-600" to="/login">Entrar</Link>
-        </p>
-      </form>
+
+          {/* Tipo de conta */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Tipo de conta
+            </label>
+            {accountType ? (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
+                  {accountType === 'ATLETA' ? (
+                    <UserCircle2 size={20} className="text-blue-600" />
+                  ) : (
+                    <ShieldCheck size={20} className="text-emerald-600" />
+                  )}
+                  <span className="text-gray-700">
+                    {accountType === 'ATLETA' ? 'Atleta' : 'Administrador'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSwapRole}
+                  className="px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
+                >
+                  Trocar
+                </button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-yellow-50 text-sm text-yellow-700">
+                Nenhum perfil selecionado.{' '}
+                <Link className="font-medium underline" to="/perfil">
+                  Escolher perfil
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Nome
+            </label>
+            <input
+              name="nome"
+              value={form.nome}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="Seu nome completo"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              E-mail
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="seu@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Telefone
+            </label>
+            <input
+              name="telefone"
+              value={form.telefone}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="(11) 99999-9999"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Senha
+            </label>
+            <input
+              type="password"
+              name="senha"
+              value={form.senha}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="Crie uma senha"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-medium rounded-xl transition-colors"
+          >
+            {loading ? 'Criando...' : 'Criar conta'}
+          </button>
+
+          <p className="text-sm text-gray-500 text-center pt-2">
+            Já tem conta?{' '}
+            <Link className="text-primary-600 font-medium hover:underline" to="/login">
+              Entrar
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   )
 }

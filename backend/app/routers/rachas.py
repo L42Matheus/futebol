@@ -37,8 +37,23 @@ def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user:
 
 
 @router.get("/", response_model=List[RachaResponse])
-def listar_rachas(skip: int = 0, limit: int = 100, ativo: bool = True, db: Session = Depends(get_db)):
-    query = db.query(Racha).filter(Racha.ativo == ativo)
+def listar_rachas(
+    skip: int = 0,
+    limit: int = 100,
+    ativo: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Busca apenas rachas onde o usuário é atleta
+    user_racha_ids = db.query(Atleta.racha_id).filter(
+        Atleta.user_id == current_user.id,
+        Atleta.ativo == True
+    ).subquery()
+
+    query = db.query(Racha).filter(
+        Racha.ativo == ativo,
+        Racha.id.in_(user_racha_ids)
+    )
     rachas = query.offset(skip).limit(limit).all()
     result = []
     for racha in rachas:
