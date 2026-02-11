@@ -16,13 +16,13 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    senha: str = Field(..., min_length=6, max_length=128)
+    senha: str = Field(..., min_length=6, max_length=72)
     invite_token: Optional[str] = None
 
 
 class UserLogin(BaseModel):
     identificador: str = Field(..., min_length=3, max_length=255)
-    senha: str = Field(..., min_length=6, max_length=128)
+    senha: str = Field(..., min_length=6, max_length=72)
     push_token: Optional[str] = None
     plataforma: Optional[str] = None
 
