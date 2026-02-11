@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Users, Calendar, DollarSign, ChevronRight } from 'lucide-react'
+import { Users, Calendar, DollarSign, ChevronRight, Layers } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -37,9 +37,10 @@ export default function RachaDetail() {
         <p className="text-gray-500 capitalize">{racha.tipo} - {racha.total_atletas}/{racha.max_atletas} atletas</p>
         {saldo && <div className="bg-primary-50 rounded-lg p-4 mt-4"><p className="text-sm text-primary-700">Saldo do Racha</p><p className="text-2xl font-bold text-primary-800">{saldo.saldo_formatado}</p>{saldo.pendente > 0 && <p className="text-sm text-orange-600 mt-1">{saldo.pendente_formatado} pendente</p>}</div>}
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <Link to={`/racha/${rachaId}/atletas`} className="card flex flex-col items-center py-4 hover:shadow-md"><Users className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Atletas</span><span className="text-xs text-gray-500">{racha.total_atletas}</span></Link>
         <Link to={`/racha/${rachaId}/jogos`} className="card flex flex-col items-center py-4 hover:shadow-md"><Calendar className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Jogos</span><span className="text-xs text-gray-500">{jogos.length}</span></Link>
+        <Link to={`/racha/${rachaId}/times`} className="card flex flex-col items-center py-4 hover:shadow-md"><Layers className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Times</span></Link>
         <Link to={`/racha/${rachaId}/financeiro`} className="card flex flex-col items-center py-4 hover:shadow-md"><DollarSign className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Caixa</span></Link>
       </div>
       <div>

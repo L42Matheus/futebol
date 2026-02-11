@@ -35,11 +35,15 @@ def criar_time(payload: TeamCreate, db: Session = Depends(get_db), current_user:
     return TeamResponse.model_validate(team)
 
 
-@router.get("/", response_model=List[TeamResponse])
+@router.get("/", response_model=List[TeamWithMembers])
 def listar_times(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     ensure_admin(db, current_user, racha_id)
     teams = db.query(Team).filter(Team.racha_id == racha_id, Team.ativo == True).all()
-    return [TeamResponse.model_validate(t) for t in teams]
+    result = []
+    for team in teams:
+        membros = db.query(TeamMember).filter(TeamMember.team_id == team.id, TeamMember.ativo == True).all()
+        result.append(TeamWithMembers(**TeamResponse.model_validate(team).model_dump(), membros=[TeamMemberResponse.model_validate(m) for m in membros]))
+    return result
 
 
 @router.get("/{team_id}", response_model=TeamWithMembers)

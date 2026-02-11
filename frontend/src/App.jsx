@@ -8,6 +8,7 @@ import Financeiro from './pages/Financeiro'
 import NovoRacha from './pages/NovoRacha'
 import NovoJogo from './pages/NovoJogo'
 import Jogos from './pages/Jogos'
+import Times from './pages/Times'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import PrivateRoute from './components/PrivateRoute' // Import PrivateRoute
@@ -27,6 +28,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="novo" element={<NovoRacha />} />
             <Route path="racha/:rachaId" element={<RachaDetail />} />
+            <Route path="racha/:rachaId/times" element={<Times />} />
             <Route path="racha/:rachaId/jogos" element={<Jogos />} />
             <Route path="racha/:rachaId/novo-jogo" element={<NovoJogo />} />
             <Route path="racha/:rachaId/jogo/:jogoId" element={<JogoDetail />} />
