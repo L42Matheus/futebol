@@ -9,7 +9,6 @@ export default function RegisterPage() {
     email: '',
     telefone: '',
     senha: '',
-    invite_token: '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -27,7 +26,6 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       const payload = { ...form }
-      if (!payload.invite_token) delete payload.invite_token
       const response = await authApi.register(payload)
       localStorage.setItem('auth_token', response.data.access_token)
       setAuthToken(response.data.access_token)
@@ -62,10 +60,6 @@ export default function RegisterPage() {
         <div>
           <label className="label">Senha</label>
           <input type="password" name="senha" value={form.senha} onChange={handleChange} className="input" required />
-        </div>
-        <div>
-          <label className="label">Token de convite (opcional)</label>
-          <input name="invite_token" value={form.invite_token} onChange={handleChange} className="input" />
         </div>
         <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? 'Criando...' : 'Criar conta'}
