@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import rachas, atletas, jogos, presencas, pagamentos
+from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth # Import auth router
 
 settings = get_settings()
 
@@ -26,6 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.auth_router, prefix="/api/v1") # Include auth router first
 app.include_router(rachas.router, prefix="/api/v1")
 app.include_router(atletas.router, prefix="/api/v1")
 app.include_router(jogos.router, prefix="/api/v1")
