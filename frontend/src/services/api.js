@@ -85,10 +85,22 @@ export const pagamentosApi = {
   gerarMensalidade: (rachaId, referencia) => api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`),
 }
 
+export const teamsApi = {
+  list: (rachaId) => api.get(`/teams?racha_id=${rachaId}`),
+  get: (teamId) => api.get(`/teams/${teamId}`),
+  create: (data) => api.post('/teams', data),
+  update: (teamId, data) => api.patch(`/teams/${teamId}`, data),
+  remove: (teamId) => api.delete(`/teams/${teamId}`),
+  addMember: (teamId, atletaId) => api.post(`/teams/${teamId}/members`, { atleta_id: atletaId }),
+  removeMember: (teamId, atletaId) => api.delete(`/teams/${teamId}/members/${atletaId}`),
+}
+
 export const authApi = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
+  getInvite: (token) => api.get(`/auth/invites/${token}`),
+  createInvite: (data) => api.post('/auth/invites', data),
 }
 
 export default api

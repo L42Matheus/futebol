@@ -4,9 +4,12 @@ from app.models.jogo import Jogo
 from app.models.presenca import Presenca, StatusPresenca
 from app.models.pagamento import Pagamento, TipoPagamento, StatusPagamento
 from app.models.cartao import Cartao, TipoCartao
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.invite import Invite, InviteStatus
 from app.models.push_token import PushToken
+from app.models.team import Team
+from app.models.team_member import TeamMember
+from app.models.invite import InviteRole
 
 __all__ = [
     "Racha",
@@ -22,7 +25,11 @@ __all__ = [
     "Cartao",
     "TipoCartao",
     "User",
+    "UserRole",
     "Invite",
     "InviteStatus",
+    "InviteRole",
     "PushToken",
+    "Team",
+    "TeamMember",
 ]

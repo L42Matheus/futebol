@@ -12,6 +12,11 @@ class InviteStatus(str, enum.Enum):
     EXPIRADO = "expirado"
 
 
+class InviteRole(str, enum.Enum):
+    ADMIN = "admin"
+    ATLETA = "atleta"
+
+
 class Invite(Base):
     __tablename__ = "invites"
 
@@ -22,10 +27,13 @@ class Invite(Base):
     telefone = Column(String(20), nullable=True)
     nome = Column(String(100), nullable=True)
     status = Column(Enum(InviteStatus), default=InviteStatus.PENDENTE)
+    role = Column(Enum(InviteRole), default=InviteRole.ATLETA)
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     criado_por_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     aceito_em = Column(DateTime(timezone=True), nullable=True)
     expira_em = Column(DateTime(timezone=True), nullable=True)
 
     racha = relationship("Racha")
+    team = relationship("Team")
     convidado_por = relationship("User", back_populates="convites_enviados")

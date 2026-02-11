@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth
+from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams
 
 settings = get_settings()
 
@@ -27,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(teams.router, prefix="/api/v1")
 app.include_router(rachas.router, prefix="/api/v1")
 app.include_router(atletas.router, prefix="/api/v1")
 app.include_router(jogos.router, prefix="/api/v1")

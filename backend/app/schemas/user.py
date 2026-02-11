@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 from datetime import datetime
+from app.models.user import UserRole
 
 
 class UserBase(BaseModel):
@@ -18,6 +19,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     senha: str = Field(..., min_length=6, max_length=72)
     invite_token: Optional[str] = None
+    role: UserRole = UserRole.ATLETA
 
 
 class UserLogin(BaseModel):
@@ -30,6 +32,7 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: int
     ativo: bool
+    role: UserRole
     created_at: datetime
 
     class Config:

@@ -37,3 +37,4 @@ class Atleta(Base):
     presencas = relationship("Presenca", back_populates="atleta", cascade="all, delete-orphan")
     pagamentos = relationship("Pagamento", back_populates="atleta", cascade="all, delete-orphan")
     cartoes = relationship("Cartao", back_populates="atleta", cascade="all, delete-orphan")
+    team_members = relationship("TeamMember", back_populates="atleta", cascade="all, delete-orphan")

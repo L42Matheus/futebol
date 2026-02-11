@@ -6,6 +6,8 @@ from typing import List
 from app.database import get_db
 from app.models import Racha, TipoRacha, Atleta
 from app.schemas.racha import RachaCreate, RachaUpdate, RachaResponse
+from app.services.auth import get_current_user
+from app.models import User
 
 router = APIRouter(prefix="/rachas", tags=["Rachas"])
 
@@ -16,12 +18,22 @@ def get_max_atletas(tipo: TipoRacha) -> int:
 
 
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
-def criar_racha(racha: RachaCreate, db: Session = Depends(get_db)):
+def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_racha = Racha(**racha.model_dump(), max_atletas=get_max_atletas(racha.tipo))
     db.add(db_racha)
     db.commit()
     db.refresh(db_racha)
-    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=0)
+    admin = Atleta(
+        user_id=current_user.id,
+        racha_id=db_racha.id,
+        nome=current_user.nome or "Administrador",
+        telefone=current_user.telefone,
+        is_admin=True,
+        ativo=True,
+    )
+    db.add(admin)
+    db.commit()
+    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=1)
 
 
 @router.get("/", response_model=List[RachaResponse])

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { rachasApi } from '../services/api'
+import { rachasApi, authApi } from '../services/api'
 
 export default function NovoRacha() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [inviteLinks, setInviteLinks] = useState(null)
+  const [createdRacha, setCreatedRacha] = useState(null)
   const [form, setForm] = useState({ nome: '', tipo: 'society', valor_mensalidade: 0, valor_cartao_amarelo: 1000, valor_cartao_vermelho: 2000 })
 
   async function handleSubmit(e) {
@@ -13,7 +15,16 @@ export default function NovoRacha() {
     setLoading(true)
     try {
       const response = await rachasApi.create(form)
-      navigate(`/racha/${response.data.id}`)
+      setCreatedRacha(response.data)
+      const [inviteAtleta, inviteAdmin] = await Promise.all([
+        authApi.createInvite({ racha_id: response.data.id, role: 'atleta' }),
+        authApi.createInvite({ racha_id: response.data.id, role: 'admin' }),
+      ])
+      const base = window.location.origin
+      setInviteLinks({
+        atleta: `${base}/register?invite=${inviteAtleta.data.token}`,
+        admin: `${base}/register?invite=${inviteAdmin.data.token}`,
+      })
     } catch (error) {
       console.error('Erro ao criar racha:', error)
       alert('Erro ao criar racha. Tente novamente.')
@@ -33,6 +44,7 @@ export default function NovoRacha() {
         <button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button>
         <h1 className="text-2xl font-bold text-gray-900">Novo Racha</h1>
       </div>
+      {!inviteLinks && (
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div><label className="label">Nome do Racha</label><input type="text" name="nome" value={form.nome} onChange={handleChange} placeholder="Ex: Racha do Sábado" className="input" required /></div>
         <div><label className="label">Tipo de Racha</label>
@@ -49,6 +61,22 @@ export default function NovoRacha() {
         </div>
         <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Criando...' : 'Criar Racha'}</button>
       </form>
+      )}
+      {inviteLinks && createdRacha && (
+        <div className="card space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">Racha criado com sucesso</h2>
+          <p className="text-gray-500">Compartilhe os links abaixo para que atletas e administradores criem a conta.</p>
+          <div>
+            <label className="label">Link para Atletas</label>
+            <input className="input" readOnly value={inviteLinks.atleta} onFocus={(e) => e.target.select()} />
+          </div>
+          <div>
+            <label className="label">Link para Administradores</label>
+            <input className="input" readOnly value={inviteLinks.admin} onFocus={(e) => e.target.select()} />
+          </div>
+          <button className="btn-primary w-full" onClick={() => navigate(`/racha/${createdRacha.id}`)}>Ir para o Racha</button>
+        </div>
+      )}
     </div>
   )
 }

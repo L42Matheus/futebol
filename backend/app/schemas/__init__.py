@@ -5,6 +5,7 @@ from app.schemas.presenca import PresencaCreate, PresencaUpdate, PresencaRespons
 from app.schemas.pagamento import PagamentoCreate, PagamentoUpdate, PagamentoResponse
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
+from app.schemas.team import TeamCreate, TeamUpdate, TeamResponse, TeamMemberCreate, TeamMemberResponse, TeamWithMembers
 
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "PagamentoCreate", "PagamentoUpdate", "PagamentoResponse",
     "UserCreate", "UserLogin", "UserResponse", "TokenResponse",
     "InviteCreate", "InviteResponse", "InviteAccept",
+    "TeamCreate", "TeamUpdate", "TeamResponse", "TeamMemberCreate", "TeamMemberResponse", "TeamWithMembers",
 ]

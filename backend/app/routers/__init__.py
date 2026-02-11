@@ -1,3 +1,3 @@
-from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth
+from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams
 
-__all__ = ["rachas", "atletas", "jogos", "presencas", "pagamentos", "auth"]
+__all__ = ["rachas", "atletas", "jogos", "presencas", "pagamentos", "auth", "teams"]

@@ -29,3 +29,4 @@ class Racha(Base):
 
     atletas = relationship("Atleta", back_populates="racha", cascade="all, delete-orphan")
     jogos = relationship("Jogo", back_populates="racha", cascade="all, delete-orphan")
+    teams = relationship("Team", back_populates="racha", cascade="all, delete-orphan")
