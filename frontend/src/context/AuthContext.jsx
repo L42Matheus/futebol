@@ -27,10 +27,10 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (identificador, senha) => {
     setLoading(true);
     try {
-      await authService.login(email, password);
+      await authService.login(identificador, senha);
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       setIsAuthenticated(true);
@@ -44,10 +44,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, phone, password) => {
+  const register = async (email, phone, password, nome = "", inviteToken = "") => {
     setLoading(true);
     try {
-      await authService.register(email, phone, password);
+      await authService.register(email, phone, password, nome, inviteToken);
       // After registration, user needs to login
       return true;
     } catch (error) {
