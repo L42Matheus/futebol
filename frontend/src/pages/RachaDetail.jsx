@@ -43,7 +43,10 @@ export default function RachaDetail() {
         <Link to={`/racha/${rachaId}/financeiro`} className="card flex flex-col items-center py-4 hover:shadow-md"><DollarSign className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Caixa</span></Link>
       </div>
       <div>
-        <h2 className="font-semibold text-gray-900 mb-3">Próximos Jogos</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-gray-900">Pr?ximos Jogos</h2>
+          <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>
+        </div>
         {jogos.length === 0 ? <div className="card text-center py-8"><Calendar size={32} className="mx-auto text-gray-400 mb-2" /><p className="text-gray-500">Nenhum jogo agendado</p></div> : (
           <div className="space-y-2">
             {jogos.slice(0, 3).map((jogo) => (
