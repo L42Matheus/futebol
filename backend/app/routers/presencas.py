@@ -2,14 +2,32 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Presenca, Jogo, Atleta, StatusPresenca
+from app.models import Presenca, Jogo, Atleta, StatusPresenca, User
 from app.schemas.presenca import PresencaCreate, PresencaUpdate, PresencaResponse
+from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/presencas", tags=["Presenças"])
 
 
+def verificar_acesso_racha(db: Session, user: User, racha_id: int):
+    """Verifica se o usuário tem acesso ao racha"""
+    atleta = db.query(Atleta).filter(
+        Atleta.user_id == user.id,
+        Atleta.racha_id == racha_id,
+        Atleta.ativo == True
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=403, detail="Sem acesso a este racha")
+    return atleta
+
+
 @router.post("/", response_model=PresencaResponse, status_code=status.HTTP_201_CREATED)
-def criar_presenca(presenca: PresencaCreate, db: Session = Depends(get_db)):
+def criar_presenca(presenca: PresencaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    jogo = db.query(Jogo).filter(Jogo.id == presenca.jogo_id).first()
+    if not jogo:
+        raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
+
     existing = db.query(Presenca).filter(
         Presenca.jogo_id == presenca.jogo_id, Presenca.atleta_id == presenca.atleta_id).first()
     if existing:
@@ -20,9 +38,6 @@ def criar_presenca(presenca: PresencaCreate, db: Session = Depends(get_db)):
         return PresencaResponse(**{c.name: getattr(existing, c.name) for c in existing.__table__.columns},
                                 atleta_nome=atleta.nome if atleta else None,
                                 atleta_posicao=atleta.posicao.value if atleta else None)
-    jogo = db.query(Jogo).filter(Jogo.id == presenca.jogo_id).first()
-    if not jogo:
-        raise HTTPException(status_code=404, detail="Jogo não encontrado")
     atleta = db.query(Atleta).filter(Atleta.id == presenca.atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
@@ -37,10 +52,12 @@ def criar_presenca(presenca: PresencaCreate, db: Session = Depends(get_db)):
 
 
 @router.patch("/{presenca_id}", response_model=PresencaResponse)
-def atualizar_presenca(presenca_id: int, presenca_update: PresencaUpdate, db: Session = Depends(get_db)):
+def atualizar_presenca(presenca_id: int, presenca_update: PresencaUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     presenca = db.query(Presenca).filter(Presenca.id == presenca_id).first()
     if not presenca:
         raise HTTPException(status_code=404, detail="Presença não encontrada")
+    jogo = db.query(Jogo).filter(Jogo.id == presenca.jogo_id).first()
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     presenca.status = presenca_update.status
     db.commit()
     db.refresh(presenca)
@@ -51,7 +68,11 @@ def atualizar_presenca(presenca_id: int, presenca_update: PresencaUpdate, db: Se
 
 
 @router.post("/confirmar/{jogo_id}/{atleta_id}")
-def confirmar_presenca(jogo_id: int, atleta_id: int, db: Session = Depends(get_db)):
+def confirmar_presenca(jogo_id: int, atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
+    if not jogo:
+        raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     presenca = db.query(Presenca).filter(Presenca.jogo_id == jogo_id, Presenca.atleta_id == atleta_id).first()
     if not presenca:
         raise HTTPException(status_code=404, detail="Presença não encontrada")
@@ -61,7 +82,11 @@ def confirmar_presenca(jogo_id: int, atleta_id: int, db: Session = Depends(get_d
 
 
 @router.post("/recusar/{jogo_id}/{atleta_id}")
-def recusar_presenca(jogo_id: int, atleta_id: int, db: Session = Depends(get_db)):
+def recusar_presenca(jogo_id: int, atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
+    if not jogo:
+        raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     presenca = db.query(Presenca).filter(Presenca.jogo_id == jogo_id, Presenca.atleta_id == atleta_id).first()
     if not presenca:
         raise HTTPException(status_code=404, detail="Presença não encontrada")

@@ -4,14 +4,41 @@ from sqlalchemy import func
 from typing import List, Optional
 
 from app.database import get_db
-from app.models import Atleta, Racha, Posicao
+from app.models import Atleta, Racha, Posicao, User
 from app.schemas.atleta import AtletaCreate, AtletaUpdate, AtletaResponse
+from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/atletas", tags=["Atletas"])
 
 
+def verificar_acesso_racha(db: Session, user: User, racha_id: int):
+    """Verifica se o usuário tem acesso ao racha (é atleta dele)"""
+    atleta = db.query(Atleta).filter(
+        Atleta.user_id == user.id,
+        Atleta.racha_id == racha_id,
+        Atleta.ativo == True
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=403, detail="Sem acesso a este racha")
+    return atleta
+
+
+def verificar_admin_racha(db: Session, user: User, racha_id: int):
+    """Verifica se o usuário é admin do racha"""
+    atleta = db.query(Atleta).filter(
+        Atleta.user_id == user.id,
+        Atleta.racha_id == racha_id,
+        Atleta.is_admin == True,
+        Atleta.ativo == True
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=403, detail="Apenas administradores podem realizar esta ação")
+    return atleta
+
+
 @router.post("/", response_model=AtletaResponse, status_code=status.HTTP_201_CREATED)
-def criar_atleta(atleta: AtletaCreate, db: Session = Depends(get_db)):
+def criar_atleta(atleta: AtletaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_admin_racha(db, current_user, atleta.racha_id)
     racha = db.query(Racha).filter(Racha.id == atleta.racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -31,7 +58,18 @@ def criar_atleta(atleta: AtletaCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[AtletaResponse])
-def listar_atletas(racha_id: int, posicao: Optional[Posicao] = None, ativo: bool = True, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def listar_atletas(
+    racha_id: int,
+    posicao: Optional[Posicao] = None,
+    ativo: bool = True,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Verifica se o usuário tem acesso ao racha
+    verificar_acesso_racha(db, current_user, racha_id)
+
     query = db.query(Atleta).filter(Atleta.racha_id == racha_id, Atleta.ativo == ativo)
     if posicao:
         query = query.filter(Atleta.posicao == posicao)
@@ -39,18 +77,20 @@ def listar_atletas(racha_id: int, posicao: Optional[Posicao] = None, ativo: bool
 
 
 @router.get("/{atleta_id}", response_model=AtletaResponse)
-def obter_atleta(atleta_id: int, db: Session = Depends(get_db)):
+def obter_atleta(atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
+    verificar_acesso_racha(db, current_user, atleta.racha_id)
     return atleta
 
 
 @router.patch("/{atleta_id}", response_model=AtletaResponse)
-def atualizar_atleta(atleta_id: int, atleta_update: AtletaUpdate, db: Session = Depends(get_db)):
+def atualizar_atleta(atleta_id: int, atleta_update: AtletaUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
+    verificar_admin_racha(db, current_user, atleta.racha_id)
     update_data = atleta_update.model_dump(exclude_unset=True)
     if update_data.get("is_admin") and not atleta.is_admin:
         total_admins = db.query(func.count(Atleta.id)).filter(
@@ -65,20 +105,22 @@ def atualizar_atleta(atleta_id: int, atleta_update: AtletaUpdate, db: Session = 
 
 
 @router.delete("/{atleta_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remover_atleta(atleta_id: int, db: Session = Depends(get_db)):
+def remover_atleta(atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
+    verificar_admin_racha(db, current_user, atleta.racha_id)
     atleta.ativo = False
     db.commit()
 
 
 @router.get("/{atleta_id}/historico")
-def obter_historico(atleta_id: int, db: Session = Depends(get_db)):
+def obter_historico(atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from app.models import Presenca, Pagamento, Cartao, StatusPresenca, StatusPagamento
     atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
+    verificar_acesso_racha(db, current_user, atleta.racha_id)
     total_jogos = db.query(func.count(Presenca.id)).filter(Presenca.atleta_id == atleta_id).scalar()
     confirmados = db.query(func.count(Presenca.id)).filter(
         Presenca.atleta_id == atleta_id, Presenca.status == StatusPresenca.CONFIRMADO).scalar()

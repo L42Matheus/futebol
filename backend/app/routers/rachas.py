@@ -17,6 +17,31 @@ def get_max_atletas(tipo: TipoRacha) -> int:
     return limites.get(tipo, 30)
 
 
+def verificar_acesso_racha(db: Session, user: User, racha_id: int):
+    """Verifica se o usuário tem acesso ao racha"""
+    atleta = db.query(Atleta).filter(
+        Atleta.user_id == user.id,
+        Atleta.racha_id == racha_id,
+        Atleta.ativo == True
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=403, detail="Sem acesso a este racha")
+    return atleta
+
+
+def verificar_admin_racha(db: Session, user: User, racha_id: int):
+    """Verifica se o usuário é admin do racha"""
+    atleta = db.query(Atleta).filter(
+        Atleta.user_id == user.id,
+        Atleta.racha_id == racha_id,
+        Atleta.is_admin == True,
+        Atleta.ativo == True
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=403, detail="Apenas administradores podem realizar esta ação")
+    return atleta
+
+
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_racha = Racha(**racha.model_dump(), max_atletas=get_max_atletas(racha.tipo))
@@ -63,7 +88,8 @@ def listar_rachas(
 
 
 @router.get("/{racha_id}", response_model=RachaResponse)
-def obter_racha(racha_id: int, db: Session = Depends(get_db)):
+def obter_racha(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_acesso_racha(db, current_user, racha_id)
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -72,7 +98,8 @@ def obter_racha(racha_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/{racha_id}", response_model=RachaResponse)
-def atualizar_racha(racha_id: int, racha_update: RachaUpdate, db: Session = Depends(get_db)):
+def atualizar_racha(racha_id: int, racha_update: RachaUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_admin_racha(db, current_user, racha_id)
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -88,7 +115,8 @@ def atualizar_racha(racha_id: int, racha_update: RachaUpdate, db: Session = Depe
 
 
 @router.delete("/{racha_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletar_racha(racha_id: int, db: Session = Depends(get_db)):
+def deletar_racha(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_admin_racha(db, current_user, racha_id)
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -97,7 +125,8 @@ def deletar_racha(racha_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{racha_id}/saldo")
-def obter_saldo(racha_id: int, db: Session = Depends(get_db)):
+def obter_saldo(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_acesso_racha(db, current_user, racha_id)
     from app.models import Pagamento, StatusPagamento
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:

@@ -5,14 +5,28 @@ from typing import List
 from datetime import datetime
 
 from app.database import get_db
-from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca
+from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User
 from app.schemas.jogo import JogoCreate, JogoUpdate, JogoResponse
+from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
 
 
+def verificar_acesso_racha(db: Session, user: User, racha_id: int):
+    """Verifica se o usuário tem acesso ao racha"""
+    atleta = db.query(Atleta).filter(
+        Atleta.user_id == user.id,
+        Atleta.racha_id == racha_id,
+        Atleta.ativo == True
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=403, detail="Sem acesso a este racha")
+    return atleta
+
+
 @router.post("/", response_model=JogoResponse, status_code=status.HTTP_201_CREATED)
-def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db)):
+def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     racha = db.query(Racha).filter(Racha.id == jogo.racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -32,7 +46,8 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[JogoResponse])
-def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limit: int = 50, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    verificar_acesso_racha(db, current_user, racha_id)
     query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado == False)
     if apenas_futuros:
         query = query.filter(Jogo.data_hora >= datetime.now())
@@ -46,20 +61,22 @@ def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limi
 
 
 @router.get("/{jogo_id}", response_model=JogoResponse)
-def obter_jogo(jogo_id: int, db: Session = Depends(get_db)):
+def obter_jogo(jogo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     confirmados = db.query(func.count(Presenca.id)).filter(
         Presenca.jogo_id == jogo.id, Presenca.status == StatusPresenca.CONFIRMADO).scalar()
     return JogoResponse(**{c.name: getattr(jogo, c.name) for c in jogo.__table__.columns}, total_confirmados=confirmados)
 
 
 @router.patch("/{jogo_id}", response_model=JogoResponse)
-def atualizar_jogo(jogo_id: int, jogo_update: JogoUpdate, db: Session = Depends(get_db)):
+def atualizar_jogo(jogo_id: int, jogo_update: JogoUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     for field, value in jogo_update.model_dump(exclude_unset=True).items():
         setattr(jogo, field, value)
     db.commit()
@@ -70,19 +87,21 @@ def atualizar_jogo(jogo_id: int, jogo_update: JogoUpdate, db: Session = Depends(
 
 
 @router.delete("/{jogo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def cancelar_jogo(jogo_id: int, db: Session = Depends(get_db)):
+def cancelar_jogo(jogo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     jogo.cancelado = True
     db.commit()
 
 
 @router.get("/{jogo_id}/lista")
-def obter_lista_presenca(jogo_id: int, db: Session = Depends(get_db)):
+def obter_lista_presenca(jogo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    verificar_acesso_racha(db, current_user, jogo.racha_id)
     presencas = db.query(Presenca, Atleta).join(Atleta).filter(Presenca.jogo_id == jogo_id).all()
     confirmados, pendentes, recusados = [], [], []
     for presenca, atleta in presencas:
