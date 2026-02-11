@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar } from 'lucide-react'
+import { ArrowLeft, Calendar, Trash2 } from 'lucide-react'
 import { jogosApi, rachasApi } from '../services/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -27,6 +27,18 @@ export default function Jogos() {
       console.error('Erro ao carregar jogos:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleExcluir(jogoId) {
+    const ok = window.confirm('Excluir este jogo?')
+    if (!ok) return
+    try {
+      await jogosApi.cancel(jogoId)
+      loadData()
+    } catch (error) {
+      console.error('Erro ao excluir jogo:', error)
+      alert('Erro ao excluir jogo. Tente novamente.')
     }
   }
 
@@ -61,13 +73,21 @@ export default function Jogos() {
       ) : (
         <div className="space-y-2">
           {jogos.map((jogo) => (
-            <Link key={jogo.id} to={`/racha/${rachaId}/jogo/${jogo.id}`} className="card flex items-center justify-between hover:shadow-md">
-              <div>
+            <div key={jogo.id} className="card flex items-center justify-between hover:shadow-md">
+              <Link to={`/racha/${rachaId}/jogo/${jogo.id}`} className="flex-1">
                 <p className="font-medium text-gray-900">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
                 <p className="text-sm text-gray-500">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p>
                 <p className="text-sm text-primary-600 font-medium mt-1">{jogo.total_confirmados} confirmados</p>
-              </div>
-            </Link>
+              </Link>
+              <button
+                type="button"
+                onClick={() => handleExcluir(jogo.id)}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                title="Excluir jogo"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           ))}
         </div>
       )}
