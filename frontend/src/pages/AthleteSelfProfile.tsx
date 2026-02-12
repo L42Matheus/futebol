@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { profileApi } from '../services/api'
 import Avatar from '../components/Avatar'
-import { Edit2, LogOut, Shield, Trophy, MapPin, Phone, Hash, Footprints } from 'lucide-react'
+import { Edit2, LogOut, Shield, Trophy, MapPin, Phone, Hash, Footprints, Home } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -54,9 +54,17 @@ export default function AthleteSelfProfile() {
         <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.12),transparent_40%)]" />
           <div className="relative p-6 md:p-8">
+            <div className="flex items-center justify-between mb-4" />
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="relative">
                 <Avatar src={profile?.foto_url} name={profile?.apelido || profile?.nome || 'Atleta'} size="xl" />
+                <Link
+                  to="/"
+                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50"
+                  title="Meus rachas"
+                >
+                  <Home size={16} />
+                </Link>
                 <div className="absolute -bottom-2 -right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                   <Trophy size={12} /> Atleta
                 </div>
