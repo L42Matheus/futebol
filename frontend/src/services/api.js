@@ -94,9 +94,9 @@ export const pagamentosApi = {
 }
 
 export const teamsApi = {
-  list: (rachaId) => api.get(`/teams?racha_id=${rachaId}`),
+  list: (rachaId) => api.get(`/teams/?racha_id=${rachaId}`),
   get: (teamId) => api.get(`/teams/${teamId}`),
-  create: (data) => api.post('/teams', data),
+  create: (data) => api.post('/teams/', data),
   update: (teamId, data) => api.patch(`/teams/${teamId}`, data),
   remove: (teamId) => api.delete(`/teams/${teamId}`),
   addMember: (teamId, atletaId, options = {}) => api.post(`/teams/${teamId}/members`, {
