@@ -4,10 +4,10 @@ from sqlalchemy import func
 from typing import List
 
 from app.database import get_db
-from app.models import Racha, TipoRacha, Atleta
+from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User
 from app.schemas.racha import RachaCreate, RachaUpdate, RachaResponse
 from app.services.auth import get_current_user
-from app.models import User
+from app.deps import verificar_acesso_racha, verificar_admin_racha
 
 router = APIRouter(prefix="/rachas", tags=["Rachas"])
 
@@ -17,48 +17,23 @@ def get_max_atletas(tipo: TipoRacha) -> int:
     return limites.get(tipo, 30)
 
 
-def verificar_acesso_racha(db: Session, user: User, racha_id: int):
-    """Verifica se o usuário tem acesso ao racha"""
-    atleta = db.query(Atleta).filter(
-        Atleta.user_id == user.id,
-        Atleta.racha_id == racha_id,
-        Atleta.ativo == True
-    ).first()
-    if not atleta:
-        raise HTTPException(status_code=403, detail="Sem acesso a este racha")
-    return atleta
-
-
-def verificar_admin_racha(db: Session, user: User, racha_id: int):
-    """Verifica se o usuário é admin do racha"""
-    atleta = db.query(Atleta).filter(
-        Atleta.user_id == user.id,
-        Atleta.racha_id == racha_id,
-        Atleta.is_admin == True,
-        Atleta.ativo == True
-    ).first()
-    if not atleta:
-        raise HTTPException(status_code=403, detail="Apenas administradores podem realizar esta ação")
-    return atleta
-
-
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_racha = Racha(**racha.model_dump(), max_atletas=get_max_atletas(racha.tipo))
     db.add(db_racha)
     db.commit()
     db.refresh(db_racha)
-    admin = Atleta(
+
+    # Cria o admin do racha (não cria atleta)
+    racha_admin = RachaAdmin(
         user_id=current_user.id,
         racha_id=db_racha.id,
-        nome=current_user.nome or "Administrador",
-        telefone=current_user.telefone,
-        is_admin=True,
+        is_owner=True,
         ativo=True,
     )
-    db.add(admin)
+    db.add(racha_admin)
     db.commit()
-    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=1)
+    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=0)
 
 
 @router.get("/", response_model=List[RachaResponse])
@@ -69,11 +44,20 @@ def listar_rachas(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Busca apenas rachas onde o usuário é atleta
-    user_racha_ids = db.query(Atleta.racha_id).filter(
+    # Busca rachas onde o usuário é admin
+    admin_racha_ids = db.query(RachaAdmin.racha_id).filter(
+        RachaAdmin.user_id == current_user.id,
+        RachaAdmin.ativo == True
+    )
+
+    # Busca rachas onde o usuário é atleta
+    atleta_racha_ids = db.query(Atleta.racha_id).filter(
         Atleta.user_id == current_user.id,
         Atleta.ativo == True
-    ).subquery()
+    )
+
+    # Une os dois
+    user_racha_ids = admin_racha_ids.union(atleta_racha_ids).subquery()
 
     query = db.query(Racha).filter(
         Racha.ativo == ativo,

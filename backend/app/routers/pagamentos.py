@@ -7,33 +7,9 @@ from app.database import get_db
 from app.models import Pagamento, Atleta, StatusPagamento, TipoPagamento, User
 from app.schemas.pagamento import PagamentoCreate, PagamentoUpdate, PagamentoResponse, PagamentoAprovacao
 from app.services.auth import get_current_user
+from app.deps import verificar_acesso_racha, verificar_admin_racha
 
 router = APIRouter(prefix="/pagamentos", tags=["Pagamentos"])
-
-
-def verificar_acesso_racha(db: Session, user: User, racha_id: int):
-    """Verifica se o usuário tem acesso ao racha"""
-    atleta = db.query(Atleta).filter(
-        Atleta.user_id == user.id,
-        Atleta.racha_id == racha_id,
-        Atleta.ativo == True
-    ).first()
-    if not atleta:
-        raise HTTPException(status_code=403, detail="Sem acesso a este racha")
-    return atleta
-
-
-def verificar_admin_racha(db: Session, user: User, racha_id: int):
-    """Verifica se o usuário é admin do racha"""
-    atleta = db.query(Atleta).filter(
-        Atleta.user_id == user.id,
-        Atleta.racha_id == racha_id,
-        Atleta.is_admin == True,
-        Atleta.ativo == True
-    ).first()
-    if not atleta:
-        raise HTTPException(status_code=403, detail="Apenas administradores podem realizar esta ação")
-    return atleta
 
 
 @router.post("/", response_model=PagamentoResponse, status_code=status.HTTP_201_CREATED)

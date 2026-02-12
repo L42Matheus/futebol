@@ -5,10 +5,11 @@ from datetime import datetime
 import uuid
 
 from app.database import get_db
-from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole
+from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole, RachaAdmin
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
 from app.services.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.deps import verificar_admin_racha
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -45,18 +46,28 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     if user_in.invite_token:
         invite = db.query(Invite).filter(Invite.token == user_in.invite_token).first()
         if invite and invite.status == InviteStatus.PENDENTE:
-            atleta = Atleta(
-                user_id=user.id,
-                racha_id=invite.racha_id,
-                nome=invite.nome or user.nome or "Atleta",
-                telefone=invite.telefone or user.telefone,
-                ativo=True,
-                is_admin=True if invite.role == InviteRole.ADMIN else False,
-            )
-            db.add(atleta)
-            db.flush()
-            if invite.team_id:
-                db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
+            if invite.role == InviteRole.ADMIN:
+                # Convite de admin: cria RachaAdmin
+                racha_admin = RachaAdmin(
+                    user_id=user.id,
+                    racha_id=invite.racha_id,
+                    is_owner=False,
+                    ativo=True,
+                )
+                db.add(racha_admin)
+            else:
+                # Convite de atleta: cria Atleta
+                atleta = Atleta(
+                    user_id=user.id,
+                    racha_id=invite.racha_id,
+                    nome=invite.nome or user.nome or "Atleta",
+                    telefone=invite.telefone or user.telefone,
+                    ativo=True,
+                )
+                db.add(atleta)
+                db.flush()
+                if invite.team_id:
+                    db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
             invite.status = InviteStatus.ACEITO
             invite.aceito_em = datetime.utcnow()
             db.commit()
@@ -96,13 +107,7 @@ def me(current_user: User = Depends(get_current_user)):
 
 @router.post("/invites", response_model=InviteResponse, status_code=status.HTTP_201_CREATED)
 def criar_invite(invite_in: InviteCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    admin = db.query(Atleta).filter(
-        Atleta.user_id == current_user.id,
-        Atleta.racha_id == invite_in.racha_id,
-        Atleta.is_admin == True
-    ).first()
-    if not admin:
-        raise HTTPException(status_code=403, detail="Somente administradores podem convidar")
+    verificar_admin_racha(db, current_user, invite_in.racha_id)
 
     if invite_in.team_id:
         team = db.query(Team).filter(Team.id == invite_in.team_id, Team.racha_id == invite_in.racha_id).first()
@@ -132,23 +137,38 @@ def aceitar_invite(payload: InviteAccept, db: Session = Depends(get_db), current
     if not invite or invite.status != InviteStatus.PENDENTE:
         raise HTTPException(status_code=400, detail="Convite inválido")
 
-    existing = db.query(Atleta).filter(
-        Atleta.user_id == current_user.id,
-        Atleta.racha_id == invite.racha_id
-    ).first()
-    if not existing:
-        atleta = Atleta(
-            user_id=current_user.id,
-            racha_id=invite.racha_id,
-            nome=invite.nome or current_user.nome or "Atleta",
-            telefone=invite.telefone or current_user.telefone,
-            ativo=True,
-            is_admin=True if invite.role == InviteRole.ADMIN else False,
-        )
-        db.add(atleta)
-        db.flush()
-        if invite.team_id:
-            db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
+    if invite.role == InviteRole.ADMIN:
+        # Verifica se já é admin
+        existing_admin = db.query(RachaAdmin).filter(
+            RachaAdmin.user_id == current_user.id,
+            RachaAdmin.racha_id == invite.racha_id
+        ).first()
+        if not existing_admin:
+            racha_admin = RachaAdmin(
+                user_id=current_user.id,
+                racha_id=invite.racha_id,
+                is_owner=False,
+                ativo=True,
+            )
+            db.add(racha_admin)
+    else:
+        # Verifica se já é atleta
+        existing_atleta = db.query(Atleta).filter(
+            Atleta.user_id == current_user.id,
+            Atleta.racha_id == invite.racha_id
+        ).first()
+        if not existing_atleta:
+            atleta = Atleta(
+                user_id=current_user.id,
+                racha_id=invite.racha_id,
+                nome=invite.nome or current_user.nome or "Atleta",
+                telefone=invite.telefone or current_user.telefone,
+                ativo=True,
+            )
+            db.add(atleta)
+            db.flush()
+            if invite.team_id:
+                db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
 
     invite.status = InviteStatus.ACEITO
     invite.aceito_em = datetime.utcnow()

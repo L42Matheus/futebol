@@ -10,6 +10,7 @@ from app.models.push_token import PushToken
 from app.models.team import Team
 from app.models.team_member import TeamMember
 from app.models.invite import InviteRole
+from app.models.racha_admin import RachaAdmin
 
 __all__ = [
     "Racha",
@@ -32,4 +33,5 @@ __all__ = [
     "PushToken",
     "Team",
     "TeamMember",
+    "RachaAdmin",
 ]

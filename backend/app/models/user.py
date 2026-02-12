@@ -26,3 +26,4 @@ class User(Base):
     atletas = relationship("Atleta", back_populates="user")
     push_tokens = relationship("PushToken", back_populates="user", cascade="all, delete-orphan")
     convites_enviados = relationship("Invite", back_populates="convidado_por")
+    rachas_admin = relationship("RachaAdmin", back_populates="user")

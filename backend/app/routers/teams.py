@@ -4,27 +4,17 @@ from typing import List
 from datetime import datetime
 
 from app.database import get_db
-from app.models import Team, TeamMember, Atleta, Racha
+from app.models import Team, TeamMember, Atleta, Racha, User
 from app.schemas.team import TeamCreate, TeamUpdate, TeamResponse, TeamMemberCreate, TeamMemberResponse, TeamWithMembers
 from app.services.auth import get_current_user
-from app.models import User
+from app.deps import verificar_admin_racha
 
 router = APIRouter(prefix="/teams", tags=["Times"])
 
 
-def ensure_admin(db: Session, user: User, racha_id: int):
-    admin = db.query(Atleta).filter(
-        Atleta.user_id == user.id,
-        Atleta.racha_id == racha_id,
-        Atleta.is_admin == True
-    ).first()
-    if not admin:
-        raise HTTPException(status_code=403, detail="Somente administradores podem gerenciar times")
-
-
 @router.post("/", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 def criar_time(payload: TeamCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    ensure_admin(db, current_user, payload.racha_id)
+    verificar_admin_racha(db, current_user, payload.racha_id)
     racha = db.query(Racha).filter(Racha.id == payload.racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -37,7 +27,7 @@ def criar_time(payload: TeamCreate, db: Session = Depends(get_db), current_user:
 
 @router.get("/", response_model=List[TeamWithMembers])
 def listar_times(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    ensure_admin(db, current_user, racha_id)
+    verificar_admin_racha(db, current_user, racha_id)
     teams = db.query(Team).filter(Team.racha_id == racha_id, Team.ativo == True).all()
     result = []
     for team in teams:
@@ -51,7 +41,7 @@ def obter_time(team_id: int, db: Session = Depends(get_db), current_user: User =
     team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
-    ensure_admin(db, current_user, team.racha_id)
+    verificar_admin_racha(db, current_user, team.racha_id)
     membros = db.query(TeamMember).filter(TeamMember.team_id == team_id, TeamMember.ativo == True).all()
     return TeamWithMembers(**TeamResponse.model_validate(team).model_dump(), membros=[TeamMemberResponse.model_validate(m) for m in membros])
 
@@ -61,7 +51,7 @@ def atualizar_time(team_id: int, payload: TeamUpdate, db: Session = Depends(get_
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
-    ensure_admin(db, current_user, team.racha_id)
+    verificar_admin_racha(db, current_user, team.racha_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(team, field, value)
     db.commit()
@@ -74,7 +64,7 @@ def remover_time(team_id: int, db: Session = Depends(get_db), current_user: User
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
-    ensure_admin(db, current_user, team.racha_id)
+    verificar_admin_racha(db, current_user, team.racha_id)
     team.ativo = False
     db.commit()
 
@@ -84,7 +74,7 @@ def adicionar_membro(team_id: int, payload: TeamMemberCreate, db: Session = Depe
     team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
-    ensure_admin(db, current_user, team.racha_id)
+    verificar_admin_racha(db, current_user, team.racha_id)
     atleta = db.query(Atleta).filter(Atleta.id == payload.atleta_id, Atleta.racha_id == team.racha_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
@@ -108,7 +98,7 @@ def remover_membro(team_id: int, atleta_id: int, db: Session = Depends(get_db), 
     team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
-    ensure_admin(db, current_user, team.racha_id)
+    verificar_admin_racha(db, current_user, team.racha_id)
     member = db.query(TeamMember).filter(TeamMember.team_id == team_id, TeamMember.atleta_id == atleta_id, TeamMember.ativo == True).first()
     if not member:
         raise HTTPException(status_code=404, detail="Atleta não está no time")
