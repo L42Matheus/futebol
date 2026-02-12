@@ -1,3 +1,5 @@
+﻿import React from 'react'
+
 interface AvatarProps {
   src?: string | null
   name: string
@@ -5,81 +7,42 @@ interface AvatarProps {
   className?: string
 }
 
-const sizeClasses = {
-  xs: 'w-6 h-6 text-xs',
-  sm: 'w-8 h-8 text-sm',
-  md: 'w-10 h-10 text-base',
-  lg: 'w-14 h-14 text-lg',
-  xl: 'w-20 h-20 text-2xl',
+const sizeClasses: Record<NonNullable<AvatarProps['size']>, string> = {
+  xs: 'w-6 h-6 text-[10px]',
+  sm: 'w-8 h-8 text-xs',
+  md: 'w-12 h-12 text-sm',
+  lg: 'w-16 h-16 text-xl',
+  xl: 'w-24 h-24 text-3xl',
 }
 
-// Cores para as iniciais (baseado no nome)
-const bgColors = [
-  'bg-red-500',
-  'bg-orange-500',
-  'bg-amber-500',
-  'bg-yellow-500',
-  'bg-lime-500',
-  'bg-green-500',
-  'bg-emerald-500',
-  'bg-teal-500',
-  'bg-cyan-500',
-  'bg-sky-500',
-  'bg-blue-500',
-  'bg-indigo-500',
-  'bg-violet-500',
-  'bg-purple-500',
-  'bg-fuchsia-500',
-  'bg-pink-500',
-  'bg-rose-500',
-]
-
-function getInitials(name: string): string {
+const getInitials = (name: string) => {
   if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase()
-  }
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
-}
-
-function getColorFromName(name: string): string {
-  if (!name) return bgColors[0]
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return bgColors[Math.abs(hash) % bgColors.length]
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 }
 
 export default function Avatar({ src, name, size = 'md', className = '' }: AvatarProps) {
   const sizeClass = sizeClasses[size]
-  const initials = getInitials(name)
-  const bgColor = getColorFromName(name)
 
-  // Se tem foto, mostra a foto
   if (src) {
+    const resolvedSrc = src.startsWith('/uploads')
+      ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${src}`
+      : src
+
     return (
-      <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 ${className}`}>
-        <img
-          src={src.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${src}` : src}
-          alt={name}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            // Se a imagem falhar, esconde e mostra as iniciais
-            (e.target as HTMLImageElement).style.display = 'none'
-          }}
-        />
+      <div className={`${sizeClass} rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm flex-shrink-0 ${className}`}>
+        <img src={resolvedSrc} alt={name} className="w-full h-full object-cover" />
       </div>
     )
   }
 
-  // Fallback: mostra iniciais
   return (
-    <div
-      className={`${sizeClass} ${bgColor} rounded-full flex items-center justify-center text-white font-medium flex-shrink-0 ${className}`}
-    >
-      {initials}
+    <div className={`${sizeClass} rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center border-2 border-white shadow-sm flex-shrink-0 ${className}`}>
+      {getInitials(name)}
     </div>
   )
 }
