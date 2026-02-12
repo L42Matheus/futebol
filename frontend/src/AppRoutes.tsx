@@ -9,6 +9,7 @@ import NovoRacha from './pages/NovoRacha'
 import NovoJogo from './pages/NovoJogo'
 import Jogos from './pages/Jogos'
 import Times from './pages/Times'
+import TeamLineup from './pages/TeamLineup'
 import AtletaProfile from './pages/AtletaProfile'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -33,6 +34,7 @@ export default function AppRoutes() {
             <Route path="novo" element={<NovoRacha />} />
             <Route path="racha/:rachaId" element={<RachaDetail />} />
             <Route path="racha/:rachaId/times" element={<Times />} />
+            <Route path="racha/:rachaId/escalacao" element={<TeamLineup />} />
             <Route path="racha/:rachaId/jogos" element={<Jogos />} />
             <Route path="racha/:rachaId/novo-jogo" element={<NovoJogo />} />
             <Route path="racha/:rachaId/jogo/:jogoId" element={<JogoDetail />} />

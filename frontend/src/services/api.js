@@ -99,7 +99,12 @@ export const teamsApi = {
   create: (data) => api.post('/teams', data),
   update: (teamId, data) => api.patch(`/teams/${teamId}`, data),
   remove: (teamId) => api.delete(`/teams/${teamId}`),
-  addMember: (teamId, atletaId) => api.post(`/teams/${teamId}/members`, { atleta_id: atletaId }),
+  addMember: (teamId, atletaId, options = {}) => api.post(`/teams/${teamId}/members`, {
+    atleta_id: atletaId,
+    is_titular: options.is_titular,
+    posicao_escalacao: options.posicao_escalacao
+  }),
+  updateMember: (teamId, atletaId, data) => api.patch(`/teams/${teamId}/members/${atletaId}`, data),
   removeMember: (teamId, atletaId) => api.delete(`/teams/${teamId}/members/${atletaId}`),
 }
 
