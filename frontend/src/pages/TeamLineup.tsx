@@ -208,12 +208,12 @@ export default function TeamLineup() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="text-gray-500">
+          <button onClick={() => navigate(-1)} className="text-gray-400">
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Escalação</h1>
-            <span className="text-xs text-gray-500 capitalize">
+            <h1 className="text-xl font-bold text-white">Escalação</h1>
+            <span className="text-xs text-gray-400 capitalize">
               {gameType === 'campo' ? '11 jogadores' : gameType === 'society' ? '7 jogadores' : '5 jogadores'}
             </span>
           </div>
@@ -221,7 +221,7 @@ export default function TeamLineup() {
       </div>
 
       {/* Seleção de times e formações */}
-      <div className="card p-4">
+      <div className="card bg-gray-900/40 border border-gray-800 p-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-3">
             <div>
@@ -351,8 +351,8 @@ export default function TeamLineup() {
 
       {/* Atletas disponíveis */}
       {getAvailableAtletas().length > 0 && (
-        <div className="card p-4">
-          <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+        <div className="card bg-gray-900/40 border border-gray-800 p-4">
+          <h3 className="font-medium text-white mb-3 flex items-center gap-2">
             <Users size={18} />
             Atletas Disponíveis ({getAvailableAtletas().length})
           </h3>
@@ -364,8 +364,8 @@ export default function TeamLineup() {
               >
                 <Avatar src={atleta.foto_url} name={atleta.apelido || atleta.nome} size="sm" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{atleta.apelido || atleta.nome}</p>
-                  <p className="text-xs text-gray-500">{posicaoLabels[atleta.posicao]}</p>
+                  <p className="text-sm font-medium text-white">{atleta.apelido || atleta.nome}</p>
+                  <p className="text-xs text-gray-400">{posicaoLabels[atleta.posicao]}</p>
                 </div>
               </div>
             ))}
@@ -376,9 +376,9 @@ export default function TeamLineup() {
       {/* Modal de edição de jogador */}
       {editingMember && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
+          <div className="bg-gray-900/40 rounded-t-2xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Editar Jogador</h2>
+              <h2 className="text-xl font-bold text-white">Editar Jogador</h2>
               <button onClick={() => setEditingMember(null)} className="text-gray-400">
                 <X size={24} />
               </button>
@@ -391,10 +391,10 @@ export default function TeamLineup() {
                 size="lg"
               />
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-white">
                   {editingMember.member.atleta.apelido || editingMember.member.atleta.nome}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-400">
                   {editingMember.team.nome}
                 </p>
               </div>
@@ -410,7 +410,7 @@ export default function TeamLineup() {
                     className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
                       memberForm.is_titular
                         ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-600'
+                        : 'bg-gray-100 text-gray-400'
                     }`}
                   >
                     Titular
@@ -421,7 +421,7 @@ export default function TeamLineup() {
                     className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
                       !memberForm.is_titular
                         ? 'bg-amber-600 text-white'
-                        : 'bg-gray-100 text-gray-600'
+                        : 'bg-gray-100 text-gray-400'
                     }`}
                   >
                     Reserva
@@ -471,12 +471,12 @@ export default function TeamLineup() {
       {/* Modal de adicionar jogador */}
       {addingToTeam && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
+          <div className="bg-gray-900/40 rounded-t-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-white">
                 Adicionar ao {addingToTeam.team.nome}
                 {addingToTeam.slot && addingToTeam.slot.id !== 'bench' && (
-                  <span className="text-sm font-normal text-gray-500 ml-2">
+                  <span className="text-sm font-normal text-gray-400 ml-2">
                     ({addingToTeam.slot.label})
                   </span>
                 )}
@@ -488,7 +488,7 @@ export default function TeamLineup() {
 
             <div className="space-y-2">
               {getAvailableAtletas().length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
+                <p className="text-center text-gray-400 py-8">
                   Todos os atletas já estão nos times
                 </p>
               ) : (
@@ -496,14 +496,14 @@ export default function TeamLineup() {
                   <button
                     key={atleta.id}
                     onClick={() => handleAddMember(atleta.id)}
-                    className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/50 transition-colors"
                   >
                     <Avatar src={atleta.foto_url} name={atleta.apelido || atleta.nome} size="md" />
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-gray-900">{atleta.apelido || atleta.nome}</p>
-                      <p className="text-sm text-gray-500">{posicaoLabels[atleta.posicao]}</p>
+                      <p className="font-medium text-white">{atleta.apelido || atleta.nome}</p>
+                      <p className="text-sm text-gray-400">{posicaoLabels[atleta.posicao]}</p>
                     </div>
-                    <UserPlus size={20} className="text-primary-600" />
+                    <UserPlus size={20} className="text-emerald-400" />
                   </button>
                 ))
               )}

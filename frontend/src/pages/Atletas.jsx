@@ -33,21 +33,21 @@ export default function Atletas() {
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4"><button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button><h1 className="text-xl font-bold text-gray-900">Atletas</h1></div>
+        <div className="flex items-center gap-4"><button onClick={() => navigate(-1)} className="text-gray-400"><ArrowLeft size={24} /></button><h1 className="text-xl font-bold text-white">Atletas</h1></div>
         {isAdmin && <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><Plus size={20} />Adicionar</button>}
       </div>
-      <div className="card divide-y">
-        {atletas.length === 0 ? <div className="text-center py-8"><User size={48} className="mx-auto text-gray-400 mb-4" /><p className="text-gray-500">Nenhum atleta cadastrado</p></div> : atletas.map((a) => (
-          <Link key={a.id} to={`/racha/${rachaId}/atleta/${a.id}`} className="py-4 flex items-center gap-4 hover:bg-gray-50 -mx-4 px-4 transition-colors">
+      <div className="card bg-gray-900/40 border border-gray-800 divide-y">
+        {atletas.length === 0 ? <div className="text-center py-8"><User size={48} className="mx-auto text-gray-400 mb-4" /><p className="text-gray-400">Nenhum atleta cadastrado</p></div> : atletas.map((a) => (
+          <Link key={a.id} to={`/racha/${rachaId}/atleta/${a.id}`} className="py-4 flex items-center gap-4 hover:bg-gray-800/50 -mx-4 px-4 transition-colors">
             <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
-            <div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium text-gray-900">{a.apelido || a.nome}</p>{a.is_admin && <Shield className="text-primary-600" size={16} />}</div><p className="text-sm text-gray-500">{posicaoLabels[a.posicao]}{a.numero_camisa && ` - #${a.numero_camisa}`}</p></div>
+            <div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium text-white">{a.apelido || a.nome}</p>{a.is_admin && <Shield className="text-emerald-400" size={16} />}</div><p className="text-sm text-gray-400">{posicaoLabels[a.posicao]}{a.numero_camisa && ` - #${a.numero_camisa}`}</p></div>
           </Link>
         ))}
       </div>
       {isAdmin && showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Novo Atleta</h2>
+          <div className="bg-gray-900/40 rounded-t-2xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Novo Atleta</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div><label className="label">Nome Completo</label><input type="text" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="input" required /></div>
               <div><label className="label">Apelido</label><input type="text" value={form.apelido} onChange={(e) => setForm({ ...form, apelido: e.target.value })} className="input" placeholder="Como é conhecido no racha" /></div>

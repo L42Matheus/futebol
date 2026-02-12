@@ -52,14 +52,14 @@ export default function Jogos() {
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center gap-4">
-        <Link to={`/racha/${rachaId}`} className="text-gray-500"><ArrowLeft size={24} /></Link>
+        <Link to={`/racha/${rachaId}`} className="text-gray-400"><ArrowLeft size={24} /></Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agenda de Jogos</h1>
-          <p className="text-gray-500">{racha.nome}</p>
+          <h1 className="text-2xl font-bold text-white">Agenda de Jogos</h1>
+          <p className="text-gray-400">{racha.nome}</p>
         </div>
       </div>
-      <div className="card flex items-center justify-between gap-4">
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+      <div className="card bg-gray-900/40 border border-gray-800 flex items-center justify-between gap-4">
+        <label className="flex items-center gap-2 text-sm text-gray-300">
           <input
             type="checkbox"
             checked={apenasFuturos}
@@ -70,28 +70,28 @@ export default function Jogos() {
         {isAdmin ? (
           <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>
         ) : (
-          <p className="text-xs text-gray-500">Somente administradores podem criar jogos.</p>
+          <p className="text-xs text-gray-400">Somente administradores podem criar jogos.</p>
         )}
       </div>
       {jogos.length === 0 ? (
-        <div className="card text-center py-10">
+        <div className="card bg-gray-900/40 border border-gray-800 text-center py-10">
           <Calendar size={32} className="mx-auto text-gray-400 mb-2" />
-          <p className="text-gray-500">Nenhum jogo agendado</p>
+          <p className="text-gray-400">Nenhum jogo agendado</p>
         </div>
       ) : (
         <div className="space-y-2">
           {jogos.map((jogo) => (
-            <div key={jogo.id} className="card flex items-center justify-between hover:shadow-md">
+            <div key={jogo.id} className="card bg-gray-900/40 border border-gray-800 flex items-center justify-between hover:shadow-md">
               <Link to={`/racha/${rachaId}/jogo/${jogo.id}`} className="flex-1">
-                <p className="font-medium text-gray-900">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
-                <p className="text-sm text-gray-500">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p>
-                <p className="text-sm text-primary-600 font-medium mt-1">{jogo.total_confirmados} confirmados</p>
+                <p className="font-medium text-white">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
+                <p className="text-sm text-gray-400">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p>
+                <p className="text-sm text-emerald-400 font-medium mt-1">{jogo.total_confirmados} confirmados</p>
               </Link>
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => handleExcluir(jogo.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                  className="p-2 text-red-600 hover:bg-red-500/10 rounded-lg"
                   title="Excluir jogo"
                 >
                   <Trash2 size={16} />
