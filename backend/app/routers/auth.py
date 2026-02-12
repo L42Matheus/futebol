@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 from app.database import get_db
-from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole, RachaAdmin
+from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole, RachaAdmin, AthleteProfile
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
 from app.services.auth import hash_password, verify_password, create_access_token, get_current_user
@@ -65,12 +65,14 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
                 db.add(racha_admin)
             else:
                 # Convite de atleta: cria Atleta
+                profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == user.id).first()
                 atleta = Atleta(
                     user_id=user.id,
                     racha_id=invite.racha_id,
                     nome=invite.nome or user.nome or "Atleta",
                     telefone=invite.telefone or user.telefone,
                     ativo=True,
+                    foto_url=profile.foto_url if profile else None,
                 )
                 db.add(atleta)
                 db.flush()
@@ -164,12 +166,14 @@ def aceitar_invite(payload: InviteAccept, db: Session = Depends(get_db), current
             Atleta.racha_id == invite.racha_id
         ).first()
         if not existing_atleta:
+            profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == current_user.id).first()
             atleta = Atleta(
                 user_id=current_user.id,
                 racha_id=invite.racha_id,
                 nome=invite.nome or current_user.nome or "Atleta",
                 telefone=invite.telefone or current_user.telefone,
                 ativo=True,
+                foto_url=profile.foto_url if profile else None,
             )
             db.add(atleta)
             db.flush()

@@ -5,7 +5,7 @@ import uuid
 import shutil
 
 from app.database import get_db
-from app.models import AthleteProfile, User
+from app.models import AthleteProfile, User, Atleta
 from app.schemas.athlete_profile import AthleteProfileUpdate, AthleteProfileResponse
 from app.services.auth import get_current_user
 from app.config import get_settings
@@ -30,6 +30,13 @@ def get_or_create_profile(db: Session, user: User) -> AthleteProfile:
         db.commit()
         db.refresh(profile)
     return profile
+
+
+def sync_atleta_foto(db: Session, user: User, foto_url: str | None):
+    atletas = db.query(Atleta).filter(Atleta.user_id == user.id, Atleta.ativo == True).all()
+    for atleta in atletas:
+        atleta.foto_url = foto_url
+    db.commit()
 
 
 @router.get("/me", response_model=AthleteProfileResponse)
@@ -81,6 +88,7 @@ def upload_foto(
     profile.foto_url = f"/uploads/profiles/{filename}"
     db.commit()
     db.refresh(profile)
+    sync_atleta_foto(db, current_user, profile.foto_url)
     return AthleteProfileResponse.model_validate(profile)
 
 
@@ -94,4 +102,5 @@ def delete_foto(db: Session = Depends(get_db), current_user: User = Depends(get_
         profile.foto_url = None
         db.commit()
         db.refresh(profile)
+        sync_atleta_foto(db, current_user, None)
     return AthleteProfileResponse.model_validate(profile)
