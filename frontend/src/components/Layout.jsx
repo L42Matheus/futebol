@@ -1,11 +1,33 @@
+import { useEffect, useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, LogOut, User, Trophy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import Avatar from './Avatar'
+import { profileApi } from '../services/api'
 
 export default function Layout() {
   const { isAuthenticated, logout, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [profile, setProfile] = useState(null)
+
+  useEffect(() => {
+    let active = true
+    async function loadProfile() {
+      if (!user || user.role !== 'atleta') {
+        setProfile(null)
+        return
+      }
+      try {
+        const res = await profileApi.getMe()
+        if (active) setProfile(res.data)
+      } catch (error) {
+        if (active) setProfile(null)
+      }
+    }
+    loadProfile()
+    return () => { active = false }
+  }, [user])
 
   const handleLogout = () => {
     logout()
@@ -49,6 +71,15 @@ export default function Layout() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {user?.role === 'atleta' && (
+                  <Link to="/perfil-atleta" className="rounded-full ring-2 ring-white/30">
+                    <Avatar
+                      src={profile?.foto_url}
+                      name={profile?.apelido || profile?.nome || user?.nome || user?.email}
+                      size="sm"
+                    />
+                  </Link>
+                )}
                 {user && (
                   <div className="hidden sm:flex items-center gap-2 text-sm text-primary-100 mr-2">
                     <User size={16} />
