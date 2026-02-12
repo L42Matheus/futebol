@@ -56,9 +56,17 @@ export const atletasApi = {
   list: (rachaId) => api.get(`/atletas/?racha_id=${rachaId}`),
   get: (id) => api.get(`/atletas/${id}`),
   create: (data) => api.post('/atletas/', data),
-  update: (id, data) => api.patch(`/atletas/${id}`),
+  update: (id, data) => api.patch(`/atletas/${id}`, data),
   delete: (id) => api.delete(`/atletas/${id}`),
   getHistorico: (id) => api.get(`/atletas/${id}/historico`),
+  uploadFoto: (id, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/atletas/${id}/foto`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  removerFoto: (id) => api.delete(`/atletas/${id}/foto`),
 }
 
 export const jogosApi = {

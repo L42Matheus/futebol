@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, User, Shield } from 'lucide-react'
 import { atletasApi } from '../services/api'
+import Avatar from '../components/Avatar'
 
 export default function Atletas() {
   const { rachaId } = useParams()
@@ -34,10 +35,10 @@ export default function Atletas() {
       </div>
       <div className="card divide-y">
         {atletas.length === 0 ? <div className="text-center py-8"><User size={48} className="mx-auto text-gray-400 mb-4" /><p className="text-gray-500">Nenhum atleta cadastrado</p></div> : atletas.map((a) => (
-          <div key={a.id} className="py-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center"><User className="text-primary-600" size={24} /></div>
+          <Link key={a.id} to={`/racha/${rachaId}/atleta/${a.id}`} className="py-4 flex items-center gap-4 hover:bg-gray-50 -mx-4 px-4 transition-colors">
+            <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
             <div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium text-gray-900">{a.apelido || a.nome}</p>{a.is_admin && <Shield className="text-primary-600" size={16} />}</div><p className="text-sm text-gray-500">{posicaoLabels[a.posicao]}{a.numero_camisa && ` - #${a.numero_camisa}`}</p></div>
-          </div>
+          </Link>
         ))}
       </div>
       {showModal && (

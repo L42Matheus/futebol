@@ -1,15 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
+import os
+import uuid
+import shutil
 
 from app.database import get_db
 from app.models import Atleta, Racha, Posicao, User
 from app.schemas.atleta import AtletaCreate, AtletaUpdate, AtletaResponse
 from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
+from app.config import get_settings
 
 router = APIRouter(prefix="/atletas", tags=["Atletas"])
+settings = get_settings()
+
+# Extensões de imagem permitidas
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
+
+def get_upload_dir():
+    """Cria e retorna o diretório de uploads"""
+    upload_path = settings.get_upload_path()
+    os.makedirs(upload_path, exist_ok=True)
+    return upload_path
 
 
 @router.post("/", response_model=AtletaResponse, status_code=status.HTTP_201_CREATED)
@@ -115,3 +131,101 @@ def obter_historico(atleta_id: int, db: Session = Depends(get_db), current_user:
                        "pago_formatado": f"R$ {total_pago / 100:.2f}", "pendente_formatado": f"R$ {total_pendente / 100:.2f}"},
         "cartoes": {"amarelos": amarelos, "vermelhos": vermelhos}
     }
+
+
+@router.post("/{atleta_id}/foto", response_model=AtletaResponse)
+def upload_foto(
+    atleta_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload de foto do atleta"""
+    atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Atleta não encontrado")
+
+    # Verifica se o usuário pode editar (é o próprio atleta ou admin do racha)
+    is_own_profile = atleta.user_id == current_user.id
+    try:
+        is_admin = verificar_admin_racha(db, current_user, atleta.racha_id)
+    except HTTPException:
+        is_admin = False
+
+    if not is_own_profile and not is_admin:
+        raise HTTPException(status_code=403, detail="Sem permissão para editar este atleta")
+
+    # Valida extensão do arquivo
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Extensão não permitida. Use: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # Valida tamanho do arquivo
+    file.file.seek(0, 2)  # Vai para o final
+    file_size = file.file.tell()
+    file.file.seek(0)  # Volta para o início
+    if file_size > settings.max_upload_size:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Arquivo muito grande. Máximo: {settings.max_upload_size // (1024 * 1024)}MB"
+        )
+
+    # Cria diretório se não existe
+    upload_dir = os.path.join(get_upload_dir(), "atletas")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Remove foto antiga se existir
+    if atleta.foto_url:
+        old_path = os.path.join(settings.get_upload_path(), atleta.foto_url.lstrip('/'))
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    # Gera nome único e salva arquivo
+    filename = f"{uuid.uuid4()}{ext}"
+    filepath = os.path.join(upload_dir, filename)
+
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Atualiza URL no banco
+    atleta.foto_url = f"/uploads/atletas/{filename}"
+    db.commit()
+    db.refresh(atleta)
+
+    return atleta
+
+
+@router.delete("/{atleta_id}/foto", response_model=AtletaResponse)
+def remover_foto(
+    atleta_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove foto do atleta"""
+    atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Atleta não encontrado")
+
+    # Verifica permissão
+    is_own_profile = atleta.user_id == current_user.id
+    try:
+        is_admin = verificar_admin_racha(db, current_user, atleta.racha_id)
+    except HTTPException:
+        is_admin = False
+
+    if not is_own_profile and not is_admin:
+        raise HTTPException(status_code=403, detail="Sem permissão para editar este atleta")
+
+    # Remove arquivo se existir
+    if atleta.foto_url:
+        filepath = os.path.join(settings.get_upload_path(), atleta.foto_url.lstrip('/'))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        atleta.foto_url = None
+        db.commit()
+        db.refresh(atleta)
+
+    return atleta
