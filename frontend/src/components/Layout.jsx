@@ -6,7 +6,7 @@ import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
 import { profileApi } from '../services/api'
 
-const TITLES: { test: RegExp; title: string }[] = [
+const TITLES = [
   { test: /^\/$/, title: 'QuemJoga' },
   { test: /^\/novo$/, title: 'Novo Racha' },
   { test: /\/racha\/\d+$/, title: 'Racha' },
