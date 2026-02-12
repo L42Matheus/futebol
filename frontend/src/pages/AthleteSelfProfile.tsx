@@ -1,38 +1,32 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { profileApi } from '../services/api'
-import Avatar from '../components/Avatar'
-import { Edit2, LogOut, Shield, Trophy, MapPin, Phone, Hash, Footprints, Home } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-const posicaoLabels: Record<string, string> = {
-  goleiro: 'Goleiro',
-  zagueiro: 'Zagueiro',
-  lateral: 'Lateral',
-  volante: 'Volante',
-  meia: 'Meia',
-  atacante: 'Atacante',
-  ponta: 'Ponta',
-}
-
-const pernaLabels: Record<string, string> = {
-  direita: 'Direita',
-  esquerda: 'Esquerda',
-  ambidestra: 'Ambidestra',
-}
+import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera } from 'lucide-react'
+import Layout from '../components/Layout'
+import Avatar from '../components/Avatar'
+import { POSICAO_LABELS, PERNA_LABELS } from '../constants'
+import { useAuth } from '../context/AuthContext'
+import { profileApi, rachasApi } from '../services/api'
 
 export default function AthleteSelfProfile() {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [hasRacha, setHasRacha] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await profileApi.me()
-        setProfile(res.data)
+        const [profileRes, rachasRes] = await Promise.all([
+          profileApi.me(),
+          rachasApi.list(),
+        ])
+        setProfile(profileRes.data)
+        setHasRacha(Array.isArray(rachasRes.data) && rachasRes.data.length > 0)
+      } catch (e) {
+        console.error(e)
       } finally {
         setLoading(false)
       }
@@ -40,125 +34,173 @@ export default function AthleteSelfProfile() {
     load()
   }, [])
 
+  const handleLogoutAction = () => {
+    logout()
+    navigate('/perfil')
+  }
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione uma imagem')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Imagem muito grande. Máximo 5MB')
+      return
+    }
+    setUploading(true)
+    try {
+      const res = await profileApi.uploadFoto(file)
+      setProfile(res.data)
+    } catch (err) {
+      alert('Erro ao enviar foto')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
-      </div>
+      <Layout>
+        <div className="animate-pulse flex flex-col items-center py-20">
+          <div className="w-24 h-24 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <Layout>
+        <div>Atleta não encontrado</div>
+      </Layout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.12),transparent_40%)]" />
-          <div className="relative p-6 md:p-8">
-            <div className="flex items-center justify-between mb-4" />
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              <div className="relative">
-                <Avatar src={profile?.foto_url} name={profile?.apelido || profile?.nome || 'Atleta'} size="xl" />
-                <Link
-                  to="/"
-                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50"
-                  title="Meus rachas"
-                >
-                  <Home size={16} />
-                </Link>
-                <div className="absolute -bottom-2 -right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                  <Trophy size={12} /> Atleta
-                </div>
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {profile?.apelido || profile?.nome || 'Atleta'}
-                </h1>
-                {profile?.apelido && profile?.nome && (
-                  <p className="text-sm text-gray-500">{profile.nome}</p>
+    <Layout title="Meu Perfil" showBack={false}>
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="relative overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-sm">
+          <div className="h-32 bg-emerald-600 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
+              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0 0 L100 0 L100 100 L0 100 Z" fill="url(#grad)" />
+                <defs>
+                  <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'white' }} />
+                    <stop offset="100%" style={{ stopColor: 'transparent' }} />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </div>
+          <div className="px-6 pb-6 -mt-12 relative flex flex-col items-center text-center">
+            <div className="relative">
+              <Avatar src={profile.foto_url} name={profile.apelido || profile.nome || 'Atleta'} size="xl" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg text-emerald-600 border border-gray-100 hover:bg-emerald-50"
+              >
+                {uploading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-600 border-t-transparent"></div>
+                ) : (
+                  <Camera size={16} />
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {profile?.posicao && (
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
-                      {posicaoLabels[profile.posicao]}
-                    </span>
-                  )}
-                  {profile?.perna_boa && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium flex items-center gap-1">
-                      <Footprints size={12} /> {pernaLabels[profile.perna_boa]}
-                    </span>
-                  )}
-                  {profile?.numero_camisa && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium flex items-center gap-1">
-                      <Hash size={12} /> {profile.numero_camisa}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Shield className="text-emerald-600" size={24} />
+              </button>
+            </div>
+
+            <h1 className="mt-4 text-2xl font-bold text-gray-900">{profile.apelido || profile.nome}</h1>
+            {profile.apelido && <p className="text-gray-500">{profile.nome}</p>}
+
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
+                {POSICAO_LABELS[profile.posicao] || '-'}
+              </span>
+              <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                <Footprints size={12} /> {PERNA_LABELS[profile.perna_boa || 'direita']}
+              </span>
+              {profile.numero_camisa && (
+                <span className="bg-gray-50 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                  <Hash size={12} /> {profile.numero_camisa}
+                </span>
+              )}
+              {user?.role === 'admin' && (
+                <span className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                  <Shield size={12} /> Admin
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card p-4">
-            <p className="text-xs text-gray-500">Telefone</p>
-            <div className="mt-2 flex items-center gap-2 text-gray-800">
-              <Phone size={16} />
-              <span>{profile?.telefone || '-'}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center">
+              <Phone size={24} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">WhatsApp</p>
+              <p className="text-gray-900 font-semibold">{profile.telefone || '-'}</p>
             </div>
           </div>
-          <div className="card p-4">
-            <p className="text-xs text-gray-500">Posição</p>
-            <div className="mt-2 flex items-center gap-2 text-gray-800">
-              <MapPin size={16} />
-              <span>{profile?.posicao ? posicaoLabels[profile.posicao] : '-'}</span>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center">
+              <MapPin size={24} />
             </div>
-          </div>
-          <div className="card p-4">
-            <p className="text-xs text-gray-500">Perna boa</p>
-            <div className="mt-2 flex items-center gap-2 text-gray-800">
-              <Footprints size={16} />
-              <span>{profile?.perna_boa ? pernaLabels[profile.perna_boa] : '-'}</span>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">Status</p>
+              <p className="text-emerald-600 font-bold">{hasRacha ? 'Ativo no Racha' : 'Aguardando convite'}</p>
             </div>
           </div>
         </div>
 
-        <div className="card p-6 space-y-3">
-          <h2 className="font-semibold text-gray-900">Informações básicas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-            <div>
-              <p className="text-xs text-gray-500">Nome</p>
-              <p>{profile?.nome || '-'}</p>
+        <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Trophy size={20} className="text-orange-500" /> Estatísticas Gerais
+          </h2>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-gray-900">0</p>
+              <p className="text-xs text-gray-400 font-medium mt-1">Jogos</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Apelido</p>
-              <p>{profile?.apelido || '-'}</p>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-gray-900">0</p>
+              <p className="text-xs text-gray-400 font-medium mt-1">Gols</p>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Número</p>
-              <p>{profile?.numero_camisa || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Status</p>
-              <p className="text-emerald-700 font-medium">Aguardando convite</p>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-gray-900">0%</p>
+              <p className="text-xs text-gray-400 font-medium mt-1">Presença</p>
             </div>
           </div>
-        </div>
+          <p className="text-xs text-gray-400 mt-4 text-center">Em breve com dados reais.</p>
+        </section>
 
-        <div className="flex flex-col gap-3">
-          <Link to="/perfil-basico" className="btn-primary w-full flex items-center justify-center gap-2">
-            <Edit2 size={18} />
-            Editar perfil
-          </Link>
+        <div className="flex flex-col gap-3 pt-4">
           <button
-            onClick={() => { logout(); navigate('/login') }}
-            className="btn-secondary w-full flex items-center justify-center gap-2"
+            onClick={() => navigate('/perfil-basico')}
+            className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100"
           >
-            <LogOut size={18} />
-            Sair
+            <Edit2 size={20} /> Editar Perfil
+          </button>
+          <button
+            onClick={handleLogoutAction}
+            className="w-full bg-white text-gray-600 border border-gray-100 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+          >
+            Log Out
           </button>
         </div>
       </div>
-    </div>
+    </Layout>
   )
 }
