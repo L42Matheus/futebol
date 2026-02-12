@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Users, Calendar, DollarSign, ChevronRight, Layers } from 'lucide-react'
-import { rachasApi, jogosApi } from '../services/api'
+import { Users, Calendar, DollarSign, ChevronRight, Layers, Link2 } from 'lucide-react'
+import { rachasApi, jogosApi, authApi } from '../services/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -11,6 +11,7 @@ export default function RachaDetail() {
   const [jogos, setJogos] = useState([])
   const [saldo, setSaldo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [inviteLink, setInviteLink] = useState('')
 
   useEffect(() => { loadData() }, [rachaId])
 
@@ -24,6 +25,17 @@ export default function RachaDetail() {
       console.error('Erro ao carregar dados:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleInvite() {
+    try {
+      const res = await authApi.createInvite({ racha_id: parseInt(rachaId), role: 'atleta' })
+      const base = window.location.origin
+      setInviteLink(`${base}/register?invite=${res.data.token}`)
+    } catch (error) {
+      console.error('Erro ao gerar convite:', error)
+      alert('Erro ao gerar convite.')
     }
   }
 
@@ -42,6 +54,20 @@ export default function RachaDetail() {
         <Link to={`/racha/${rachaId}/jogos`} className="card flex flex-col items-center py-4 hover:shadow-md"><Calendar className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Jogos</span><span className="text-xs text-gray-500">{jogos.length}</span></Link>
         <Link to={`/racha/${rachaId}/times`} className="card flex flex-col items-center py-4 hover:shadow-md"><Layers className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Times</span></Link>
         <Link to={`/racha/${rachaId}/financeiro`} className="card flex flex-col items-center py-4 hover:shadow-md"><DollarSign className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Caixa</span></Link>
+      </div>
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-gray-900">Convidar atleta</h3>
+            <p className="text-sm text-gray-500">Gere um link para o atleta criar conta</p>
+          </div>
+          <button onClick={handleInvite} className="btn-secondary flex items-center gap-2">
+            <Link2 size={16} /> Gerar link
+          </button>
+        </div>
+        {inviteLink && (
+          <input className="input" readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
+        )}
       </div>
       <div>
         <div className="flex items-center justify-between mb-3">
