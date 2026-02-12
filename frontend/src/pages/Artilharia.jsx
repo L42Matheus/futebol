@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { Trophy, Plus, Minus, Medal, HandHelping } from 'lucide-react'
+import { Trophy, Plus, Minus, Medal, Users } from 'lucide-react'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
 import { useAuth } from '../context/AuthContext'
@@ -80,7 +80,7 @@ export default function Artilharia() {
         <header className="bg-gray-900/40 p-6 rounded-3xl border border-gray-800 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
-              {tab === 'gols' ? <Trophy size={28} /> : <HandHelping size={28} />}
+              {tab === 'gols' ? <Trophy size={28} /> : <Users size={28} />}
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Ranking de {tab === 'gols' ? 'Gols' : 'Assistencias'}</h1>
