@@ -33,7 +33,7 @@ export const PAGAMENTO_TIPO_LABELS: Record<string, string> = {
 export const NAV_ITEMS = [
   { path: '/', label: 'Inicio', icon: <Home size={20} /> },
   { path: '/artilharia', label: 'Ranking', icon: <Trophy size={20} /> },
+  { path: '/novo', label: 'Novo', icon: <PlusCircle size={24} />, adminOnly: true, isFab: true },
   { path: '/financeiro', label: 'Caixa', icon: <DollarSign size={20} /> },
   { path: '/perfil-atleta', label: 'Perfil', icon: <User size={20} /> },
-  { path: '/novo', label: 'Novo Racha', icon: <PlusCircle size={20} />, adminOnly: true },
 ]
