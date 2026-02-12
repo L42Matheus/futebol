@@ -29,7 +29,6 @@ export default function Register() {
 
   const role = useMemo(() => toRole(accountType), [accountType])
 
-  // Redireciona se já está autenticado
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       navigate('/', { replace: true })
@@ -63,14 +62,10 @@ export default function Register() {
       setError('Informe e-mail ou telefone.')
       return
     }
-    if (accountType === 'ATLETA' && !inviteToken) {
-      // Permitido: atleta sem convite cria conta básica
-    }
     setLoading(true)
     try {
       const finalRole = inviteRole || role
       await register(form.email, form.telefone, form.senha, form.nome, inviteToken, finalRole)
-      // Navegar após registro bem-sucedido
       navigate('/', { replace: true })
     } catch (err: any) {
       setError('Falha no cadastro. Verifique os dados.')
@@ -84,15 +79,15 @@ export default function Register() {
     navigate('/perfil')
   }
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
+  const inputClass = "w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none"
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex flex-col">
+    <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
       {/* Header */}
       <div className="pt-6 px-4">
         <Link
           to="/perfil"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white"
         >
           <ArrowLeft size={18} />
           Voltar
@@ -100,36 +95,36 @@ export default function Register() {
       </div>
 
       <div className="pt-8 pb-6 px-6 text-center">
-        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-primary-600 text-white flex items-center justify-center shadow-lg">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
           <Trophy size={28} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Criar conta</h1>
-        <p className="text-gray-500 mt-1">Preencha seus dados</p>
+        <h1 className="text-2xl font-bold text-white">Criar conta</h1>
+        <p className="text-gray-400 mt-1">Preencha seus dados</p>
       </div>
 
       {/* Form */}
       <div className="flex-1 px-4 pb-8">
-        <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-white rounded-2xl p-6 shadow-sm space-y-4">
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-900/40 rounded-2xl p-6 border border-gray-800 space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-red-50 text-sm text-red-600">
+            <div className="p-3 rounded-xl bg-red-500/10 text-sm text-red-400 border border-red-500/20">
               {error}
             </div>
           )}
 
           {/* Tipo de conta */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Tipo de conta
             </label>
             {accountType ? (
               <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700">
                   {accountType === 'ATLETA' ? (
-                    <UserCircle2 size={20} className="text-blue-600" />
+                    <UserCircle2 size={20} className="text-blue-500" />
                   ) : (
-                    <ShieldCheck size={20} className="text-emerald-600" />
+                    <ShieldCheck size={20} className="text-emerald-500" />
                   )}
-                  <span className="text-gray-700">
+                  <span className="text-white">
                     {accountType === 'ATLETA' ? 'Atleta' : 'Administrador'}
                   </span>
                 </div>
@@ -137,14 +132,14 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={handleSwapRole}
-                    className="px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
+                    className="px-4 py-3 text-sm font-medium text-emerald-500 hover:bg-gray-800 rounded-xl transition-colors"
                   >
                     Trocar
                   </button>
                 )}
               </div>
             ) : (
-              <div className="p-3 rounded-xl bg-yellow-50 text-sm text-yellow-700">
+              <div className="p-3 rounded-xl bg-yellow-500/10 text-sm text-yellow-500 border border-yellow-500/20">
                 Nenhum perfil selecionado.{' '}
                 <Link className="font-medium underline" to="/perfil">
                   Escolher perfil
@@ -153,13 +148,13 @@ export default function Register() {
             )}
           </div>
           {accountType === 'ATLETA' && !inviteToken && (
-            <div className="p-3 rounded-xl bg-blue-50 text-sm text-blue-700">
+            <div className="p-3 rounded-xl bg-blue-500/10 text-sm text-blue-400 border border-blue-500/20">
               Você poderá entrar em um racha somente após receber um convite.
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Nome
             </label>
             <input
@@ -172,7 +167,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">
               E-mail
             </label>
             <input
@@ -186,7 +181,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Telefone
             </label>
             <input
@@ -199,7 +194,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">
               Senha
             </label>
             <input
@@ -216,14 +211,14 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-medium rounded-xl transition-colors"
+            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:text-gray-400 text-white font-medium rounded-xl transition-colors"
           >
             {loading ? 'Criando...' : 'Criar conta'}
           </button>
 
           <p className="text-sm text-gray-500 text-center pt-2">
             Já tem conta?{' '}
-            <Link className="text-primary-600 font-medium hover:underline" to={inviteToken ? `/login?invite=${inviteToken}` : '/login'}>
+            <Link className="text-emerald-500 font-medium hover:underline" to={inviteToken ? `/login?invite=${inviteToken}` : '/login'}>
               Entrar
             </Link>
           </p>
