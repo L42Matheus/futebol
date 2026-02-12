@@ -4,7 +4,7 @@ from sqlalchemy import func
 from typing import List
 
 from app.database import get_db
-from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User
+from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User, UserRole
 from app.schemas.racha import RachaCreate, RachaUpdate, RachaResponse
 from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
@@ -19,6 +19,8 @@ def get_max_atletas(tipo: TipoRacha) -> int:
 
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Apenas administradores podem criar racha")
     db_racha = Racha(**racha.model_dump(), max_atletas=get_max_atletas(racha.tipo))
     db.add(db_racha)
     db.commit()

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, User, Shield } from 'lucide-react'
 import { atletasApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 
 export default function Atletas() {
@@ -12,6 +13,8 @@ export default function Atletas() {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ nome: '', apelido: '', telefone: '', posicao: 'meia' })
   const posicaoLabels = { goleiro: 'Goleiro', zagueiro: 'Zagueiro', lateral: 'Lateral', volante: 'Volante', meia: 'Meia', atacante: 'Atacante', ponta: 'Ponta' }
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => { loadAtletas() }, [rachaId])
 
@@ -31,7 +34,7 @@ export default function Atletas() {
     <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4"><button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button><h1 className="text-xl font-bold text-gray-900">Atletas</h1></div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><Plus size={20} />Adicionar</button>
+        {isAdmin && <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><Plus size={20} />Adicionar</button>}
       </div>
       <div className="card divide-y">
         {atletas.length === 0 ? <div className="text-center py-8"><User size={48} className="mx-auto text-gray-400 mb-4" /><p className="text-gray-500">Nenhum atleta cadastrado</p></div> : atletas.map((a) => (
@@ -41,7 +44,7 @@ export default function Atletas() {
           </Link>
         ))}
       </div>
-      {showModal && (
+      {isAdmin && showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
           <div className="bg-white rounded-t-2xl w-full max-w-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Novo Atleta</h2>

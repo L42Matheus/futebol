@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Users, ChevronRight, Trash2 } from 'lucide-react'
 import { rachasApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function Home() {
   const [rachas, setRachas] = useState([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => { loadRachas() }, [])
 
@@ -41,14 +44,18 @@ export default function Home() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Meus Rachas</h1>
-        <Link to="/novo" className="btn-primary flex items-center gap-2"><Plus size={20} />Novo Racha</Link>
+        {isAdmin && <Link to="/novo" className="btn-primary flex items-center gap-2"><Plus size={20} />Novo Racha</Link>}
       </div>
       {rachas.length === 0 ? (
         <div className="card text-center py-12">
           <Users size={48} className="mx-auto text-gray-400 mb-4" />
           <h2 className="text-xl font-medium text-gray-900 mb-2">Nenhum racha cadastrado</h2>
           <p className="text-gray-500 mb-4">Crie seu primeiro racha para começar a organizar</p>
-          <Link to="/novo" className="btn-primary inline-flex items-center gap-2"><Plus size={20} />Criar Racha</Link>
+          {isAdmin ? (
+            <Link to="/novo" className="btn-primary inline-flex items-center gap-2"><Plus size={20} />Criar Racha</Link>
+          ) : (
+            <p className="text-sm text-gray-500">Apenas administradores podem criar rachas.</p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

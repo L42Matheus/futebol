@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, X, DollarSign } from 'lucide-react'
 import { rachasApi, pagamentosApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function Financeiro() {
   const { rachaId } = useParams()
@@ -11,6 +12,8 @@ export default function Financeiro() {
   const [pagamentos, setPagamentos] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pendentes')
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const tipoLabels = { mensalidade: 'Mensalidade', rateio: 'Rateio', uniforme: 'Uniforme', multa_amarelo: 'Multa Amarelo', multa_vermelho: 'Multa Vermelho', outro: 'Outro' }
   const statusColors = { pendente: 'bg-gray-100 text-gray-700', aguardando_aprovacao: 'bg-orange-100 text-orange-700', aprovado: 'bg-green-100 text-green-700', rejeitado: 'bg-red-100 text-red-700' }
 
@@ -27,6 +30,14 @@ export default function Financeiro() {
   async function handleRejeitar(id) { const m = prompt('Motivo da rejeição:'); if (m !== null) { await pagamentosApi.aprovar(id, 1, false, m); loadData() } }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
+  if (user && !isAdmin) {
+    return (
+      <div className="card text-center py-10">
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Acesso restrito</h1>
+        <p className="text-gray-500">Apenas administradores podem acessar o financeiro.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-20">

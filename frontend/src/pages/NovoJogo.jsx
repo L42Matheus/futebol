@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { jogosApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function NovoJogo() {
   const navigate = useNavigate()
   const { rachaId } = useParams()
   const [loading, setLoading] = useState(false)
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const [form, setForm] = useState({
     data_hora: '',
     local: '',
@@ -37,6 +40,16 @@ export default function NovoJogo() {
       return
     }
     setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  if (user && !isAdmin) {
+    return (
+      <div className="card text-center py-10">
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Acesso restrito</h1>
+        <p className="text-gray-500 mb-4">Apenas administradores podem criar jogos.</p>
+        <button className="btn-primary" onClick={() => navigate(-1)}>Voltar</button>
+      </div>
+    )
   }
 
   return (

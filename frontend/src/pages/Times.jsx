@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Users, Link2, Plus } from 'lucide-react'
 import { teamsApi, atletasApi, authApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function Times() {
   const { rachaId } = useParams()
@@ -10,6 +11,8 @@ export default function Times() {
   const [loading, setLoading] = useState(true)
   const [newTeamName, setNewTeamName] = useState('')
   const [inviteLinks, setInviteLinks] = useState({})
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   const atletasById = useMemo(() => {
     const map = {}
@@ -82,6 +85,14 @@ export default function Times() {
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
+  if (user && !isAdmin) {
+    return (
+      <div className="card text-center py-10">
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Acesso restrito</h1>
+        <p className="text-gray-500">Apenas administradores podem gerenciar times.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-20">

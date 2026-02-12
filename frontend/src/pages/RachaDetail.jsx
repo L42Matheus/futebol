@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Users, Calendar, DollarSign, ChevronRight, Layers, Link2 } from 'lucide-react'
 import { rachasApi, jogosApi, authApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -12,6 +13,8 @@ export default function RachaDetail() {
   const [saldo, setSaldo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [inviteLink, setInviteLink] = useState('')
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => { loadData() }, [rachaId])
 
@@ -49,30 +52,32 @@ export default function RachaDetail() {
         <p className="text-gray-500 capitalize">{racha.tipo} - {racha.total_atletas}/{racha.max_atletas} atletas</p>
         {saldo && <div className="bg-primary-50 rounded-lg p-4 mt-4"><p className="text-sm text-primary-700">Saldo do Racha</p><p className="text-2xl font-bold text-primary-800">{saldo.saldo_formatado}</p>{saldo.pendente > 0 && <p className="text-sm text-orange-600 mt-1">{saldo.pendente_formatado} pendente</p>}</div>}
       </div>
-      <div className="grid grid-cols-4 gap-3">
+      <div className={`grid ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'} gap-3`}>
         <Link to={`/racha/${rachaId}/atletas`} className="card flex flex-col items-center py-4 hover:shadow-md"><Users className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Atletas</span><span className="text-xs text-gray-500">{racha.total_atletas}</span></Link>
         <Link to={`/racha/${rachaId}/jogos`} className="card flex flex-col items-center py-4 hover:shadow-md"><Calendar className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Jogos</span><span className="text-xs text-gray-500">{jogos.length}</span></Link>
-        <Link to={`/racha/${rachaId}/times`} className="card flex flex-col items-center py-4 hover:shadow-md"><Layers className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Times</span></Link>
-        <Link to={`/racha/${rachaId}/financeiro`} className="card flex flex-col items-center py-4 hover:shadow-md"><DollarSign className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Caixa</span></Link>
+        {isAdmin && <Link to={`/racha/${rachaId}/times`} className="card flex flex-col items-center py-4 hover:shadow-md"><Layers className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Times</span></Link>}
+        {isAdmin && <Link to={`/racha/${rachaId}/financeiro`} className="card flex flex-col items-center py-4 hover:shadow-md"><DollarSign className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Caixa</span></Link>}
       </div>
-      <div className="card space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-gray-900">Convidar atleta</h3>
-            <p className="text-sm text-gray-500">Gere um link para o atleta criar conta</p>
+      {isAdmin && (
+        <div className="card space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-gray-900">Convidar atleta</h3>
+              <p className="text-sm text-gray-500">Gere um link para o atleta criar conta</p>
+            </div>
+            <button onClick={handleInvite} className="btn-secondary flex items-center gap-2">
+              <Link2 size={16} /> Gerar link
+            </button>
           </div>
-          <button onClick={handleInvite} className="btn-secondary flex items-center gap-2">
-            <Link2 size={16} /> Gerar link
-          </button>
+          {inviteLink && (
+            <input className="input" readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
+          )}
         </div>
-        {inviteLink && (
-          <input className="input" readOnly value={inviteLink} onFocus={(e) => e.target.select()} />
-        )}
-      </div>
+      )}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-gray-900">Pr?ximos Jogos</h2>
-          <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>
+          {isAdmin && <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>}
         </div>
         {jogos.length === 0 ? <div className="card text-center py-8"><Calendar size={32} className="mx-auto text-gray-400 mb-2" /><p className="text-gray-500">Nenhum jogo agendado</p></div> : (
           <div className="space-y-2">

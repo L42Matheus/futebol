@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { rachasApi, authApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function NovoRacha() {
   const navigate = useNavigate()
@@ -9,6 +10,8 @@ export default function NovoRacha() {
   const [inviteLinks, setInviteLinks] = useState(null)
   const [createdRacha, setCreatedRacha] = useState(null)
   const [form, setForm] = useState({ nome: '', tipo: 'society', valor_mensalidade: 0, valor_cartao_amarelo: 1000, valor_cartao_vermelho: 2000 })
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -36,6 +39,16 @@ export default function NovoRacha() {
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: name.includes('valor') ? parseInt(value) * 100 : value }))
+  }
+
+  if (user && !isAdmin) {
+    return (
+      <div className="card text-center py-10">
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Acesso restrito</h1>
+        <p className="text-gray-500 mb-4">Apenas administradores podem criar rachas.</p>
+        <button className="btn-primary" onClick={() => navigate(-1)}>Voltar</button>
+      </div>
+    )
   }
 
   return (

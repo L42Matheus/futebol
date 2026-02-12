@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Trash2 } from 'lucide-react'
 import { jogosApi, rachasApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -11,6 +12,8 @@ export default function Jogos() {
   const [jogos, setJogos] = useState([])
   const [apenasFuturos, setApenasFuturos] = useState(true)
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => { loadData() }, [rachaId, apenasFuturos])
 
