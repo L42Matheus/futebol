@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Trophy, ArrowLeft } from 'lucide-react'
-import { authApi, setAuthToken } from '../services/api'
-import { useAccountType } from '../context/AccountTypeContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { accountType } = useAccountType()
+  const { login, isAuthenticated, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ identificador: '', senha: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Redireciona se já está autenticado
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const redirectTo = (location.state as any)?.from?.pathname || '/'
+      navigate(redirectTo, { replace: true })
+    }
+  }, [isAuthenticated, authLoading, navigate, location.state])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
@@ -22,11 +29,11 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      const response = await authApi.login(form)
-      localStorage.setItem('auth_token', response.data.access_token)
-      setAuthToken(response.data.access_token)
+      await login(form.identificador, form.senha)
+      // Navegação feita pelo useEffect quando isAuthenticated muda
+      // Forçar navegação direta após login bem-sucedido
       const redirectTo = (location.state as any)?.from?.pathname || '/'
-      navigate(redirectTo)
+      navigate(redirectTo, { replace: true })
     } catch (err: any) {
       setError('Falha no login. Verifique os dados.')
     } finally {

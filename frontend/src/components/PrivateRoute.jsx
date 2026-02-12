@@ -1,6 +1,11 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+// Verifica se há token no localStorage (fallback para race conditions)
+function hasValidToken() {
+  return Boolean(localStorage.getItem('auth_token') && localStorage.getItem('session_id'))
+}
+
 export default function PrivateRoute() {
   const location = useLocation()
   const { isAuthenticated, loading } = useAuth()
@@ -14,7 +19,8 @@ export default function PrivateRoute() {
     )
   }
 
-  if (!isAuthenticated) {
+  // Verifica tanto o estado do contexto quanto o localStorage
+  if (!isAuthenticated && !hasValidToken()) {
     return <Navigate to="/perfil" state={{ from: location }} replace />
   }
 

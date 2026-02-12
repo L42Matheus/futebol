@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, ArrowLeft, UserCircle2, ShieldCheck } from 'lucide-react'
-import { authApi, setAuthToken } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import { useAccountType, AccountType } from '../context/AccountTypeContext'
 
 function toRole(value: AccountType | null) {
@@ -14,6 +14,7 @@ export default function Register() {
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('invite') || ''
   const { accountType, setAccountType } = useAccountType()
+  const { register, isAuthenticated, loading: authLoading } = useAuth()
 
   const [form, setForm] = useState({
     nome: '',
@@ -25,6 +26,13 @@ export default function Register() {
   const [error, setError] = useState('')
 
   const role = useMemo(() => toRole(accountType), [accountType])
+
+  // Redireciona se já está autenticado
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/', { replace: true })
+    }
+  }, [isAuthenticated, authLoading, navigate])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
@@ -44,12 +52,9 @@ export default function Register() {
     }
     setLoading(true)
     try {
-      const payload: any = { ...form, role }
-      if (inviteToken) payload.invite_token = inviteToken
-      const response = await authApi.register(payload)
-      localStorage.setItem('auth_token', response.data.access_token)
-      setAuthToken(response.data.access_token)
-      navigate('/')
+      await register(form.email, form.telefone, form.senha, form.nome, inviteToken, role)
+      // Navegar após registro bem-sucedido
+      navigate('/', { replace: true })
     } catch (err: any) {
       setError('Falha no cadastro. Verifique os dados.')
     } finally {
