@@ -47,17 +47,17 @@ export default function Atletas() {
         <h1 className="text-xl font-bold text-white">Atletas</h1>
         {isAdmin && <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><Plus size={20} />Adicionar</button>}
       </div>
-      <div className="card bg-gray-900/40 border border-gray-800 divide-y">
+      <div className="card bg-gray-900/40 border border-gray-800 divide-y divide-gray-800 overflow-visible">
         {atletas.length === 0 ? <div className="text-center py-8"><User size={48} className="mx-auto text-gray-400 mb-4" /><p className="text-gray-400">Nenhum atleta cadastrado</p></div> : atletas.map((a) => (
-          <div key={a.id} className="relative group">
-            <Link to={`/racha/${rachaId}/atleta/${a.id}`} className="py-4 flex items-center gap-4 hover:bg-gray-800/50 -mx-4 px-4 transition-colors">
+          <div key={a.id} className="relative group py-4 px-4 hover:bg-gray-800/50 transition-colors">
+            <Link to={`/racha/${rachaId}/atleta/${a.id}`} className="flex items-center gap-4">
               <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
               <div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium text-white">{a.apelido || a.nome}</p>{a.is_admin && <Shield className="text-emerald-400" size={16} />}</div><p className="text-sm text-gray-400">{posicaoLabels[a.posicao]}{a.numero_camisa && ` - #${a.numero_camisa}`}</p></div>
             </Link>
             {isAdmin && (
               <button
                 onClick={(e) => handleDeleteAtleta(e, a.id)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
                 title="Excluir Atleta"
               >
                 <Trash2 size={14} strokeWidth={3} />

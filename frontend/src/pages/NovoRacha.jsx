@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 import { rachasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -43,20 +42,16 @@ export default function NovoRacha() {
 
   if (user && !isAdmin) {
     return (
-      <div className="card text-center py-10">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Acesso restrito</h1>
-        <p className="text-gray-500 mb-4">Apenas administradores podem criar rachas.</p>
-        <button className="btn-primary" onClick={() => navigate(-1)}>Voltar</button>
+      <div className="card bg-gray-900/40 border border-gray-800 text-center py-10">
+        <h1 className="text-xl font-semibold text-white mb-2">Acesso restrito</h1>
+        <p className="text-gray-400">Apenas administradores podem criar rachas.</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button>
-        <h1 className="text-2xl font-bold text-gray-900">Novo Racha</h1>
-      </div>
+      <h1 className="text-2xl font-bold text-white">Novo Racha</h1>
       {!inviteLinks && (
       <form onSubmit={handleSubmit} className="card space-y-4">
         <div><label className="label">Nome do Racha</label><input type="text" name="nome" value={form.nome} onChange={handleChange} placeholder="Ex: Racha do Sábado" className="input" required /></div>
