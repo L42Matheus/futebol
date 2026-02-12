@@ -117,6 +117,11 @@ export const authApi = {
   acceptInvite: (token) => api.post('/auth/invites/accept', { token }),
 }
 
+export const artilhariaApi = {
+  list: (rachaId) => api.get(`/artilharia/?racha_id=${rachaId}`),
+  update: (rachaId, atletaId, data) => api.patch(`/artilharia/${atletaId}?racha_id=${rachaId}`, data),
+}
+
 export const profileApi = {
   me: () => api.get('/profile/me'),
   update: (data) => api.patch('/profile/me', data),

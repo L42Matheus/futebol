@@ -105,51 +105,14 @@ export default function Home() {
               <button
                 key={item.label}
                 onClick={() => navigate(item.path)}
-                className="px-4 py-2 rounded-full border border-gray-800 text-gray-300 text-xs font-bold uppercase tracking-wider bg-gray-900/40 hover:border-emerald-500/50 hover:text-emerald-300 transition-all whitespace-nowrap"
+                className="px-4 py-2 rounded-full border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-wider bg-white hover:border-emerald-500 hover:text-emerald-600 transition-all whitespace-nowrap"
               >
                 {item.label}
               </button>
             ))}
           </div>
 
-          {/* Quick links top */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}
-              className="bg-gray-900/40 border border-gray-800 p-4 rounded-2xl text-gray-200 hover:border-emerald-500/50 transition-all"
-            >
-              <Calendar size={18} className="text-blue-400 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">Jogos</span>
-            </button>
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/atletas`)}
-              className="bg-gray-900/40 border border-gray-800 p-4 rounded-2xl text-gray-200 hover:border-emerald-500/50 transition-all"
-            >
-              <Users size={18} className="text-purple-400 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">Atletas</span>
-            </button>
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/times`)}
-              className="bg-gray-900/40 border border-gray-800 p-4 rounded-2xl text-gray-200 hover:border-emerald-500/50 transition-all"
-            >
-              <Layers size={18} className="text-amber-400 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">Times</span>
-            </button>
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/escalacao`)}
-              className="bg-gray-900/40 border border-gray-800 p-4 rounded-2xl text-gray-200 hover:border-emerald-500/50 transition-all"
-            >
-              <LayoutIcon size={18} className="text-emerald-400 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">Escalacao</span>
-            </button>
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/financeiro`)}
-              className="bg-gray-900/40 border border-gray-800 p-4 rounded-2xl text-gray-200 hover:border-emerald-500/50 transition-all"
-            >
-              <DollarSign size={18} className="text-green-400 mb-2" />
-              <span className="text-xs font-bold uppercase tracking-wider">Financeiro</span>
-            </button>
-          </div>
+          {/* Tabs handle navigation; quick links removed */}
 
           {/* Middle grid */}
           <div className="grid grid-cols-2 gap-4">
