@@ -223,7 +223,7 @@ export default function Register() {
 
           <p className="text-sm text-gray-500 text-center pt-2">
             Já tem conta?{' '}
-            <Link className="text-primary-600 font-medium hover:underline" to="/login">
+            <Link className="text-primary-600 font-medium hover:underline" to={inviteToken ? `/login?invite=${inviteToken}` : '/login'}>
               Entrar
             </Link>
           </p>

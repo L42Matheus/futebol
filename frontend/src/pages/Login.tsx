@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { authApi } from '../services/api'
 
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('invite') || ''
   const { login, isAuthenticated, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ identificador: '', senha: '' })
   const [loading, setLoading] = useState(false)
@@ -30,6 +33,13 @@ export default function Login() {
     setLoading(true)
     try {
       await login(form.identificador, form.senha)
+      if (inviteToken) {
+        try {
+          await authApi.acceptInvite(inviteToken)
+        } catch (e) {
+          // ignore, user may already be linked
+        }
+      }
       // Navegação feita pelo useEffect quando isAuthenticated muda
       // Forçar navegação direta após login bem-sucedido
       const redirectTo = (location.state as any)?.from?.pathname || '/'
@@ -110,7 +120,7 @@ export default function Login() {
 
           <p className="text-sm text-gray-500 text-center pt-2">
             Não tem conta?{' '}
-            <Link className="text-primary-600 font-medium hover:underline" to="/register">
+            <Link className="text-primary-600 font-medium hover:underline" to={inviteToken ? `/register?invite=${inviteToken}` : '/register'}>
               Cadastre-se
             </Link>
           </p>

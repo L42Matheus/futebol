@@ -58,10 +58,7 @@ export default function PrivateRoute() {
   }
 
   if (user?.role === 'atleta' && !hasRacha) {
-    if (location.pathname !== '/perfil-basico') {
-      return <Navigate to="/perfil-basico" replace />
-    }
-    return <NoRacha />
+    return <Navigate to="/perfil-atleta" replace />
   }
 
   return <Outlet />

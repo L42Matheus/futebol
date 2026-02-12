@@ -109,6 +109,7 @@ export const authApi = {
   me: () => api.get('/auth/me'),
   getInvite: (token) => api.get(`/auth/invites/${token}`),
   createInvite: (data) => api.post('/auth/invites', data),
+  acceptInvite: (token) => api.post('/auth/invites/accept', { token }),
 }
 
 export const profileApi = {
