@@ -9,6 +9,7 @@ import NovoRacha from './pages/NovoRacha'
 import NovoJogo from './pages/NovoJogo'
 import Jogos from './pages/Jogos'
 import Times from './pages/Times'
+import AtletaProfile from './pages/AtletaProfile'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
@@ -32,6 +33,7 @@ export default function AppRoutes() {
             <Route path="racha/:rachaId/novo-jogo" element={<NovoJogo />} />
             <Route path="racha/:rachaId/jogo/:jogoId" element={<JogoDetail />} />
             <Route path="racha/:rachaId/atletas" element={<Atletas />} />
+            <Route path="racha/:rachaId/atleta/:atletaId" element={<AtletaProfile />} />
             <Route path="racha/:rachaId/financeiro" element={<Financeiro />} />
           </Route>
         </Route>
