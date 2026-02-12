@@ -6,6 +6,7 @@ from app.schemas.pagamento import PagamentoCreate, PagamentoUpdate, PagamentoRes
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
 from app.schemas.team import TeamCreate, TeamUpdate, TeamResponse, TeamMemberCreate, TeamMemberResponse, TeamWithMembers
+from app.schemas.athlete_profile import AthleteProfileUpdate, AthleteProfileResponse
 
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "UserCreate", "UserLogin", "UserResponse", "TokenResponse",
     "InviteCreate", "InviteResponse", "InviteAccept",
     "TeamCreate", "TeamUpdate", "TeamResponse", "TeamMemberCreate", "TeamMemberResponse", "TeamWithMembers",
+    "AthleteProfileUpdate", "AthleteProfileResponse",
 ]

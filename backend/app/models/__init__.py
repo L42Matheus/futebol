@@ -11,6 +11,7 @@ from app.models.team import Team
 from app.models.team_member import TeamMember
 from app.models.invite import InviteRole
 from app.models.racha_admin import RachaAdmin
+from app.models.athlete_profile import AthleteProfile, PernaBoa
 
 __all__ = [
     "Racha",
@@ -34,4 +35,6 @@ __all__ = [
     "Team",
     "TeamMember",
     "RachaAdmin",
+    "AthleteProfile",
+    "PernaBoa",
 ]

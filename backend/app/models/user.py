@@ -24,6 +24,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     atletas = relationship("Atleta", back_populates="user")
+    athlete_profile = relationship("AthleteProfile", back_populates="user", uselist=False)
     push_tokens = relationship("PushToken", back_populates="user", cascade="all, delete-orphan")
     convites_enviados = relationship("Invite", back_populates="convidado_por")
     rachas_admin = relationship("RachaAdmin", back_populates="user")
