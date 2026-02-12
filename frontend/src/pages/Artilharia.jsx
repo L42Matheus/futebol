@@ -90,28 +90,32 @@ export default function Artilharia() {
           <Medal className="text-amber-500/40" size={32} />
         </header>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setTab('gols')}
-            className={`px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-wider ${
-              tab === 'gols'
-                ? 'bg-emerald-600 text-white border-emerald-500'
-                : 'bg-gray-900/40 text-gray-300 border-gray-800'
-            }`}
-          >
-            Gols
-          </button>
-          <button
-            onClick={() => setTab('assistencias')}
-            className={`px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-wider ${
-              tab === 'assistencias'
-                ? 'bg-emerald-600 text-white border-emerald-500'
-                : 'bg-gray-900/40 text-gray-300 border-gray-800'
-            }`}
-          >
-            Assistencias
-          </button>
-        </div>
+        <ul className="flex items-center gap-1 border-b border-gray-800">
+          <li>
+            <button
+              onClick={() => setTab('gols')}
+              className={`inline-block px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === 'gols'
+                  ? 'border-emerald-500 text-emerald-500'
+                  : 'border-transparent text-gray-400 hover:text-emerald-500 hover:border-emerald-500'
+              }`}
+            >
+              Gols
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setTab('assistencias')}
+              className={`inline-block px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === 'assistencias'
+                  ? 'border-emerald-500 text-emerald-500'
+                  : 'border-transparent text-gray-400 hover:text-emerald-500 hover:border-emerald-500'
+              }`}
+            >
+              Assistências
+            </button>
+          </li>
+        </ul>
 
         <div className="bg-gray-900/40 rounded-[2.5rem] border border-gray-800 overflow-hidden divide-y divide-gray-800/70">
           {artilheiros.map((atleta, index) => (

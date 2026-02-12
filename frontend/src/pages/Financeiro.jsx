@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, X, DollarSign } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { Check, X, DollarSign } from 'lucide-react'
 import { rachasApi, pagamentosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
 export default function Financeiro() {
   const { rachaId } = useParams()
-  const navigate = useNavigate()
   const [saldo, setSaldo] = useState(null)
   const [pendentes, setPendentes] = useState([])
   const [pagamentos, setPagamentos] = useState([])
@@ -41,12 +40,20 @@ export default function Financeiro() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4"><button onClick={() => navigate(-1)} className="text-gray-400"><ArrowLeft size={24} /></button><h1 className="text-xl font-bold text-white">Financeiro</h1></div>
+      <h1 className="text-xl font-bold text-white">Financeiro</h1>
       {saldo && <div className="card bg-gray-900/40 border border-gray-800 bg-gradient-to-r from-primary-600 to-primary-700 text-white"><p className="text-primary-100 text-sm">Saldo do Racha</p><p className="text-3xl font-bold">{saldo.saldo_formatado}</p>{saldo.pendente > 0 && <p className="text-primary-200 text-sm mt-2">{saldo.pendente_formatado} aguardando aprovação</p>}</div>}
-      <div className="flex border-b border-gray-800">
-        <button onClick={() => setTab('pendentes')} className={`flex-1 py-3 text-sm font-medium border-b-2 ${tab === 'pendentes' ? 'border-primary-600 text-emerald-400' : 'border-transparent text-gray-400'}`}>Pendentes ({pendentes.length})</button>
-        <button onClick={() => setTab('historico')} className={`flex-1 py-3 text-sm font-medium border-b-2 ${tab === 'historico' ? 'border-primary-600 text-emerald-400' : 'border-transparent text-gray-400'}`}>Histórico</button>
-      </div>
+      <ul className="flex items-center gap-1 border-b border-gray-800">
+        <li>
+          <button onClick={() => setTab('pendentes')} className={`inline-block px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === 'pendentes' ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-gray-400 hover:text-emerald-500 hover:border-emerald-500'}`}>
+            Pendentes ({pendentes.length})
+          </button>
+        </li>
+        <li>
+          <button onClick={() => setTab('historico')} className={`inline-block px-4 py-3 text-sm font-medium border-b-2 transition-colors ${tab === 'historico' ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-gray-400 hover:text-emerald-500 hover:border-emerald-500'}`}>
+            Histórico
+          </button>
+        </li>
+      </ul>
       {tab === 'pendentes' ? (
         <div className="space-y-3">{pendentes.length === 0 ? <div className="card bg-gray-900/40 border border-gray-800 text-center py-8"><Check size={48} className="mx-auto text-green-500 mb-4" /><p className="text-gray-400">Nenhum pagamento pendente</p></div> : pendentes.map((p) => (
           <div key={p.id} className="card bg-gray-900/40 border border-gray-800">

@@ -94,7 +94,7 @@ export default function Home() {
       {currentRacha && (
         <>
           {/* Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          <ul className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             {[
               { label: 'Jogos', path: `/racha/${currentRacha.id}/jogos` },
               { label: 'Atletas', path: `/racha/${currentRacha.id}/atletas` },
@@ -102,15 +102,16 @@ export default function Home() {
               { label: 'Escalação', path: `/racha/${currentRacha.id}/escalacao` },
               { label: 'Financeiro', path: `/racha/${currentRacha.id}/financeiro` },
             ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.path)}
-                className="px-4 py-2 rounded-full border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-wider bg-white hover:border-emerald-500 hover:text-emerald-600 transition-all whitespace-nowrap"
-              >
-                {item.label}
-              </button>
+              <li key={item.label}>
+                <button
+                  onClick={() => navigate(item.path)}
+                  className="px-4 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  {item.label}
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
 
           {/* Tabs handle navigation; quick links removed */}
 
