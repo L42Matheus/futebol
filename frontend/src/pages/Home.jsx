@@ -93,6 +93,25 @@ export default function Home() {
 
       {currentRacha && (
         <>
+          {/* Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {[
+              { label: 'Jogos', path: `/racha/${currentRacha.id}/jogos` },
+              { label: 'Atletas', path: `/racha/${currentRacha.id}/atletas` },
+              { label: 'Times', path: `/racha/${currentRacha.id}/times` },
+              { label: 'Escalação', path: `/racha/${currentRacha.id}/escalacao` },
+              { label: 'Financeiro', path: `/racha/${currentRacha.id}/financeiro` },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => navigate(item.path)}
+                className="px-4 py-2 rounded-full border border-gray-800 text-gray-300 text-xs font-bold uppercase tracking-wider bg-gray-900/40 hover:border-emerald-500/50 hover:text-emerald-300 transition-all whitespace-nowrap"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           {/* Quick links top */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <button
