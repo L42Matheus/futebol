@@ -33,7 +33,7 @@ def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user:
     )
     db.add(racha_admin)
     db.commit()
-    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=0)
+    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=0, is_admin=True)
 
 
 @router.get("/", response_model=List[RachaResponse])
@@ -67,7 +67,12 @@ def listar_rachas(
     result = []
     for racha in rachas:
         total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo == True).scalar()
-        result.append(RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total))
+        is_admin = db.query(RachaAdmin).filter(
+            RachaAdmin.user_id == current_user.id,
+            RachaAdmin.racha_id == racha.id,
+            RachaAdmin.ativo == True
+        ).first() is not None
+        result.append(RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=is_admin))
     return result
 
 
@@ -78,7 +83,12 @@ def obter_racha(racha_id: int, db: Session = Depends(get_db), current_user: User
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
     total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo == True).scalar()
-    return RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total)
+    is_admin = db.query(RachaAdmin).filter(
+        RachaAdmin.user_id == current_user.id,
+        RachaAdmin.racha_id == racha.id,
+        RachaAdmin.ativo == True
+    ).first() is not None
+    return RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=is_admin)
 
 
 @router.patch("/{racha_id}", response_model=RachaResponse)

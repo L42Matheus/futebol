@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Users, ChevronRight } from 'lucide-react'
+import { Plus, Users, ChevronRight, Trash2 } from 'lucide-react'
 import { rachasApi } from '../services/api'
 
 export default function Home() {
@@ -17,6 +17,19 @@ export default function Home() {
       console.error('Erro ao carregar rachas:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleDelete(e, rachaId) {
+    e.preventDefault()
+    const ok = window.confirm('Excluir este racha?')
+    if (!ok) return
+    try {
+      await rachasApi.delete(rachaId)
+      loadRachas()
+    } catch (error) {
+      console.error('Erro ao excluir racha:', error)
+      alert('Erro ao excluir racha.')
     }
   }
 
@@ -45,7 +58,18 @@ export default function Home() {
                 <h2 className="font-semibold text-gray-900">{racha.nome}</h2>
                 <p className="text-sm text-gray-500">{tipoLabels[racha.tipo]} - {racha.total_atletas}/{racha.max_atletas} atletas</p>
               </div>
-              <ChevronRight className="text-gray-400" />
+              <div className="flex items-center gap-2">
+                {racha.is_admin && (
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    onClick={(e) => handleDelete(e, racha.id)}
+                    title="Excluir racha"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+                <ChevronRight className="text-gray-400" />
+              </div>
             </Link>
           ))}
         </div>

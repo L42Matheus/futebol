@@ -33,6 +33,7 @@ class RachaResponse(RachaBase):
     id: int
     max_atletas: int
     ativo: bool
+    is_admin: bool = False
     created_at: datetime
     updated_at: Optional[datetime] = None
     total_atletas: int = 0
