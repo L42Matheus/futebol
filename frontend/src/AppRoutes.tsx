@@ -11,6 +11,7 @@ import Jogos from './pages/Jogos'
 import Times from './pages/Times'
 import TeamLineup from './pages/TeamLineup'
 import AtletaProfile from './pages/AtletaProfile'
+import Artilharia from './pages/Artilharia'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
@@ -41,6 +42,7 @@ export default function AppRoutes() {
             <Route path="racha/:rachaId/atletas" element={<Atletas />} />
             <Route path="racha/:rachaId/atleta/:atletaId" element={<AtletaProfile />} />
             <Route path="racha/:rachaId/financeiro" element={<Financeiro />} />
+            <Route path="artilharia" element={<Artilharia />} />
           </Route>
         </Route>
       </Routes>
