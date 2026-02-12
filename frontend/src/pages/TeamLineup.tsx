@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Users, UserPlus, X, Check } from 'lucide-react'
-import { teamsApi, atletasApi } from '../services/api'
+import { teamsApi, atletasApi, rachasApi } from '../services/api'
 import SoccerField from '../components/SoccerField'
 import Avatar from '../components/Avatar'
+import {
+  GameType,
+  Formation,
+  PositionSlot,
+  formationsByType,
+  defaultFormation,
+  getFormation
+} from '../config/formations'
 
 interface Atleta {
   id: number
@@ -51,12 +59,17 @@ export default function TeamLineup() {
   const [selectedTeamA, setSelectedTeamA] = useState<Team | null>(null)
   const [selectedTeamB, setSelectedTeamB] = useState<Team | null>(null)
 
+  // Tipo de jogo e formações
+  const [gameType, setGameType] = useState<GameType>('society')
+  const [formationA, setFormationA] = useState<Formation | null>(null)
+  const [formationB, setFormationB] = useState<Formation | null>(null)
+
   // Modal de edição de jogador
-  const [editingMember, setEditingMember] = useState<{ team: Team; member: TeamMember } | null>(null)
+  const [editingMember, setEditingMember] = useState<{ team: Team; member: TeamMember; slot?: PositionSlot } | null>(null)
   const [memberForm, setMemberForm] = useState({ is_titular: true, posicao_escalacao: '' })
 
   // Modal de adicionar jogador
-  const [addingToTeam, setAddingToTeam] = useState<Team | null>(null)
+  const [addingToTeam, setAddingToTeam] = useState<{ team: Team; slot?: PositionSlot } | null>(null)
 
   useEffect(() => {
     loadData()
@@ -64,19 +77,45 @@ export default function TeamLineup() {
 
   async function loadData() {
     try {
-      const [teamsRes, atletasRes] = await Promise.all([
+      const [teamsRes, atletasRes, rachaRes] = await Promise.all([
         teamsApi.list(rachaId),
-        atletasApi.list(rachaId)
+        atletasApi.list(rachaId),
+        rachasApi.get(rachaId)
       ])
       setTeams(teamsRes.data)
       setAtletas(atletasRes.data)
 
-      // Seleciona automaticamente os dois primeiros times
-      if (teamsRes.data.length >= 2) {
-        setSelectedTeamA(teamsRes.data[0])
-        setSelectedTeamB(teamsRes.data[1])
-      } else if (teamsRes.data.length === 1) {
-        setSelectedTeamA(teamsRes.data[0])
+      // Define o tipo de jogo baseado no racha
+      const tipo = rachaRes.data.tipo as GameType
+      setGameType(tipo)
+
+      // Define as formações padrão se ainda não foram definidas
+      const defaultFormationId = defaultFormation[tipo]
+      const defaultForm = getFormation(tipo, defaultFormationId)
+      if (defaultForm) {
+        if (!formationA) setFormationA(defaultForm)
+        if (!formationB) setFormationB(defaultForm)
+      }
+
+      // Atualiza times selecionados com dados frescos ou seleciona automaticamente
+      const freshTeams = teamsRes.data
+      if (selectedTeamA) {
+        const freshA = freshTeams.find((t: Team) => t.id === selectedTeamA.id)
+        if (freshA) setSelectedTeamA(freshA)
+      }
+      if (selectedTeamB) {
+        const freshB = freshTeams.find((t: Team) => t.id === selectedTeamB.id)
+        if (freshB) setSelectedTeamB(freshB)
+      }
+
+      // Se ainda não tem times selecionados, seleciona automaticamente
+      if (!selectedTeamA && !selectedTeamB) {
+        if (freshTeams.length >= 2) {
+          setSelectedTeamA(freshTeams[0])
+          setSelectedTeamB(freshTeams[1])
+        } else if (freshTeams.length === 1) {
+          setSelectedTeamA(freshTeams[0])
+        }
       }
     } catch (e) {
       console.error(e)
@@ -85,12 +124,18 @@ export default function TeamLineup() {
     }
   }
 
-  function handlePlayerClick(team: Team, member: TeamMember) {
-    setEditingMember({ team, member })
-    setMemberForm({
-      is_titular: member.is_titular,
-      posicao_escalacao: member.posicao_escalacao || member.atleta.posicao
-    })
+  function handleSlotClick(team: Team, slot: PositionSlot, member?: TeamMember) {
+    if (member) {
+      // Clicou em um jogador existente - editar
+      setEditingMember({ team, member, slot })
+      setMemberForm({
+        is_titular: member.is_titular,
+        posicao_escalacao: slot.id
+      })
+    } else {
+      // Clicou em um slot vazio - adicionar jogador
+      setAddingToTeam({ team, slot })
+    }
   }
 
   async function handleUpdateMember() {
@@ -126,9 +171,10 @@ export default function TeamLineup() {
     if (!addingToTeam) return
 
     try {
-      await teamsApi.addMember(addingToTeam.id, atletaId, {
-        is_titular: true,
-        posicao_escalacao: atletas.find(a => a.id === atletaId)?.posicao
+      const isBench = addingToTeam.slot?.id === 'bench'
+      await teamsApi.addMember(addingToTeam.team.id, atletaId, {
+        is_titular: !isBench,
+        posicao_escalacao: isBench ? undefined : addingToTeam.slot?.id
       })
       await loadData()
       setAddingToTeam(null)
@@ -165,44 +211,83 @@ export default function TeamLineup() {
           <button onClick={() => navigate(-1)} className="text-gray-500">
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Escalação</h1>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Escalação</h1>
+            <span className="text-xs text-gray-500 capitalize">
+              {gameType === 'campo' ? '11 jogadores' : gameType === 'society' ? '7 jogadores' : '5 jogadores'}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Seleção de times */}
+      {/* Seleção de times e formações */}
       <div className="card p-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Time A</label>
-            <select
-              value={selectedTeamA?.id || ''}
-              onChange={(e) => {
-                const team = teams.find(t => t.id === parseInt(e.target.value))
-                setSelectedTeamA(team || null)
-              }}
-              className="input"
-            >
-              <option value="">Selecione...</option>
-              {teams.filter(t => t.id !== selectedTeamB?.id).map(team => (
-                <option key={team.id} value={team.id}>{team.nome}</option>
-              ))}
-            </select>
+          <div className="space-y-3">
+            <div>
+              <label className="label">Time A</label>
+              <select
+                value={selectedTeamA?.id || ''}
+                onChange={(e) => {
+                  const team = teams.find(t => t.id === parseInt(e.target.value))
+                  setSelectedTeamA(team || null)
+                }}
+                className="input"
+              >
+                <option value="">Selecione...</option>
+                {teams.filter(t => t.id !== selectedTeamB?.id).map(team => (
+                  <option key={team.id} value={team.id}>{team.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label text-xs">Formação A</label>
+              <select
+                value={formationA?.id || ''}
+                onChange={(e) => {
+                  const form = getFormation(gameType, e.target.value)
+                  if (form) setFormationA(form)
+                }}
+                className="input text-sm"
+              >
+                {formationsByType[gameType].map(form => (
+                  <option key={form.id} value={form.id}>{form.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="label">Time B</label>
-            <select
-              value={selectedTeamB?.id || ''}
-              onChange={(e) => {
-                const team = teams.find(t => t.id === parseInt(e.target.value))
-                setSelectedTeamB(team || null)
-              }}
-              className="input"
-            >
-              <option value="">Selecione...</option>
-              {teams.filter(t => t.id !== selectedTeamA?.id).map(team => (
-                <option key={team.id} value={team.id}>{team.nome}</option>
-              ))}
-            </select>
+          <div className="space-y-3">
+            <div>
+              <label className="label">Time B</label>
+              <select
+                value={selectedTeamB?.id || ''}
+                onChange={(e) => {
+                  const team = teams.find(t => t.id === parseInt(e.target.value))
+                  setSelectedTeamB(team || null)
+                }}
+                className="input"
+              >
+                <option value="">Selecione...</option>
+                {teams.filter(t => t.id !== selectedTeamA?.id).map(team => (
+                  <option key={team.id} value={team.id}>{team.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label text-xs">Formação B</label>
+              <select
+                value={formationB?.id || ''}
+                onChange={(e) => {
+                  const form = getFormation(gameType, e.target.value)
+                  if (form) setFormationB(form)
+                }}
+                className="input text-sm"
+              >
+                {formationsByType[gameType].map(form => (
+                  <option key={form.id} value={form.id}>{form.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -211,17 +296,18 @@ export default function TeamLineup() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Time A */}
         <div>
-          {selectedTeamA ? (
+          {selectedTeamA && formationA ? (
             <>
               <SoccerField
                 teamName={selectedTeamA.nome}
                 members={selectedTeamA.membros}
+                formation={formationA}
                 color="green"
                 side="left"
-                onPlayerClick={(member) => handlePlayerClick(selectedTeamA, member)}
+                onSlotClick={(slot, member) => handleSlotClick(selectedTeamA, slot, member)}
               />
               <button
-                onClick={() => setAddingToTeam(selectedTeamA)}
+                onClick={() => setAddingToTeam({ team: selectedTeamA, slot: undefined })}
                 className="mt-3 w-full btn-secondary flex items-center justify-center gap-2"
               >
                 <UserPlus size={18} />
@@ -237,17 +323,18 @@ export default function TeamLineup() {
 
         {/* Time B */}
         <div>
-          {selectedTeamB ? (
+          {selectedTeamB && formationB ? (
             <>
               <SoccerField
                 teamName={selectedTeamB.nome}
                 members={selectedTeamB.membros}
+                formation={formationB}
                 color="blue"
                 side="right"
-                onPlayerClick={(member) => handlePlayerClick(selectedTeamB, member)}
+                onSlotClick={(slot, member) => handleSlotClick(selectedTeamB, slot, member)}
               />
               <button
-                onClick={() => setAddingToTeam(selectedTeamB)}
+                onClick={() => setAddingToTeam({ team: selectedTeamB, slot: undefined })}
                 className="mt-3 w-full btn-secondary flex items-center justify-center gap-2"
               >
                 <UserPlus size={18} />
@@ -349,8 +436,8 @@ export default function TeamLineup() {
                   onChange={(e) => setMemberForm({ ...memberForm, posicao_escalacao: e.target.value })}
                   className="input"
                 >
-                  {Object.entries(posicaoLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  {(editingMember.team.id === selectedTeamA?.id ? formationA : formationB)?.positions.map((slot) => (
+                    <option key={slot.id} value={slot.id}>{slot.label} ({slot.id})</option>
                   ))}
                 </select>
               </div>
@@ -387,7 +474,12 @@ export default function TeamLineup() {
           <div className="bg-white rounded-t-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">
-                Adicionar ao {addingToTeam.nome}
+                Adicionar ao {addingToTeam.team.nome}
+                {addingToTeam.slot && addingToTeam.slot.id !== 'bench' && (
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    ({addingToTeam.slot.label})
+                  </span>
+                )}
               </h2>
               <button onClick={() => setAddingToTeam(null)} className="text-gray-400">
                 <X size={24} />

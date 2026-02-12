@@ -1,4 +1,5 @@
 import Avatar from './Avatar'
+import { Formation, PositionSlot } from '../config/formations'
 
 interface Atleta {
   id: number
@@ -20,53 +21,47 @@ interface TeamMember {
 interface SoccerFieldProps {
   teamName: string
   members: TeamMember[]
+  formation: Formation
   color?: 'green' | 'blue' | 'red'
   side?: 'left' | 'right'
-  onPlayerClick?: (member: TeamMember) => void
+  onSlotClick?: (slot: PositionSlot, currentPlayer?: TeamMember) => void
   showBench?: boolean
-}
-
-// Mapeamento de posições para coordenadas no campo (em %)
-const positionCoords: Record<string, { top: string; slots: { left: string }[] }> = {
-  goleiro: { top: '85%', slots: [{ left: '50%' }] },
-  zagueiro: { top: '70%', slots: [{ left: '30%' }, { left: '50%' }, { left: '70%' }] },
-  lateral: { top: '55%', slots: [{ left: '15%' }, { left: '85%' }] },
-  volante: { top: '50%', slots: [{ left: '35%' }, { left: '65%' }] },
-  meia: { top: '35%', slots: [{ left: '25%' }, { left: '50%' }, { left: '75%' }] },
-  atacante: { top: '15%', slots: [{ left: '35%' }, { left: '65%' }] },
-  ponta: { top: '20%', slots: [{ left: '15%' }, { left: '85%' }] },
-}
-
-const posicaoLabels: Record<string, string> = {
-  goleiro: 'GOL',
-  zagueiro: 'ZAG',
-  lateral: 'LAT',
-  volante: 'VOL',
-  meia: 'MEI',
-  atacante: 'ATA',
-  ponta: 'PON',
 }
 
 export default function SoccerField({
   teamName,
   members,
+  formation,
   color = 'green',
   side = 'left',
-  onPlayerClick,
+  onSlotClick,
   showBench = true
 }: SoccerFieldProps) {
   // Separa titulares e reservas
   const titulares = members.filter(m => m.is_titular)
   const reservas = members.filter(m => !m.is_titular)
 
-  // Agrupa titulares por posição
-  const playersByPosition: Record<string, TeamMember[]> = {}
-  titulares.forEach(member => {
-    const pos = member.posicao_escalacao || member.atleta.posicao
-    if (!playersByPosition[pos]) {
-      playersByPosition[pos] = []
+  // Mapeia jogadores por slot (usando posicao_escalacao como slot id)
+  const playersBySlot: Record<string, TeamMember> = {}
+  titulares.forEach((member, index) => {
+    // Se o jogador tem posição definida, usa ela
+    if (member.posicao_escalacao) {
+      // Procura um slot com esse id ou label
+      const slot = formation.positions.find(
+        p => p.id === member.posicao_escalacao || p.label === member.posicao_escalacao?.toUpperCase()
+      )
+      if (slot && !playersBySlot[slot.id]) {
+        playersBySlot[slot.id] = member
+        return
+      }
     }
-    playersByPosition[pos].push(member)
+    // Senão, coloca no primeiro slot disponível
+    for (const slot of formation.positions) {
+      if (!playersBySlot[slot.id]) {
+        playersBySlot[slot.id] = member
+        break
+      }
+    }
   })
 
   // Cor do time
@@ -110,55 +105,53 @@ export default function SoccerField({
           <rect x="35" y="5" width="30" height="10" fill="none" stroke="white" strokeWidth="0.5" opacity="0.5" />
         </svg>
 
-        {/* Jogadores no campo */}
-        {Object.entries(positionCoords).map(([posicao, coords]) => {
-          const playersInPosition = playersByPosition[posicao] || []
-          const slots = coords.slots
+        {/* Slots de posição */}
+        {formation.positions.map((slot) => {
+          const player = playersBySlot[slot.id]
 
-          return slots.map((slot, slotIndex) => {
-            const player = playersInPosition[slotIndex]
-
-            return (
-              <div
-                key={`${posicao}-${slotIndex}`}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-                style={{
-                  top: getTop(coords.top),
-                  left: slot.left,
-                }}
-              >
-                {player ? (
-                  <button
-                    onClick={() => onPlayerClick?.(player)}
-                    className="flex flex-col items-center group"
-                  >
-                    <div className="relative">
-                      <Avatar
-                        src={player.atleta.foto_url}
-                        name={player.atleta.apelido || player.atleta.nome}
-                        size="sm"
-                        className="ring-2 ring-white shadow-lg group-hover:ring-yellow-400 transition-all"
-                      />
-                      {player.atleta.numero_camisa && (
-                        <span className="absolute -bottom-1 -right-1 bg-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center text-gray-800 shadow">
-                          {player.atleta.numero_camisa}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-white font-medium mt-1 drop-shadow-md max-w-[60px] truncate">
-                      {player.atleta.apelido || player.atleta.nome.split(' ')[0]}
-                    </span>
-                  </button>
-                ) : (
-                  <div className="flex flex-col items-center opacity-40">
-                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-white/50 flex items-center justify-center">
-                      <span className="text-[8px] text-white/70">{posicaoLabels[posicao]}</span>
-                    </div>
+          return (
+            <div
+              key={slot.id}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
+              style={{
+                top: getTop(slot.top),
+                left: slot.left,
+              }}
+            >
+              {player ? (
+                <button
+                  onClick={() => onSlotClick?.(slot, player)}
+                  className="flex flex-col items-center group"
+                >
+                  <div className="relative">
+                    <Avatar
+                      src={player.atleta.foto_url}
+                      name={player.atleta.apelido || player.atleta.nome}
+                      size="sm"
+                      className="ring-2 ring-white shadow-lg group-hover:ring-yellow-400 transition-all"
+                    />
+                    {player.atleta.numero_camisa && (
+                      <span className="absolute -bottom-1 -right-1 bg-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center text-gray-800 shadow">
+                        {player.atleta.numero_camisa}
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          })
+                  <span className="text-[10px] text-white font-medium mt-1 drop-shadow-md max-w-[60px] truncate">
+                    {player.atleta.apelido || player.atleta.nome.split(' ')[0]}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onSlotClick?.(slot, undefined)}
+                  className="flex flex-col items-center opacity-50 hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-8 h-8 rounded-full border-2 border-dashed border-white/70 flex items-center justify-center bg-black/10">
+                    <span className="text-[8px] text-white font-bold">{slot.label}</span>
+                  </div>
+                </button>
+              )}
+            </div>
+          )
         })}
       </div>
 
@@ -173,7 +166,7 @@ export default function SoccerField({
               reservas.map(member => (
                 <button
                   key={member.id}
-                  onClick={() => onPlayerClick?.(member)}
+                  onClick={() => onSlotClick?.({ id: 'bench', label: 'BANCO', top: '0', left: '0' }, member)}
                   className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                 >
                   <Avatar
