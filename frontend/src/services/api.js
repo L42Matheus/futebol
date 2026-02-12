@@ -111,4 +111,17 @@ export const authApi = {
   createInvite: (data) => api.post('/auth/invites', data),
 }
 
+export const profileApi = {
+  me: () => api.get('/profile/me'),
+  update: (data) => api.patch('/profile/me', data),
+  uploadFoto: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/profile/me/foto', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  removerFoto: () => api.delete('/profile/me/foto'),
+}
+
 export default api

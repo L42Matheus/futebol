@@ -14,12 +14,16 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
 import PrivateRoute from './components/PrivateRoute'
+import NoRacha from './pages/NoRacha'
+import AthleteSelfProfile from './pages/AthleteSelfProfile'
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/perfil" element={<ChooseRole />} />
+        <Route path="/perfil-basico" element={<NoRacha />} />
+        <Route path="/perfil-atleta" element={<AthleteSelfProfile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
