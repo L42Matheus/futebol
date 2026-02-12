@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Plus, User, Shield } from 'lucide-react'
+import { Plus, User, Shield, Trash2 } from 'lucide-react'
 import { atletasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
@@ -27,6 +27,18 @@ export default function Atletas() {
     catch (error) { alert(error.response?.data?.detail || 'Erro ao adicionar atleta') }
   }
 
+  async function handleDeleteAtleta(e, id) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!window.confirm('Deseja realmente excluir este atleta?')) return
+    try {
+      await atletasApi.delete(id)
+      loadAtletas()
+    } catch (error) {
+      alert(error.response?.data?.detail || 'Erro ao excluir atleta')
+    }
+  }
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
 
   return (
@@ -37,10 +49,21 @@ export default function Atletas() {
       </div>
       <div className="card bg-gray-900/40 border border-gray-800 divide-y">
         {atletas.length === 0 ? <div className="text-center py-8"><User size={48} className="mx-auto text-gray-400 mb-4" /><p className="text-gray-400">Nenhum atleta cadastrado</p></div> : atletas.map((a) => (
-          <Link key={a.id} to={`/racha/${rachaId}/atleta/${a.id}`} className="py-4 flex items-center gap-4 hover:bg-gray-800/50 -mx-4 px-4 transition-colors">
-            <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
-            <div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium text-white">{a.apelido || a.nome}</p>{a.is_admin && <Shield className="text-emerald-400" size={16} />}</div><p className="text-sm text-gray-400">{posicaoLabels[a.posicao]}{a.numero_camisa && ` - #${a.numero_camisa}`}</p></div>
-          </Link>
+          <div key={a.id} className="relative group">
+            <Link to={`/racha/${rachaId}/atleta/${a.id}`} className="py-4 flex items-center gap-4 hover:bg-gray-800/50 -mx-4 px-4 transition-colors">
+              <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
+              <div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium text-white">{a.apelido || a.nome}</p>{a.is_admin && <Shield className="text-emerald-400" size={16} />}</div><p className="text-sm text-gray-400">{posicaoLabels[a.posicao]}{a.numero_camisa && ` - #${a.numero_camisa}`}</p></div>
+            </Link>
+            {isAdmin && (
+              <button
+                onClick={(e) => handleDeleteAtleta(e, a.id)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
+                title="Excluir Atleta"
+              >
+                <Trash2 size={14} strokeWidth={3} />
+              </button>
+            )}
+          </div>
         ))}
       </div>
       {isAdmin && showModal && (

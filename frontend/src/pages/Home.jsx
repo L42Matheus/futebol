@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Calendar, AlertCircle, Layout as LayoutIcon, Users, DollarSign, Layers } from 'lucide-react'
+import { Calendar, AlertCircle, Layout as LayoutIcon, Users, DollarSign, Layers, Trash2 } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { TIPO_RACHA_LABELS } from '../constants'
@@ -53,6 +53,21 @@ export default function Home() {
     }
   }
 
+  async function handleDeleteRacha(e, id) {
+    e.stopPropagation()
+    if (!window.confirm('Deseja realmente excluir este racha? Esta ação não pode ser desfeita.')) return
+    try {
+      await rachasApi.delete(id)
+      setRachas(prev => prev.filter(r => r.id !== id))
+      if (selectedIndex >= rachas.length - 1) {
+        setSelectedIndex(0)
+      }
+    } catch (error) {
+      console.error('Erro ao excluir racha:', error)
+      alert('Erro ao excluir racha.')
+    }
+  }
+
   const currentRacha = rachas[selectedIndex]
 
   if (loading) {
@@ -73,20 +88,30 @@ export default function Home() {
             <div className="text-gray-500 text-sm">Nenhum racha cadastrado</div>
           )}
           {rachas.map((r, idx) => (
-            <button
-              key={r.id}
-              onClick={() => setSelectedIndex(idx)}
-              className={`flex-shrink-0 px-6 py-4 rounded-3xl border-2 transition-all flex flex-col gap-1 min-w-[140px] ${
-                selectedIndex === idx
-                  ? 'bg-emerald-600 border-emerald-400 shadow-lg shadow-emerald-900/20'
-                  : 'bg-gray-900/50 border-gray-800 text-gray-400'
-              }`}
-            >
-              <span className={`text-xs font-black uppercase tracking-wider ${selectedIndex === idx ? 'text-emerald-200' : 'text-gray-600'}`}>
-                {TIPO_RACHA_LABELS[r.tipo] || r.tipo}
-              </span>
-              <span className="text-lg font-bold text-white whitespace-nowrap">{r.nome}</span>
-            </button>
+            <div key={r.id} className="relative flex-shrink-0 group">
+              <button
+                onClick={() => setSelectedIndex(idx)}
+                className={`px-6 py-4 rounded-3xl border-2 transition-all flex flex-col gap-1 min-w-[140px] ${
+                  selectedIndex === idx
+                    ? 'bg-emerald-600 border-emerald-400 shadow-lg shadow-emerald-900/20'
+                    : 'bg-gray-900/50 border-gray-800 text-gray-400'
+                }`}
+              >
+                <span className={`text-xs font-black uppercase tracking-wider ${selectedIndex === idx ? 'text-emerald-200' : 'text-gray-600'}`}>
+                  {TIPO_RACHA_LABELS[r.tipo] || r.tipo}
+                </span>
+                <span className="text-lg font-bold text-white whitespace-nowrap">{r.nome}</span>
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={(e) => handleDeleteRacha(e, r.id)}
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
+                  title="Excluir Racha"
+                >
+                  <Trash2 size={12} strokeWidth={3} />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </div>
