@@ -1,4 +1,4 @@
-import { Home, User, PlusCircle } from 'lucide-react'
+﻿import { Home, User, PlusCircle, Trophy, DollarSign } from 'lucide-react'
 
 export const POSICAO_LABELS: Record<string, string> = {
   goleiro: 'Goleiro',
@@ -31,21 +31,9 @@ export const PAGAMENTO_TIPO_LABELS: Record<string, string> = {
 }
 
 export const NAV_ITEMS = [
-  {
-    path: '/',
-    label: 'Início',
-    icon: <Home size={20} />,
-  },
-  {
-    path: '/perfil-atleta',
-    label: 'Perfil',
-    icon: <User size={20} />,
-    athleteOnly: true,
-  },
-  {
-    path: '/novo',
-    label: 'Novo Racha',
-    icon: <PlusCircle size={20} />,
-    adminOnly: true,
-  },
+  { path: '/', label: 'Inicio', icon: <Home size={20} /> },
+  { path: '/artilharia', label: 'Ranking', icon: <Trophy size={20} /> },
+  { path: '/financeiro', label: 'Caixa', icon: <DollarSign size={20} /> },
+  { path: '/perfil-atleta', label: 'Perfil', icon: <User size={20} /> },
+  { path: '/novo', label: 'Novo Racha', icon: <PlusCircle size={20} />, adminOnly: true },
 ]
