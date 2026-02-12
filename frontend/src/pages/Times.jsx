@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Users, Link2, Plus } from 'lucide-react'
+import { ArrowLeft, Users, Link2, Plus, Trash2 } from 'lucide-react'
 import { teamsApi, atletasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -72,6 +72,17 @@ export default function Times() {
     }
   }
 
+  async function handleDeleteTeam(teamId, teamName) {
+    if (!window.confirm(`Tem certeza que deseja apagar o time "${teamName}"?`)) return
+    try {
+      await teamsApi.remove(teamId)
+      loadData()
+    } catch (error) {
+      console.error('Erro ao apagar time:', error)
+      alert('Erro ao apagar time.')
+    }
+  }
+
   async function handleGenerateInvite(teamId) {
     try {
       const res = await authApi.createInvite({ racha_id: Number(rachaId), role: 'atleta', team_id: teamId })
@@ -125,9 +136,19 @@ export default function Times() {
             <div key={team.id} className="card space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-gray-900">{team.nome}</h2>
-                <button className="btn-secondary" type="button" onClick={() => handleGenerateInvite(team.id)}>
-                  <Link2 size={16} /> Link do time
-                </button>
+                <div className="flex items-center gap-2">
+                  <button className="btn-secondary" type="button" onClick={() => handleGenerateInvite(team.id)}>
+                    <Link2 size={16} /> Link
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    type="button"
+                    onClick={() => handleDeleteTeam(team.id, team.nome)}
+                    title="Apagar time"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
               {inviteLinks[team.id] && (
                 <input className="input" readOnly value={inviteLinks[team.id]} onFocus={(e) => e.target.select()} />
