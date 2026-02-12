@@ -43,6 +43,14 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
+    # Cria perfil básico para atleta sem convite
+    if user_in.role == UserRole.ATLETA:
+        from app.models import AthleteProfile
+        profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == user.id).first()
+        if not profile:
+            db.add(AthleteProfile(user_id=user.id, nome=user.nome, telefone=user.telefone))
+            db.commit()
+
     if user_in.invite_token:
         invite = db.query(Invite).filter(Invite.token == user_in.invite_token).first()
         if invite and invite.status == InviteStatus.PENDENTE:
