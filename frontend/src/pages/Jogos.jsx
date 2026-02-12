@@ -34,6 +34,7 @@ export default function Jogos() {
   }
 
   async function handleExcluir(jogoId) {
+    if (!isAdmin) return
     const ok = window.confirm('Excluir este jogo?')
     if (!ok) return
     try {
@@ -66,7 +67,11 @@ export default function Jogos() {
           />
           Apenas futuros
         </label>
-        <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>
+        {isAdmin ? (
+          <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>
+        ) : (
+          <p className="text-xs text-gray-500">Somente administradores podem criar jogos.</p>
+        )}
       </div>
       {jogos.length === 0 ? (
         <div className="card text-center py-10">
@@ -82,14 +87,16 @@ export default function Jogos() {
                 <p className="text-sm text-gray-500">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p>
                 <p className="text-sm text-primary-600 font-medium mt-1">{jogo.total_confirmados} confirmados</p>
               </Link>
-              <button
-                type="button"
-                onClick={() => handleExcluir(jogo.id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                title="Excluir jogo"
-              >
-                <Trash2 size={16} />
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleExcluir(jogo.id)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                  title="Excluir jogo"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
           ))}
         </div>
