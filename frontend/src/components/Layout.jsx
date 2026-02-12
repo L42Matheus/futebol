@@ -1,14 +1,27 @@
-import { useEffect, useState } from 'react'
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, LogOut, User, Trophy } from 'lucide-react'
+﻿import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
+import { LogOut, ChevronLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
 import { profileApi } from '../services/api'
 
-export default function Layout() {
-  const { isAuthenticated, logout, user } = useAuth()
-  const navigate = useNavigate()
+const TITLES: { test: RegExp; title: string }[] = [
+  { test: /^\/$/, title: 'QuemJoga' },
+  { test: /^\/novo$/, title: 'Novo Racha' },
+  { test: /\/racha\/\d+$/, title: 'Racha' },
+  { test: /\/atletas/, title: 'Atletas' },
+  { test: /\/jogos/, title: 'Jogos' },
+  { test: /\/novo-jogo/, title: 'Novo Jogo' },
+  { test: /\/financeiro/, title: 'Financeiro' },
+  { test: /\/times/, title: 'Times' },
+  { test: /\/escalacao/, title: 'Escalação' },
+]
+
+export default function Layout({ children, title, showBack }) {
+  const { user, logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
 
   useEffect(() => {
@@ -19,7 +32,7 @@ export default function Layout() {
         return
       }
       try {
-        const res = await profileApi.getMe()
+        const res = await profileApi.me()
         if (active) setProfile(res.data)
       } catch (error) {
         if (active) setProfile(null)
@@ -34,101 +47,88 @@ export default function Layout() {
     navigate('/perfil')
   }
 
-  // Verifica se está na home (não mostra botão voltar)
-  const isHome = location.pathname === '/'
-
-  // Determina o título baseado na rota
-  const getPageTitle = () => {
-    const path = location.pathname
-    if (path === '/') return null
-    if (path === '/novo') return 'Novo Racha'
-    if (path.includes('/atletas')) return 'Atletas'
-    if (path.includes('/times')) return 'Times'
-    if (path.includes('/financeiro')) return 'Financeiro'
-    if (path.includes('/jogos')) return 'Jogos'
-    if (path.includes('/jogo/')) return 'Detalhes do Jogo'
-    if (path.includes('/novo-jogo')) return 'Novo Jogo'
-    if (path.match(/\/racha\/\d+$/)) return 'Racha'
-    return null
-  }
-
-  const pageTitle = getPageTitle()
+  const resolvedTitle = title || (TITLES.find((t) => t.test.test(location.pathname))?.title || 'QuemJoga')
+  const resolvedShowBack = typeof showBack === 'boolean' ? showBack : location.pathname !== '/'
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header principal - só aparece na Home */}
-      {isHome && (
-        <header className="bg-primary-600 text-white shadow-lg">
-          <div className="max-w-4xl mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Trophy size={24} />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">QuemJoga</h1>
-                  <p className="text-primary-100 text-xs">Organize seu racha</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {user?.role === 'atleta' && (
-                  <Link to="/perfil-atleta" className="rounded-full ring-2 ring-white/30">
-                    <Avatar
-                      src={profile?.foto_url}
-                      name={profile?.apelido || profile?.nome || user?.nome || user?.email}
-                      size="sm"
-                    />
-                  </Link>
-                )}
-                {user && (
-                  <div className="hidden sm:flex items-center gap-2 text-sm text-primary-100 mr-2">
-                    <User size={16} />
-                    <span>{user.nome || user.email}</span>
-                  </div>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                >
-                  <LogOut size={18} />
-                  <span className="hidden sm:inline">Sair</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
+    <div className="min-h-screen flex flex-col bg-gray-50 pb-20 md:pb-0 md:pl-64">
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 flex-col p-6 z-40">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">QJ</div>
+          <span className="text-xl font-bold text-gray-900">QuemJoga</span>
+        </div>
 
-      {/* Header de navegação - aparece nas páginas internas */}
-      {!isHome && (
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-          <div className="max-w-4xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                >
-                  <ArrowLeft size={20} className="text-gray-600" />
-                </button>
-                {pageTitle && (
-                  <h1 className="text-lg font-semibold text-gray-900">{pageTitle}</h1>
-                )}
-              </div>
+        <nav className="flex-1 space-y-2">
+          {NAV_ITEMS.map((item) => {
+            if (item.adminOnly && user?.role !== 'admin') return null
+            if (item.athleteOnly && user?.role !== 'atleta') return null
+            const active = location.pathname === item.path
+            return (
               <Link
-                to="/"
-                className="text-primary-600 font-medium text-sm hover:underline"
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  active ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-500 hover:bg-gray-50'
+                }`}
               >
-                Início
+                {item.icon}
+                {item.label}
               </Link>
-            </div>
-          </div>
-        </header>
-      )}
+            )
+          })}
+        </nav>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        <Outlet />
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all mt-auto"
+        >
+          <LogOut size={20} />
+          Sair
+        </button>
+      </aside>
+
+      <header className="md:hidden sticky top-0 bg-white border-b border-gray-100 z-30 px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {resolvedShowBack && (
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500">
+              <ChevronLeft size={24} />
+            </button>
+          )}
+          <h1 className="text-lg font-bold text-gray-900 truncate">{resolvedTitle}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Avatar
+            src={profile?.foto_url}
+            name={profile?.apelido || profile?.nome || user?.nome || user?.email || 'Perfil'}
+            size="sm"
+            className="border border-emerald-100"
+          />
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-8">
+        {children || <Outlet />}
       </main>
+
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 h-16 flex items-center justify-between z-40">
+        {NAV_ITEMS.map((item) => {
+          if (item.adminOnly && user?.role !== 'admin') return null
+          if (item.athleteOnly && user?.role !== 'atleta') return null
+          const active = location.pathname === item.path
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex flex-col items-center gap-1 ${
+                active ? 'text-emerald-600' : 'text-gray-400'
+              }`}
+            >
+              {item.icon}
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          )}
+        )}
+      </nav>
     </div>
   )
 }
