@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, ArrowLeft, UserCircle2, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { authApi } from '../services/api'
 import { useAccountType, AccountType } from '../context/AccountTypeContext'
 
 function toRole(value: AccountType | null) {
@@ -15,6 +16,7 @@ export default function Register() {
   const inviteToken = searchParams.get('invite') || ''
   const { accountType, setAccountType } = useAccountType()
   const { register, isAuthenticated, loading: authLoading } = useAuth()
+  const [inviteRole, setInviteRole] = useState<'admin' | 'atleta' | null>(null)
 
   const [form, setForm] = useState({
     nome: '',
@@ -34,6 +36,21 @@ export default function Register() {
     }
   }, [isAuthenticated, authLoading, navigate])
 
+  useEffect(() => {
+    if (!inviteToken) return
+    async function loadInvite() {
+      try {
+        const res = await authApi.getInvite(inviteToken)
+        const roleFromInvite = res.data.role === 'admin' ? 'admin' : 'atleta'
+        setInviteRole(roleFromInvite)
+        setAccountType(roleFromInvite === 'admin' ? 'ADMIN' : 'ATLETA')
+      } catch (e) {
+        setError('Convite inválido ou expirado.')
+      }
+    }
+    loadInvite()
+  }, [inviteToken, setAccountType])
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
@@ -52,7 +69,8 @@ export default function Register() {
     }
     setLoading(true)
     try {
-      await register(form.email, form.telefone, form.senha, form.nome, inviteToken, role)
+      const finalRole = inviteRole || role
+      await register(form.email, form.telefone, form.senha, form.nome, inviteToken, finalRole)
       // Navegar após registro bem-sucedido
       navigate('/', { replace: true })
     } catch (err: any) {
@@ -116,13 +134,15 @@ export default function Register() {
                     {accountType === 'ATLETA' ? 'Atleta' : 'Administrador'}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSwapRole}
-                  className="px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
-                >
-                  Trocar
-                </button>
+                {!inviteToken && (
+                  <button
+                    type="button"
+                    onClick={handleSwapRole}
+                    className="px-4 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
+                  >
+                    Trocar
+                  </button>
+                )}
               </div>
             ) : (
               <div className="p-3 rounded-xl bg-yellow-50 text-sm text-yellow-700">
