@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Trash2 } from 'lucide-react'
+import { Calendar, Trash2 } from 'lucide-react'
 import { jogosApi, rachasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { format } from 'date-fns'
@@ -51,12 +51,9 @@ export default function Jogos() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4">
-        <Link to={`/racha/${rachaId}`} className="text-gray-400"><ArrowLeft size={24} /></Link>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Agenda de Jogos</h1>
-          <p className="text-gray-400">{racha.nome}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Agenda de Jogos</h1>
+        <p className="text-gray-400">{racha.nome}</p>
       </div>
       <div className="card bg-gray-900/40 border border-gray-800 flex items-center justify-between gap-4">
         <label className="flex items-center gap-2 text-sm text-gray-300">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Users, Link2, Plus, Trash2 } from 'lucide-react'
+import { Users, Link2, Plus, Trash2 } from 'lucide-react'
 import { teamsApi, atletasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -107,12 +107,9 @@ export default function Times() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4">
-        <Link to={`/racha/${rachaId}`} className="text-gray-400"><ArrowLeft size={24} /></Link>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Times</h1>
-          <p className="text-gray-400">Gerencie times e convites</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Times</h1>
+        <p className="text-gray-400">Gerencie times e convites</p>
       </div>
 
       <form onSubmit={handleCreateTeam} className="card bg-gray-900/40 border border-gray-800 flex gap-3 items-center">

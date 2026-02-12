@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Camera, Edit2, Save, X, Trophy, CreditCard, AlertTriangle } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { Camera, Edit2, Save, X, Trophy, CreditCard, AlertTriangle } from 'lucide-react'
 import { atletasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
@@ -45,7 +45,6 @@ const posicaoLabels: Record<string, string> = {
 
 export default function AtletaProfile() {
   const { rachaId, atletaId } = useParams()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -145,12 +144,7 @@ export default function AtletaProfile() {
     <div className="space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="text-gray-500">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">Perfil</h1>
-        </div>
+        <h1 className="text-xl font-bold text-white">Perfil</h1>
         {canEdit && !editing && (
           <button
             onClick={() => setEditing(true)}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, UserPlus, X, Check } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { Users, UserPlus, X, Check } from 'lucide-react'
 import { teamsApi, atletasApi, rachasApi } from '../services/api'
 import SoccerField from '../components/SoccerField'
 import Avatar from '../components/Avatar'
@@ -51,7 +51,6 @@ const posicaoLabels: Record<string, string> = {
 
 export default function TeamLineup() {
   const { rachaId } = useParams()
-  const navigate = useNavigate()
 
   const [teams, setTeams] = useState<Team[]>([])
   const [atletas, setAtletas] = useState<Atleta[]>([])
@@ -206,18 +205,11 @@ export default function TeamLineup() {
   return (
     <div className="space-y-6 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="text-gray-400">
-            <ArrowLeft size={24} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-white">Escalação</h1>
-            <span className="text-xs text-gray-400 capitalize">
-              {gameType === 'campo' ? '11 jogadores' : gameType === 'society' ? '7 jogadores' : '5 jogadores'}
-            </span>
-          </div>
-        </div>
+      <div>
+        <h1 className="text-xl font-bold text-white">Escalação</h1>
+        <span className="text-xs text-gray-400 capitalize">
+          {gameType === 'campo' ? '11 jogadores' : gameType === 'society' ? '7 jogadores' : '5 jogadores'}
+        </span>
       </div>
 
       {/* Seleção de times e formações */}

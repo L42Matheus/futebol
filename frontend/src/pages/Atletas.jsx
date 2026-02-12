@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, User, Shield } from 'lucide-react'
+import { useParams, Link } from 'react-router-dom'
+import { Plus, User, Shield } from 'lucide-react'
 import { atletasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
 
 export default function Atletas() {
   const { rachaId } = useParams()
-  const navigate = useNavigate()
   const [atletas, setAtletas] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -33,7 +32,7 @@ export default function Atletas() {
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4"><button onClick={() => navigate(-1)} className="text-gray-400"><ArrowLeft size={24} /></button><h1 className="text-xl font-bold text-white">Atletas</h1></div>
+        <h1 className="text-xl font-bold text-white">Atletas</h1>
         {isAdmin && <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><Plus size={20} />Adicionar</button>}
       </div>
       <div className="card bg-gray-900/40 border border-gray-800 divide-y">
