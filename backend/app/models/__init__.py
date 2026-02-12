@@ -1,4 +1,4 @@
-from app.models.racha import Racha, TipoRacha
+﻿from app.models.racha import Racha, TipoRacha
 from app.models.atleta import Atleta, Posicao
 from app.models.jogo import Jogo
 from app.models.presenca import Presenca, StatusPresenca
@@ -12,6 +12,7 @@ from app.models.team_member import TeamMember
 from app.models.invite import InviteRole
 from app.models.racha_admin import RachaAdmin
 from app.models.athlete_profile import AthleteProfile, PernaBoa
+from app.models.atleta_stat import AtletaStat
 
 __all__ = [
     "Racha",
@@ -37,4 +38,5 @@ __all__ = [
     "RachaAdmin",
     "AthleteProfile",
     "PernaBoa",
+    "AtletaStat",
 ]
