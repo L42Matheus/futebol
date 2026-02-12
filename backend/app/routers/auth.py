@@ -71,9 +71,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             invite.status = InviteStatus.ACEITO
             invite.aceito_em = datetime.utcnow()
             db.commit()
-    else:
-        if user_in.role == UserRole.ATLETA:
-            raise HTTPException(status_code=400, detail="Atleta precisa de convite")
+    # Atleta pode criar conta sem convite, mas não terá racha até aceitar convite
 
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))

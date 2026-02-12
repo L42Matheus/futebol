@@ -64,8 +64,7 @@ export default function Register() {
       return
     }
     if (accountType === 'ATLETA' && !inviteToken) {
-      setError('Atleta precisa de convite.')
-      return
+      // Permitido: atleta sem convite cria conta básica
     }
     setLoading(true)
     try {
@@ -153,6 +152,11 @@ export default function Register() {
               </div>
             )}
           </div>
+          {accountType === 'ATLETA' && !inviteToken && (
+            <div className="p-3 rounded-xl bg-blue-50 text-sm text-blue-700">
+              Você poderá entrar em um racha somente após receber um convite.
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
