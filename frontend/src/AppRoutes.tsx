@@ -5,6 +5,7 @@ import RachaDetail from './pages/RachaDetail'
 import JogoDetail from './pages/JogoDetail'
 import Atletas from './pages/Atletas'
 import Financeiro from './pages/Financeiro'
+import FinanceiroHub from './pages/FinanceiroHub'
 import NovoRacha from './pages/NovoRacha'
 import NovoJogo from './pages/NovoJogo'
 import Jogos from './pages/Jogos'
@@ -32,6 +33,7 @@ export default function AppRoutes() {
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
+            <Route path="financeiro" element={<FinanceiroHub />} />
             <Route path="novo" element={<NovoRacha />} />
             <Route path="racha/:rachaId" element={<RachaDetail />} />
             <Route path="racha/:rachaId/times" element={<Times />} />
