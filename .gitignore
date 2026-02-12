@@ -15,3 +15,5 @@ build/
 *.db
 htmlcov/
 .coverage
+backend/uploads/
+docs/
