@@ -60,6 +60,9 @@ export const atletasApi = {
   update: (id, data) => api.patch(`/atletas/${id}`, data),
   delete: (id) => api.delete(`/atletas/${id}`),
   getHistorico: (id) => api.get(`/atletas/${id}/historico`),
+  addCartao: (id, tipo, payload = {}) => api.post(`/atletas/${id}/cartoes`, { tipo, ...payload }),
+  removeCartao: (id, tipo) => api.post(`/atletas/${id}/cartoes/remover`, { tipo }),
+  confirmarPagamento: (id, confirmado, payload = {}) => api.post(`/atletas/${id}/confirmar-pagamento`, { confirmado, ...payload }),
   uploadFoto: (id, file) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -141,3 +144,4 @@ export const profileApi = {
 }
 
 export default api
+
