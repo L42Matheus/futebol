@@ -1,10 +1,19 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { ShieldCheck, UserCircle2, Trophy } from 'lucide-react'
 import { useAccountType } from '../context/AccountTypeContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function ChooseRole() {
   const navigate = useNavigate()
   const { setAccountType } = useAccountType()
+  const { isAuthenticated, loading } = useAuth()
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate('/', { replace: true })
+    }
+  }, [isAuthenticated, loading, navigate])
 
   function handleChoose(value: 'ATLETA' | 'ADMIN') {
     setAccountType(value)
