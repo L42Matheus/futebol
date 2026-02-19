@@ -6,10 +6,12 @@ import uuid
 
 from app.database import get_db
 from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole, RachaAdmin, AthleteProfile
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, GoogleAuthRequest
 from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
 from app.services.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.services.google_auth import exchange_code_for_tokens, get_google_user_info, get_google_auth_url
 from app.deps import verificar_admin_racha
+from app.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -193,3 +195,89 @@ def obter_invite(token: str, db: Session = Depends(get_db)):
     if not invite:
         raise HTTPException(status_code=404, detail="Convite não encontrado")
     return InviteResponse.model_validate(invite)
+
+
+@router.get("/google/url")
+def get_google_login_url(redirect_uri: str, state: str = None):
+    """Retorna a URL para iniciar o login com Google."""
+    settings = get_settings()
+    if not settings.google_client_id:
+        raise HTTPException(status_code=500, detail="Google OAuth não configurado")
+    return {"url": get_google_auth_url(redirect_uri, state)}
+
+
+@router.post("/google", response_model=TokenResponse)
+async def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """Autentica usuário via Google OAuth."""
+    settings = get_settings()
+    if not settings.google_client_id:
+        raise HTTPException(status_code=500, detail="Google OAuth não configurado")
+
+    try:
+        tokens = await exchange_code_for_tokens(payload.code, payload.redirect_uri)
+        google_user = await get_google_user_info(tokens["access_token"])
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao autenticar com Google: {str(e)}")
+
+    email = google_user.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email não disponível na conta Google")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        user = User(
+            nome=google_user.get("name", email.split("@")[0]),
+            email=email,
+            senha_hash=hash_password(uuid.uuid4().hex),
+            role=UserRole.ATLETA,
+            ativo=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        profile = AthleteProfile(user_id=user.id, nome=user.nome, telefone=None)
+        db.add(profile)
+        db.commit()
+
+    if payload.invite_token:
+        invite = db.query(Invite).filter(Invite.token == payload.invite_token).first()
+        if invite and invite.status == InviteStatus.PENDENTE:
+            if invite.role == InviteRole.ADMIN:
+                existing_admin = db.query(RachaAdmin).filter(
+                    RachaAdmin.user_id == user.id,
+                    RachaAdmin.racha_id == invite.racha_id
+                ).first()
+                if not existing_admin:
+                    db.add(RachaAdmin(
+                        user_id=user.id,
+                        racha_id=invite.racha_id,
+                        is_owner=False,
+                        ativo=True,
+                    ))
+            else:
+                existing_atleta = db.query(Atleta).filter(
+                    Atleta.user_id == user.id,
+                    Atleta.racha_id == invite.racha_id
+                ).first()
+                if not existing_atleta:
+                    profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == user.id).first()
+                    atleta = Atleta(
+                        user_id=user.id,
+                        racha_id=invite.racha_id,
+                        nome=invite.nome or user.nome or "Atleta",
+                        telefone=invite.telefone or user.telefone,
+                        ativo=True,
+                        foto_url=profile.foto_url if profile else None,
+                    )
+                    db.add(atleta)
+                    db.flush()
+                    if invite.team_id:
+                        db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
+            invite.status = InviteStatus.ACEITO
+            invite.aceito_em = datetime.utcnow()
+            db.commit()
+
+    token = create_access_token({"sub": str(user.id)})
+    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))

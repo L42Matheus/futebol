@@ -43,3 +43,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class GoogleAuthRequest(BaseModel):
+    code: str
+    redirect_uri: str
+    invite_token: Optional[str] = None
