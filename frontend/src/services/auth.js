@@ -59,6 +59,32 @@ const authService = {
     return response.data
   },
 
+  async loginWithGoogle(code, redirectUri, inviteToken = null) {
+    const payload = { code, redirect_uri: redirectUri }
+    if (inviteToken) payload.invite_token = inviteToken
+    const response = await authApi.googleAuth(payload)
+    const token = response.data.access_token
+    const user = response.data.user
+
+    const sessionId = generateSessionId()
+    localStorage.setItem(TOKEN_KEY, token)
+    localStorage.setItem(SESSION_KEY, sessionId)
+
+    if (user) {
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, timestamp: Date.now() }))
+      userCache = user
+      userCacheTime = Date.now()
+    }
+
+    setAuthToken(token)
+    return response.data
+  },
+
+  async getGoogleAuthUrl(redirectUri, state = null) {
+    const response = await authApi.getGoogleUrl(redirectUri, state)
+    return response.data.url
+  },
+
   async getCurrentUser(forceRefresh = false) {
     // Tenta usar cache em memória primeiro
     if (!forceRefresh && userCache && Date.now() - userCacheTime < CACHE_DURATION) {
