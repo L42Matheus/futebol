@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { profileApi } from '../services/api'
+import { profileApi, rachasApi } from '../services/api'
 import Avatar from '../components/Avatar'
 import { Camera, Save, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -27,6 +27,7 @@ export default function NoRacha() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [hasRacha, setHasRacha] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [form, setForm] = useState({
     nome: '',
@@ -40,15 +41,19 @@ export default function NoRacha() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await profileApi.me()
-        setProfile(res.data)
+        const [profileRes, rachasRes] = await Promise.all([
+          profileApi.me(),
+          rachasApi.list(),
+        ])
+        setProfile(profileRes.data)
+        setHasRacha(Array.isArray(rachasRes.data) && rachasRes.data.length > 0)
         setForm({
-          nome: res.data.nome || '',
-          apelido: res.data.apelido || '',
-          telefone: res.data.telefone || '',
-          posicao: res.data.posicao || '',
-          perna_boa: res.data.perna_boa || '',
-          numero_camisa: res.data.numero_camisa?.toString() || '',
+          nome: profileRes.data.nome || '',
+          apelido: profileRes.data.apelido || '',
+          telefone: profileRes.data.telefone || '',
+          posicao: profileRes.data.posicao || '',
+          perna_boa: profileRes.data.perna_boa || '',
+          numero_camisa: profileRes.data.numero_camisa?.toString() || '',
         })
       } finally {
         setLoading(false)
@@ -72,6 +77,19 @@ export default function NoRacha() {
     }
   }
 
+  function handleBack() {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/')
+  }
+
+  function handleLogoutAction() {
+    logout()
+    navigate('/perfil', { replace: true })
+  }
+
   async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -92,11 +110,17 @@ export default function NoRacha() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex flex-col">
+    <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
       <div className="max-w-3xl mx-auto w-full px-4 pt-8 pb-10 space-y-6">
         <div className="card p-5">
-          <h1 className="text-xl font-bold text-gray-900">Você ainda não está em nenhum racha</h1>
-          <p className="text-sm text-gray-500 mt-1">Aguarde um convite do administrador para ter acesso.</p>
+          <h1 className="text-xl font-bold text-white">
+            {hasRacha ? 'Edite seu perfil' : 'Voce ainda nao esta em nenhum racha'}
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            {hasRacha
+              ? 'Mantenha seus dados atualizados para facilitar sua identificacao no racha.'
+              : 'Peca ao administrador do racha para enviar um convite e liberar seu acesso.'}
+          </p>
         </div>
 
         <div className="card p-6 space-y-5">
@@ -112,8 +136,8 @@ export default function NoRacha() {
               </button>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Perfil básico</h2>
-              <p className="text-sm text-gray-500">Complete seus dados para o admin te reconhecer.</p>
+              <h2 className="text-lg font-semibold text-white">Perfil basico</h2>
+              <p className="text-sm text-gray-400">Complete seus dados para o admin te reconhecer.</p>
             </div>
           </div>
 
@@ -131,11 +155,11 @@ export default function NoRacha() {
               <input className="input" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
             </div>
             <div>
-              <label className="label">Número da camisa</label>
+              <label className="label">Numero da camisa</label>
               <input className="input" type="number" min="1" max="99" value={form.numero_camisa} onChange={(e) => setForm({ ...form, numero_camisa: e.target.value })} />
             </div>
             <div>
-              <label className="label">Posição</label>
+              <label className="label">Posicao</label>
               <select className="input" value={form.posicao} onChange={(e) => setForm({ ...form, posicao: e.target.value })}>
                 <option value="">Selecione</option>
                 {Object.entries(posicaoLabels).map(([k, v]) => (
@@ -154,17 +178,25 @@ export default function NoRacha() {
             </div>
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            <Save size={18} />
-            {saving ? 'Salvando...' : 'Salvar perfil'}
-          </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              onClick={handleBack}
+              className="btn-secondary w-full flex items-center justify-center gap-2"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary w-full flex items-center justify-center gap-2"
+            >
+              <Save size={18} />
+              {saving ? 'Salvando...' : 'Salvar perfil'}
+            </button>
+          </div>
         </div>
 
-        <button onClick={logout} className="btn-secondary w-full flex items-center justify-center gap-2">
+        <button onClick={handleLogoutAction} className="btn-secondary w-full flex items-center justify-center gap-2">
           <LogOut size={18} />
           Sair
         </button>
