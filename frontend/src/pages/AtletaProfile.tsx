@@ -26,6 +26,8 @@ interface Historico {
   financeiro: {
     pago_formatado: string
     pendente_formatado: string
+    referencia_mes_atual?: string
+    pagamento_confirmado_mes_atual?: boolean
   }
   cartoes: {
     amarelos: number
@@ -53,6 +55,7 @@ export default function AtletaProfile() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [adminActionLoading, setAdminActionLoading] = useState(false)
   const [form, setForm] = useState({ nome: '', apelido: '', telefone: '', posicao: 'meia', numero_camisa: '' })
 
   const isAdminView = user?.role === 'admin'
@@ -103,13 +106,13 @@ export default function AtletaProfile() {
     const file = e.target.files?.[0]
     if (!file || !atleta) return
 
-    // Validação básica
+    // Validacao basica
     if (!file.type.startsWith('image/')) {
       alert('Por favor, selecione uma imagem')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('Imagem muito grande. Máximo 5MB')
+      alert('Imagem muito grande. Maximo 5MB')
       return
     }
 
@@ -124,6 +127,45 @@ export default function AtletaProfile() {
     }
   }
 
+  async function handleAddCartao(tipo: 'amarelo' | 'vermelho') {
+    if (!atleta) return
+    setAdminActionLoading(true)
+    try {
+      await atletasApi.addCartao(atleta.id, tipo)
+      await loadAtleta()
+    } catch (e: any) {
+      alert(e.response?.data?.detail || 'Erro ao adicionar cartao')
+    } finally {
+      setAdminActionLoading(false)
+    }
+  }
+
+  async function handleRemoveCartao(tipo: 'amarelo' | 'vermelho') {
+    if (!atleta) return
+    setAdminActionLoading(true)
+    try {
+      await atletasApi.removeCartao(atleta.id, tipo)
+      await loadAtleta()
+    } catch (e: any) {
+      alert(e.response?.data?.detail || 'Erro ao remover cartao')
+    } finally {
+      setAdminActionLoading(false)
+    }
+  }
+
+  async function handleTogglePagamentoConfirmado(checked: boolean) {
+    if (!atleta) return
+    setAdminActionLoading(true)
+    try {
+      await atletasApi.confirmarPagamento(atleta.id, checked)
+      await loadAtleta()
+    } catch (e: any) {
+      alert(e.response?.data?.detail || 'Erro ao confirmar pagamento')
+    } finally {
+      setAdminActionLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -135,7 +177,7 @@ export default function AtletaProfile() {
   if (!atleta) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">Atleta não encontrado</p>
+        <p className="text-gray-500">Atleta nao encontrado</p>
       </div>
     )
   }
@@ -159,7 +201,7 @@ export default function AtletaProfile() {
       {/* Foto e Info Principal */}
       <div className="card p-6">
         <div className="flex flex-col items-center">
-          {/* Foto com opção de upload */}
+          {/* Foto com opcao de upload */}
           <div className="relative">
             <Avatar
               src={atleta.foto_url}
@@ -206,7 +248,7 @@ export default function AtletaProfile() {
             </button>
           )}
 
-          {/* Nome e Posição */}
+          {/* Nome e Posicao */}
           {editing ? (
             <div className="mt-4 w-full max-w-sm space-y-4">
               <div>
@@ -226,7 +268,7 @@ export default function AtletaProfile() {
                   value={form.apelido}
                   onChange={(e) => setForm({ ...form, apelido: e.target.value })}
                   className="input"
-                  placeholder="Como é conhecido no racha"
+                  placeholder="Como e conhecido no racha"
                 />
               </div>
               <div>
@@ -240,7 +282,7 @@ export default function AtletaProfile() {
                 />
               </div>
               <div>
-                <label className="label">Posição</label>
+                <label className="label">Posicao</label>
                 <select
                   value={form.posicao}
                   onChange={(e) => setForm({ ...form, posicao: e.target.value })}
@@ -252,7 +294,7 @@ export default function AtletaProfile() {
                 </select>
               </div>
               <div>
-                <label className="label">Número da Camisa</label>
+                <label className="label">Numero da Camisa</label>
                 <input
                   type="number"
                   min="1"
@@ -304,10 +346,10 @@ export default function AtletaProfile() {
         </div>
       </div>
 
-      {/* Estatísticas */}
+      {/* Estatisticas */}
       {historico && (
         <div className="grid grid-cols-3 gap-4">
-          {/* Presenças */}
+          {/* Presencas */}
           <div className="card p-4 text-center">
             <Trophy className="mx-auto text-primary-600 mb-2" size={24} />
             <p className="text-2xl font-bold text-gray-900">{historico.presencas.confirmados}</p>
@@ -323,25 +365,66 @@ export default function AtletaProfile() {
             {historico.financeiro.pendente_formatado !== 'R$ 0.00' && (
               <p className="text-xs text-amber-600 mt-1">{historico.financeiro.pendente_formatado} pendente</p>
             )}
+            {isAdminView && (
+              <label className="mt-2 inline-flex items-center gap-2 text-xs text-gray-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!historico.financeiro.pagamento_confirmado_mes_atual}
+                  disabled={adminActionLoading}
+                  onChange={(e) => handleTogglePagamentoConfirmado(e.target.checked)}
+                />
+                Confirmar pagamento ({historico.financeiro.referencia_mes_atual || 'mes atual'})
+              </label>
+            )}
           </div>
 
-          {/* Cartões */}
+          {/* Cartoes */}
           <div className="card p-4 text-center">
             <AlertTriangle className="mx-auto text-amber-500 mb-2" size={24} />
-            <div className="flex justify-center gap-3">
-              <div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-3">
                 <span className="inline-block w-4 h-5 bg-yellow-400 rounded-sm"></span>
-                <p className="text-sm font-bold">{historico.cartoes.amarelos}</p>
+                <button
+                  onClick={() => handleRemoveCartao('amarelo')}
+                  disabled={!isAdminView || adminActionLoading || historico.cartoes.amarelos <= 0}
+                  className="w-6 h-6 rounded bg-gray-200 text-gray-800 disabled:opacity-50"
+                >
+                  -
+                </button>
+                <p className="text-sm font-bold min-w-6">{historico.cartoes.amarelos}</p>
+                <button
+                  onClick={() => handleAddCartao('amarelo')}
+                  disabled={!isAdminView || adminActionLoading}
+                  className="w-6 h-6 rounded bg-yellow-400 text-gray-900 disabled:opacity-50"
+                >
+                  +
+                </button>
               </div>
-              <div>
+              <div className="flex items-center justify-center gap-3">
                 <span className="inline-block w-4 h-5 bg-red-500 rounded-sm"></span>
-                <p className="text-sm font-bold">{historico.cartoes.vermelhos}</p>
+                <button
+                  onClick={() => handleRemoveCartao('vermelho')}
+                  disabled={!isAdminView || adminActionLoading || historico.cartoes.vermelhos <= 0}
+                  className="w-6 h-6 rounded bg-gray-200 text-gray-800 disabled:opacity-50"
+                >
+                  -
+                </button>
+                <p className="text-sm font-bold min-w-6">{historico.cartoes.vermelhos}</p>
+                <button
+                  onClick={() => handleAddCartao('vermelho')}
+                  disabled={!isAdminView || adminActionLoading}
+                  className="w-6 h-6 rounded bg-red-500 text-white disabled:opacity-50"
+                >
+                  +
+                </button>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Cartões</p>
+            <p className="text-xs text-gray-500 mt-2">Cartoes</p>
           </div>
         </div>
       )}
     </div>
   )
 }
+
+

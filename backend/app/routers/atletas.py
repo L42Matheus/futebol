@@ -3,12 +3,25 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
+from datetime import datetime
 import os
 import uuid
 import shutil
+from pydantic import BaseModel
 
 from app.database import get_db
-from app.models import Atleta, Racha, Posicao, User
+from app.models import (
+    Atleta,
+    Racha,
+    Posicao,
+    User,
+    Jogo,
+    Cartao,
+    TipoCartao,
+    Pagamento,
+    TipoPagamento,
+    StatusPagamento,
+)
 from app.schemas.atleta import AtletaCreate, AtletaUpdate, AtletaResponse
 from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
@@ -19,6 +32,22 @@ settings = get_settings()
 
 # Extensões de imagem permitidas
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
+
+class CartaoCreatePayload(BaseModel):
+    tipo: TipoCartao
+    jogo_id: Optional[int] = None
+    motivo: Optional[str] = None
+
+
+class ConfirmarPagamentoPayload(BaseModel):
+    confirmado: bool
+    referencia: Optional[str] = None
+    valor: Optional[int] = None
+
+
+class CartaoRemovePayload(BaseModel):
+    tipo: TipoCartao
 
 
 def get_upload_dir():
@@ -108,7 +137,7 @@ def remover_atleta(atleta_id: int, db: Session = Depends(get_db), current_user: 
 
 @router.get("/{atleta_id}/historico")
 def obter_historico(atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    from app.models import Presenca, Pagamento, Cartao, StatusPresenca, StatusPagamento
+    from app.models import Presenca, StatusPresenca
     atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
@@ -123,14 +152,154 @@ def obter_historico(atleta_id: int, db: Session = Depends(get_db), current_user:
         Pagamento.status.in_([StatusPagamento.PENDENTE, StatusPagamento.AGUARDANDO_APROVACAO])).scalar() or 0
     amarelos = db.query(func.count(Cartao.id)).filter(Cartao.atleta_id == atleta_id, Cartao.tipo == "amarelo").scalar()
     vermelhos = db.query(func.count(Cartao.id)).filter(Cartao.atleta_id == atleta_id, Cartao.tipo == "vermelho").scalar()
+    referencia_mes_atual = datetime.now().strftime("%m/%Y")
+    pagamento_mes_atual = db.query(Pagamento.id).filter(
+        Pagamento.atleta_id == atleta_id,
+        Pagamento.tipo == TipoPagamento.MENSALIDADE,
+        Pagamento.referencia == referencia_mes_atual,
+        Pagamento.status == StatusPagamento.APROVADO
+    ).first()
     return {
         "atleta_id": atleta_id,
         "presencas": {"total_jogos": total_jogos, "confirmados": confirmados,
                       "taxa_presenca": f"{(confirmados / total_jogos * 100):.1f}%" if total_jogos > 0 else "0%"},
         "financeiro": {"total_pago": total_pago, "total_pendente": total_pendente,
-                       "pago_formatado": f"R$ {total_pago / 100:.2f}", "pendente_formatado": f"R$ {total_pendente / 100:.2f}"},
+                       "pago_formatado": f"R$ {total_pago / 100:.2f}", "pendente_formatado": f"R$ {total_pendente / 100:.2f}",
+                       "referencia_mes_atual": referencia_mes_atual,
+                       "pagamento_confirmado_mes_atual": bool(pagamento_mes_atual)},
         "cartoes": {"amarelos": amarelos, "vermelhos": vermelhos}
     }
+
+
+@router.post("/{atleta_id}/cartoes")
+def adicionar_cartao(
+    atleta_id: int,
+    payload: CartaoCreatePayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Atleta nao encontrado")
+
+    admin = verificar_admin_racha(db, current_user, atleta.racha_id)
+
+    if payload.jogo_id:
+        jogo = db.query(Jogo).filter(Jogo.id == payload.jogo_id, Jogo.racha_id == atleta.racha_id).first()
+        if not jogo:
+            raise HTTPException(status_code=404, detail="Jogo nao encontrado para este racha")
+    else:
+        jogo = db.query(Jogo).filter(Jogo.racha_id == atleta.racha_id).order_by(Jogo.data_hora.desc()).first()
+        if not jogo:
+            raise HTTPException(status_code=400, detail="Nao ha jogo cadastrado para lancar cartao")
+
+    cartao = Cartao(
+        atleta_id=atleta.id,
+        jogo_id=jogo.id,
+        tipo=payload.tipo,
+        motivo=payload.motivo
+    )
+    db.add(cartao)
+
+    valor_multa = admin.racha.valor_cartao_amarelo if payload.tipo == TipoCartao.AMARELO else admin.racha.valor_cartao_vermelho
+    if valor_multa and valor_multa > 0:
+        pagamento = Pagamento(
+            atleta_id=atleta.id,
+            tipo=TipoPagamento.MULTA_AMARELO if payload.tipo == TipoCartao.AMARELO else TipoPagamento.MULTA_VERMELHO,
+            valor=valor_multa,
+            descricao=f"Multa por cartao {payload.tipo.value}",
+            referencia=datetime.now().strftime("%m/%Y"),
+            status=StatusPagamento.PENDENTE
+        )
+        db.add(pagamento)
+        cartao.multa_gerada = True
+
+    db.commit()
+    return {"message": f"Cartao {payload.tipo.value} adicionado", "jogo_id": jogo.id}
+
+
+@router.post("/{atleta_id}/cartoes/remover")
+def remover_cartao(
+    atleta_id: int,
+    payload: CartaoRemovePayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Atleta nao encontrado")
+
+    verificar_admin_racha(db, current_user, atleta.racha_id)
+
+    cartao = db.query(Cartao).filter(
+        Cartao.atleta_id == atleta.id,
+        Cartao.tipo == payload.tipo
+    ).order_by(Cartao.created_at.desc()).first()
+
+    if not cartao:
+        raise HTTPException(status_code=404, detail=f"Nenhum cartao {payload.tipo.value} para remover")
+
+    # Remove uma multa pendente correspondente, quando existir.
+    tipo_multa = TipoPagamento.MULTA_AMARELO if payload.tipo == TipoCartao.AMARELO else TipoPagamento.MULTA_VERMELHO
+    multa = db.query(Pagamento).filter(
+        Pagamento.atleta_id == atleta.id,
+        Pagamento.tipo == tipo_multa,
+        Pagamento.status == StatusPagamento.PENDENTE
+    ).order_by(Pagamento.created_at.desc()).first()
+    if multa:
+        db.delete(multa)
+
+    db.delete(cartao)
+    db.commit()
+    return {"message": f"Cartao {payload.tipo.value} removido"}
+
+
+@router.post("/{atleta_id}/confirmar-pagamento")
+def confirmar_pagamento_atleta(
+    atleta_id: int,
+    payload: ConfirmarPagamentoPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Atleta nao encontrado")
+
+    admin = verificar_admin_racha(db, current_user, atleta.racha_id)
+    referencia = payload.referencia or datetime.now().strftime("%m/%Y")
+
+    pagamento = db.query(Pagamento).filter(
+        Pagamento.atleta_id == atleta.id,
+        Pagamento.tipo == TipoPagamento.MENSALIDADE,
+        Pagamento.referencia == referencia
+    ).order_by(Pagamento.created_at.desc()).first()
+
+    if payload.confirmado:
+        if not pagamento:
+            valor = payload.valor if payload.valor is not None else admin.racha.valor_mensalidade
+            if not valor or valor <= 0:
+                raise HTTPException(status_code=400, detail="Informe um valor maior que zero para confirmar o pagamento")
+            pagamento = Pagamento(
+                atleta_id=atleta.id,
+                tipo=TipoPagamento.MENSALIDADE,
+                valor=valor,
+                referencia=referencia,
+                descricao=f"Mensalidade {referencia} (confirmada manualmente)"
+            )
+            db.add(pagamento)
+
+        pagamento.status = StatusPagamento.APROVADO
+        pagamento.aprovado_por = admin.id
+        pagamento.data_aprovacao = datetime.now()
+        pagamento.motivo_rejeicao = None
+    else:
+        if pagamento:
+            pagamento.status = StatusPagamento.PENDENTE
+            pagamento.aprovado_por = None
+            pagamento.data_aprovacao = None
+
+    db.commit()
+    return {"atleta_id": atleta.id, "referencia": referencia, "confirmado": payload.confirmado}
 
 
 @router.post("/{atleta_id}/foto", response_model=AtletaResponse)
