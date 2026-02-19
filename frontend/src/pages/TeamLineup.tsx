@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Users, UserPlus, X, Check } from 'lucide-react'
 import { teamsApi, atletasApi, rachasApi } from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import SoccerField from '../components/SoccerField'
 import Avatar from '../components/Avatar'
 import {
@@ -51,6 +52,8 @@ const posicaoLabels: Record<string, string> = {
 
 export default function TeamLineup() {
   const { rachaId } = useParams()
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   const [teams, setTeams] = useState<Team[]>([])
   const [atletas, setAtletas] = useState<Atleta[]>([])
@@ -124,6 +127,7 @@ export default function TeamLineup() {
   }
 
   function handleSlotClick(team: Team, slot: PositionSlot, member?: TeamMember) {
+    if (!isAdmin) return
     if (member) {
       // Clicou em um jogador existente - editar
       setEditingMember({ team, member, slot })
@@ -138,6 +142,7 @@ export default function TeamLineup() {
   }
 
   async function handleUpdateMember() {
+    if (!isAdmin) return
     if (!editingMember) return
 
     try {
@@ -154,6 +159,7 @@ export default function TeamLineup() {
   }
 
   async function handleRemoveMember() {
+    if (!isAdmin) return
     if (!editingMember) return
     if (!window.confirm('Remover jogador do time?')) return
 
@@ -167,6 +173,7 @@ export default function TeamLineup() {
   }
 
   async function handleAddMember(atletaId: number) {
+    if (!isAdmin) return
     if (!addingToTeam) return
 
     try {
@@ -296,15 +303,8 @@ export default function TeamLineup() {
                 formation={formationA}
                 color="green"
                 side="left"
-                onSlotClick={(slot, member) => handleSlotClick(selectedTeamA, slot, member)}
+                onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamA, slot, member) : undefined}
               />
-              <button
-                onClick={() => setAddingToTeam({ team: selectedTeamA, slot: undefined })}
-                className="mt-3 w-full btn-secondary flex items-center justify-center gap-2"
-              >
-                <UserPlus size={18} />
-                Adicionar Jogador
-              </button>
             </>
           ) : (
             <div className="aspect-[3/4] bg-gray-100 rounded-xl flex items-center justify-center">
@@ -323,15 +323,8 @@ export default function TeamLineup() {
                 formation={formationB}
                 color="blue"
                 side="right"
-                onSlotClick={(slot, member) => handleSlotClick(selectedTeamB, slot, member)}
+                onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamB, slot, member) : undefined}
               />
-              <button
-                onClick={() => setAddingToTeam({ team: selectedTeamB, slot: undefined })}
-                className="mt-3 w-full btn-secondary flex items-center justify-center gap-2"
-              >
-                <UserPlus size={18} />
-                Adicionar Jogador
-              </button>
             </>
           ) : (
             <div className="aspect-[3/4] bg-gray-100 rounded-xl flex items-center justify-center">
@@ -342,17 +335,17 @@ export default function TeamLineup() {
       </div>
 
       {/* Atletas disponíveis */}
-      {getAvailableAtletas().length > 0 && (
+      {isAdmin && getAvailableAtletas().length > 0 && (
         <div className="card bg-gray-900/40 border border-gray-800 p-4">
           <h3 className="font-medium text-white mb-3 flex items-center gap-2">
             <Users size={18} />
             Atletas Disponíveis ({getAvailableAtletas().length})
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-h-56 sm:max-h-72 overflow-y-auto pr-1">
             {getAvailableAtletas().map(atleta => (
               <div
                 key={atleta.id}
-                className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"
+                className="flex items-center gap-2 bg-gray-800/60 px-3 py-2 rounded-lg"
               >
                 <Avatar src={atleta.foto_url} name={atleta.apelido || atleta.nome} size="sm" />
                 <div>
@@ -366,7 +359,7 @@ export default function TeamLineup() {
       )}
 
       {/* Modal de edição de jogador */}
-      {editingMember && (
+      {isAdmin && editingMember && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
           <div className="bg-gray-900/40 rounded-t-2xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-4">
@@ -461,7 +454,7 @@ export default function TeamLineup() {
       )}
 
       {/* Modal de adicionar jogador */}
-      {addingToTeam && (
+      {isAdmin && addingToTeam && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
           <div className="bg-gray-900/40 rounded-t-2xl w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">

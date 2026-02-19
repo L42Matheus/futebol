@@ -56,7 +56,7 @@ export default function RachaDetail() {
         <Link to={`/racha/${rachaId}/atletas`} className="card flex flex-col items-center py-4 hover:shadow-md"><Users className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Atletas</span><span className="text-xs text-gray-500">{racha.total_atletas}</span></Link>
         <Link to={`/racha/${rachaId}/jogos`} className="card flex flex-col items-center py-4 hover:shadow-md"><Calendar className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Jogos</span><span className="text-xs text-gray-500">{jogos.length}</span></Link>
         {isAdmin && <Link to={`/racha/${rachaId}/times`} className="card flex flex-col items-center py-4 hover:shadow-md"><Layers className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Times</span></Link>}
-        {isAdmin && <Link to={`/racha/${rachaId}/escalacao`} className="card flex flex-col items-center py-4 hover:shadow-md"><LayoutGrid className="text-green-600 mb-2" size={24} /><span className="text-sm font-medium">Escalação</span></Link>}
+        <Link to={`/racha/${rachaId}/escalacao`} className="card flex flex-col items-center py-4 hover:shadow-md"><LayoutGrid className="text-green-600 mb-2" size={24} /><span className="text-sm font-medium">Escalação</span></Link>
         {isAdmin && <Link to={`/racha/${rachaId}/financeiro`} className="card flex flex-col items-center py-4 hover:shadow-md"><DollarSign className="text-primary-600 mb-2" size={24} /><span className="text-sm font-medium">Caixa</span></Link>}
       </div>
       {isAdmin && (

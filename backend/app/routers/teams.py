@@ -11,7 +11,7 @@ from app.schemas.team import (
     TeamWithMembers, TeamWithMembersDetailed, TeamMemberWithAtleta, AtletaResumo
 )
 from app.services.auth import get_current_user
-from app.deps import verificar_admin_racha
+from app.deps import verificar_admin_racha, verificar_acesso_racha
 
 router = APIRouter(prefix="/teams", tags=["Times"])
 
@@ -55,7 +55,7 @@ def _build_member_with_atleta(member: TeamMember) -> dict:
 
 @router.get("/", response_model=List[TeamWithMembersDetailed])
 def listar_times(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    verificar_admin_racha(db, current_user, racha_id)
+    verificar_acesso_racha(db, current_user, racha_id)
     teams = db.query(Team).filter(Team.racha_id == racha_id, Team.ativo == True).all()
     result = []
     for team in teams:
@@ -76,7 +76,7 @@ def obter_time(team_id: int, db: Session = Depends(get_db), current_user: User =
     team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
-    verificar_admin_racha(db, current_user, team.racha_id)
+    verificar_acesso_racha(db, current_user, team.racha_id)
     membros = db.query(TeamMember).options(
         joinedload(TeamMember.atleta)
     ).filter(TeamMember.team_id == team_id, TeamMember.ativo == True).all()
