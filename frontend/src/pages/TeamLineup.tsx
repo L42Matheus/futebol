@@ -189,6 +189,24 @@ export default function TeamLineup() {
     }
   }
 
+  async function handlePromoteBench(member: TeamMember) {
+    if (!isAdmin) return
+    if (!addingToTeam) return
+    if (!addingToTeam.slot || addingToTeam.slot.id === 'bench') return
+
+    try {
+      await teamsApi.updateMember(
+        addingToTeam.team.id,
+        member.atleta_id,
+        { is_titular: true, posicao_escalacao: addingToTeam.slot.id }
+      )
+      await loadData()
+      setAddingToTeam(null)
+    } catch (e: any) {
+      alert(e.response?.data?.detail || 'Erro ao mover do banco')
+    }
+  }
+
   // Atletas disponíveis (não estão em nenhum dos times selecionados)
   function getAvailableAtletas() {
     const membersInTeams = new Set<number>()
@@ -199,6 +217,11 @@ export default function TeamLineup() {
       selectedTeamB.membros.forEach(m => membersInTeams.add(m.atleta_id))
     }
     return atletas.filter(a => !membersInTeams.has(a.id))
+  }
+
+  function getBenchMembers(team: Team | null) {
+    if (!team) return []
+    return team.membros.filter(m => !m.is_titular)
   }
 
   if (loading) {
@@ -471,26 +494,55 @@ export default function TeamLineup() {
               </button>
             </div>
 
-            <div className="space-y-2">
-              {getAvailableAtletas().length === 0 ? (
+            <div className="space-y-3">
+              {getBenchMembers(addingToTeam.team).length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2">
+                    Banco do Time
+                  </p>
+                  {getBenchMembers(addingToTeam.team).map(member => (
+                    <button
+                      key={member.id}
+                      onClick={() => handlePromoteBench(member)}
+                      className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/50 transition-colors"
+                    >
+                      <Avatar src={member.atleta.foto_url} name={member.atleta.apelido || member.atleta.nome} size="md" />
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-white">{member.atleta.apelido || member.atleta.nome}</p>
+                        <p className="text-sm text-gray-400">{posicaoLabels[member.atleta.posicao]}</p>
+                      </div>
+                      <UserPlus size={20} className="text-emerald-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {getAvailableAtletas().length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2">
+                    Atletas Disponíveis
+                  </p>
+                  {getAvailableAtletas().map(atleta => (
+                    <button
+                      key={atleta.id}
+                      onClick={() => handleAddMember(atleta.id)}
+                      className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/50 transition-colors"
+                    >
+                      <Avatar src={atleta.foto_url} name={atleta.apelido || atleta.nome} size="md" />
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-white">{atleta.apelido || atleta.nome}</p>
+                        <p className="text-sm text-gray-400">{posicaoLabels[atleta.posicao]}</p>
+                      </div>
+                      <UserPlus size={20} className="text-emerald-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {getBenchMembers(addingToTeam.team).length === 0 && getAvailableAtletas().length === 0 && (
                 <p className="text-center text-gray-400 py-8">
-                  Todos os atletas já estão nos times
+                  Nenhum atleta disponível
                 </p>
-              ) : (
-                getAvailableAtletas().map(atleta => (
-                  <button
-                    key={atleta.id}
-                    onClick={() => handleAddMember(atleta.id)}
-                    className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-800/50 transition-colors"
-                  >
-                    <Avatar src={atleta.foto_url} name={atleta.apelido || atleta.nome} size="md" />
-                    <div className="flex-1 text-left">
-                      <p className="font-medium text-white">{atleta.apelido || atleta.nome}</p>
-                      <p className="text-sm text-gray-400">{posicaoLabels[atleta.posicao]}</p>
-                    </div>
-                    <UserPlus size={20} className="text-emerald-400" />
-                  </button>
-                ))
               )}
             </div>
           </div>
