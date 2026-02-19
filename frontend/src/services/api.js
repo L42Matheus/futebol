@@ -1,7 +1,8 @@
 import axios from 'axios'
 
+const API_URL = import.meta.env.VITE_API_URL || ''
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: `${API_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -115,6 +116,10 @@ export const authApi = {
   getInvite: (token) => api.get(`/auth/invites/${token}`),
   createInvite: (data) => api.post('/auth/invites', data),
   acceptInvite: (token) => api.post('/auth/invites/accept', { token }),
+  getGoogleUrl: (redirectUri, state) => api.get('/auth/google/url', { params: { redirect_uri: redirectUri, state } }),
+  googleAuth: (data) => api.post('/auth/google', data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
 }
 
 export const artilhariaApi = {
