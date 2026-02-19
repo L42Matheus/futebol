@@ -6,10 +6,26 @@ import uuid
 
 from app.database import get_db
 from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole, RachaAdmin, AthleteProfile
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, GoogleAuthRequest
+from app.schemas.user import (
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    TokenResponse,
+    GoogleAuthRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
 from app.schemas.invite import InviteCreate, InviteResponse, InviteAccept
-from app.services.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.services.auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_password_reset_token,
+    verify_password_reset_token,
+    get_current_user,
+)
 from app.services.google_auth import exchange_code_for_tokens, get_google_user_info, get_google_auth_url
+from app.services.email_service import send_password_reset_email
 from app.deps import verificar_admin_racha
 from app.config import get_settings
 
@@ -281,3 +297,34 @@ async def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db))
 
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    # Sempre retorna sucesso para não expor se o email existe.
+    user = db.query(User).filter(User.email == payload.email, User.ativo == True).first()
+    if user:
+        token = create_password_reset_token(user.id, user.senha_hash)
+        settings = get_settings()
+        reset_link = f"{settings.frontend_url}/reset-senha?token={token}"
+        send_password_reset_email(user.email, reset_link)
+    return {"message": "Se o e-mail existir, enviamos as instrucoes de redefinicao."}
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    try:
+        user_id, pwd_marker = verify_password_reset_token(payload.token)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Token invalido ou expirado")
+
+    user = db.query(User).filter(User.id == user_id, User.ativo == True).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Token invalido ou expirado")
+
+    if user.senha_hash[-12:] != pwd_marker:
+        raise HTTPException(status_code=400, detail="Token invalido ou expirado")
+
+    user.senha_hash = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Senha redefinida com sucesso"}

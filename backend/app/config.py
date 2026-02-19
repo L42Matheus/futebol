@@ -20,6 +20,15 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
     frontend_url: str = "http://localhost:3000"
+    reset_password_expire_minutes: int = 30
+
+    # Email (SMTP)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_use_tls: bool = True
 
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"

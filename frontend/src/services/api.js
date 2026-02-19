@@ -118,6 +118,8 @@ export const authApi = {
   acceptInvite: (token) => api.post('/auth/invites/accept', { token }),
   getGoogleUrl: (redirectUri, state) => api.get('/auth/google/url', { params: { redirect_uri: redirectUri, state } }),
   googleAuth: (data) => api.post('/auth/google', data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
 }
 
 export const artilhariaApi = {

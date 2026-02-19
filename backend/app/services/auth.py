@@ -34,6 +34,30 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
+def create_password_reset_token(user_id: int, senha_hash: str) -> str:
+    settings = get_settings()
+    expire = datetime.utcnow() + timedelta(minutes=settings.reset_password_expire_minutes)
+    payload = {
+        "sub": str(user_id),
+        "type": "password_reset",
+        "pwd": senha_hash[-12:],  # invalida token ao trocar senha
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def verify_password_reset_token(token: str) -> tuple[int, str]:
+    settings = get_settings()
+    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    if payload.get("type") != "password_reset":
+        raise JWTError("invalid token type")
+    user_id = payload.get("sub")
+    pwd_marker = payload.get("pwd")
+    if not user_id or not pwd_marker:
+        raise JWTError("invalid token payload")
+    return int(user_id), str(pwd_marker)
+
+
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
     settings = get_settings()
     credentials_exception = HTTPException(

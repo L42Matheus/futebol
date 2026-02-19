@@ -49,3 +49,12 @@ class GoogleAuthRequest(BaseModel):
     code: str
     redirect_uri: str
     invite_token: Optional[str] = None
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=6, max_length=72)

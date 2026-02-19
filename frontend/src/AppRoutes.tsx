@@ -14,6 +14,8 @@ import TeamLineup from './pages/TeamLineup'
 import AtletaProfile from './pages/AtletaProfile'
 import Artilharia from './pages/Artilharia'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
 import PrivateRoute from './components/PrivateRoute'
@@ -28,6 +30,8 @@ export default function AppRoutes() {
         <Route path="/perfil-basico" element={<NoRacha />} />
         <Route path="/perfil-atleta" element={<AthleteSelfProfile />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/esqueci-senha" element={<ForgotPassword />} />
+        <Route path="/reset-senha" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
 
         <Route element={<PrivateRoute />}>
