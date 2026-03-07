@@ -79,7 +79,7 @@ export const jogosApi = {
   create: (data) => api.post('/jogos/', normalizeJogoPayload(data)),
   update: (id, data) => api.patch(`/jogos/${id}`, normalizeJogoPayload(data)),
   cancel: (id) => api.delete(`/jogos/${id}`),
-  getLista: (id) => api.get(`/jogos/${id}/lista`),
+  getLista: (jogoId) => api.get(`/jogos/${jogoId}/lista`),
 }
 
 export const presencasApi = {
