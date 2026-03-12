@@ -106,7 +106,7 @@ jobs:
   # Deploy Frontend to Vercel (only on main)
   deploy-frontend:
     needs: [frontend-build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: false # Temporarily disabled until frontend deployment is ready
     runs-on: ubuntu-latest
 
     steps:
