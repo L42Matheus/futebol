@@ -1,5 +1,6 @@
 import httpx
 from typing import Optional
+from urllib.parse import urlencode
 from app.config import get_settings
 
 
@@ -53,5 +54,5 @@ def get_google_auth_url(redirect_uri: str, state: Optional[str] = None) -> str:
     if state:
         params["state"] = state
 
-    query = "&".join(f"{k}={v}" for k, v in params.items())
+    query = urlencode(params)
     return f"https://accounts.google.com/o/oauth2/v2/auth?{query}"

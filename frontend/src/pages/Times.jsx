@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+﻿import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useParams } from 'react-router-dom'
 import { Users, Link2, Plus, Trash2 } from 'lucide-react'
 import { teamsApi, atletasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -20,7 +20,7 @@ export default function Times() {
     return map
   }, [atletas])
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const [teamsRes, atletasRes] = await Promise.all([
@@ -34,9 +34,9 @@ export default function Times() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [rachaId])
 
-  useEffect(() => { loadData() }, [rachaId])
+  useEffect(() => { loadData() }, [loadData])
 
   async function handleCreateTeam(e) {
     e.preventDefault()

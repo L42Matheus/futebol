@@ -1,16 +1,16 @@
-import { authApi, setAuthToken } from './api'
+﻿import { authApi, setAuthToken } from './api.js'
 
 const TOKEN_KEY = 'auth_token'
 const SESSION_KEY = 'session_id'
 const USER_CACHE_KEY = 'cached_user'
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
 
-// Gera um ID de sessão único
+// Gera um ID de sessÃ£o Ãºnico
 function generateSessionId() {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
 }
 
-// Cache do usuário em memória
+// Cache do usuÃ¡rio em memÃ³ria
 let userCache = null
 let userCacheTime = 0
 
@@ -25,7 +25,7 @@ const authService = {
     localStorage.setItem(TOKEN_KEY, token)
     localStorage.setItem(SESSION_KEY, sessionId)
 
-    // Cache do usuário
+    // Cache do usuÃ¡rio
     if (user) {
       localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, timestamp: Date.now() }))
       userCache = user
@@ -48,7 +48,7 @@ const authService = {
     localStorage.setItem(TOKEN_KEY, token)
     localStorage.setItem(SESSION_KEY, sessionId)
 
-    // Cache do usuário
+    // Cache do usuÃ¡rio
     if (user) {
       localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, timestamp: Date.now() }))
       userCache = user
@@ -86,7 +86,7 @@ const authService = {
   },
 
   async getCurrentUser(forceRefresh = false) {
-    // Tenta usar cache em memória primeiro
+    // Tenta usar cache em memÃ³ria primeiro
     if (!forceRefresh && userCache && Date.now() - userCacheTime < CACHE_DURATION) {
       return userCache
     }
@@ -117,12 +117,12 @@ const authService = {
   },
 
   logout() {
-    // Limpa todos os dados de sessão
+    // Limpa todos os dados de sessÃ£o
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(SESSION_KEY)
     localStorage.removeItem(USER_CACHE_KEY)
 
-    // Limpa cache em memória
+    // Limpa cache em memÃ³ria
     userCache = null
     userCacheTime = 0
 

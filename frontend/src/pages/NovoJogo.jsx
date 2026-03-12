@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -22,7 +22,7 @@ export default function NovoJogo() {
     setLoading(true)
     try {
       const payload = { ...form, racha_id: Number(rachaId) }
-      const response = await jogosApi.create(payload)
+      await jogosApi.create(payload)
       navigate(`/racha/${rachaId}/jogos`)
     } catch (error) {
       console.error('Erro ao criar jogo:', error)
@@ -81,3 +81,4 @@ export default function NovoJogo() {
     </div>
   )
 }
+

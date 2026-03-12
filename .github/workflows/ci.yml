@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+﻿name: CI/CD Pipeline
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
           SECRET_KEY: test-secret-key
         run: |
           pip install pytest pytest-asyncio httpx
-          pytest -v || echo "No tests found, skipping..."
+          pytest -v
 
   # Frontend Build
   frontend-build:
@@ -75,7 +75,10 @@ jobs:
         run: npm ci
 
       - name: Run linting
-        run: npm run lint || echo "No lint script, skipping..."
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
 
       - name: Build
         run: npm run build
