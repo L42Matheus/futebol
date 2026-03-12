@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Calendar, Trash2 } from 'lucide-react'
 import { jogosApi, rachasApi } from '../services/api'
@@ -15,9 +15,7 @@ export default function Jogos() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
-  useEffect(() => { loadData() }, [rachaId, apenasFuturos])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const [rachaRes, jogosRes] = await Promise.all([
@@ -31,7 +29,9 @@ export default function Jogos() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [apenasFuturos, rachaId])
+
+  useEffect(() => { loadData() }, [loadData])
 
   async function handleExcluir(jogoId) {
     if (!isAdmin) return
@@ -101,3 +101,4 @@ export default function Jogos() {
     </div>
   )
 }
+

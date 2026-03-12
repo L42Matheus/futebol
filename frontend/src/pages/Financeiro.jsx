@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Check, X, DollarSign } from 'lucide-react'
 import { rachasApi, pagamentosApi } from '../services/api'
@@ -16,14 +16,14 @@ export default function Financeiro() {
   const tipoLabels = { mensalidade: 'Mensalidade', rateio: 'Rateio', uniforme: 'Uniforme', multa_amarelo: 'Multa Amarelo', multa_vermelho: 'Multa Vermelho', outro: 'Outro' }
   const statusColors = { pendente: 'bg-gray-100 text-gray-300', aguardando_aprovacao: 'bg-orange-100 text-orange-700', aprovado: 'bg-green-100 text-green-700', rejeitado: 'bg-red-100 text-red-700' }
 
-  useEffect(() => { loadData() }, [rachaId])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const [saldoRes, pendentesRes, pagamentosRes] = await Promise.all([rachasApi.getSaldo(rachaId), pagamentosApi.getPendentes(rachaId), pagamentosApi.list(rachaId)])
       setSaldo(saldoRes.data); setPendentes(pendentesRes.data); setPagamentos(pagamentosRes.data)
     } catch (e) { console.error(e) } finally { setLoading(false) }
-  }
+  }, [rachaId])
+
+  useEffect(() => { loadData() }, [loadData])
 
   async function handleAprovar(id) { await pagamentosApi.aprovar(id, 1, true); loadData() }
   async function handleRejeitar(id) { const m = prompt('Motivo da rejeição:'); if (m !== null) { await pagamentosApi.aprovar(id, 1, false, m); loadData() } }
@@ -73,3 +73,4 @@ export default function Financeiro() {
     </div>
   )
 }
+

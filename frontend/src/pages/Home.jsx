@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Calendar, AlertCircle, Layout as LayoutIcon, Users, DollarSign, Layers, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Calendar, AlertCircle, Layout as LayoutIcon, Users, Trash2 } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { TIPO_RACHA_LABELS } from '../constants'
@@ -80,7 +80,6 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      {/* Meus Rachas */}
       <div className="space-y-3">
         <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">Meus Rachas</p>
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -118,7 +117,6 @@ export default function Home() {
 
       {currentRacha && (
         <>
-          {/* Tabs */}
           <ul className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             {[
               { label: 'Jogos', path: `/racha/${currentRacha.id}/jogos` },
@@ -138,9 +136,6 @@ export default function Home() {
             ))}
           </ul>
 
-          {/* Tabs handle navigation; quick links removed */}
-
-          {/* Middle grid */}
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}
@@ -153,7 +148,7 @@ export default function Home() {
                 <p className="text-xl font-black text-white">
                   {nextGame ? format(new Date(nextGame.data_hora), "EEE, HH:mm", { locale: ptBR }) : 'Sem jogos'}
                 </p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Calendario</p>
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Calendário</p>
               </div>
             </button>
 
@@ -178,7 +173,7 @@ export default function Home() {
                 <LayoutIcon size={24} />
               </div>
               <div>
-                <p className="text-xl font-black text-white mb-1 uppercase tracking-tight">Escalacao</p>
+                <p className="text-xl font-black text-white mb-1 uppercase tracking-tight">Escalação</p>
                 <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
                   {TIPO_RACHA_LABELS[currentRacha.tipo] || currentRacha.tipo}
                 </p>
@@ -203,3 +198,4 @@ export default function Home() {
     </div>
   )
 }
+
