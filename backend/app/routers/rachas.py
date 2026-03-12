@@ -49,13 +49,13 @@ def listar_rachas(
     # Busca rachas onde o usuário é admin
     admin_racha_ids = db.query(RachaAdmin.racha_id).filter(
         RachaAdmin.user_id == current_user.id,
-        RachaAdmin.ativo == True
+        RachaAdmin.ativo.is_(True)
     )
 
     # Busca rachas onde o usuário é atleta
     atleta_racha_ids = db.query(Atleta.racha_id).filter(
         Atleta.user_id == current_user.id,
-        Atleta.ativo == True
+        Atleta.ativo.is_(True)
     )
 
     # Une os dois
@@ -68,11 +68,11 @@ def listar_rachas(
     rachas = query.offset(skip).limit(limit).all()
     result = []
     for racha in rachas:
-        total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo == True).scalar()
+        total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo.is_(True)).scalar()
         is_admin = db.query(RachaAdmin).filter(
             RachaAdmin.user_id == current_user.id,
             RachaAdmin.racha_id == racha.id,
-            RachaAdmin.ativo == True
+            RachaAdmin.ativo.is_(True)
         ).first() is not None
         result.append(RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=is_admin))
     return result
@@ -84,11 +84,11 @@ def obter_racha(racha_id: int, db: Session = Depends(get_db), current_user: User
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
-    total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo == True).scalar()
+    total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo.is_(True)).scalar()
     is_admin = db.query(RachaAdmin).filter(
         RachaAdmin.user_id == current_user.id,
         RachaAdmin.racha_id == racha.id,
-        RachaAdmin.ativo == True
+        RachaAdmin.ativo.is_(True)
     ).first() is not None
     return RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=is_admin)
 
@@ -106,7 +106,7 @@ def atualizar_racha(racha_id: int, racha_update: RachaUpdate, db: Session = Depe
         setattr(racha, field, value)
     db.commit()
     db.refresh(racha)
-    total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo == True).scalar()
+    total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo.is_(True)).scalar()
     return RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total)
 
 

@@ -7,8 +7,8 @@ from app.database import get_db
 from app.models import Team, TeamMember, Atleta, Racha, User
 from app.schemas.team import (
     TeamCreate, TeamUpdate, TeamResponse,
-    TeamMemberCreate, TeamMemberUpdate, TeamMemberResponse,
-    TeamWithMembers, TeamWithMembersDetailed, TeamMemberWithAtleta, AtletaResumo
+    TeamMemberCreate, TeamMemberUpdate,
+    TeamWithMembersDetailed, TeamMemberWithAtleta
 )
 from app.services.auth import get_current_user
 from app.deps import verificar_admin_racha, verificar_acesso_racha
@@ -56,12 +56,12 @@ def _build_member_with_atleta(member: TeamMember) -> dict:
 @router.get("/", response_model=List[TeamWithMembersDetailed])
 def listar_times(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_acesso_racha(db, current_user, racha_id)
-    teams = db.query(Team).filter(Team.racha_id == racha_id, Team.ativo == True).all()
+    teams = db.query(Team).filter(Team.racha_id == racha_id, Team.ativo.is_(True)).all()
     result = []
     for team in teams:
         membros = db.query(TeamMember).options(
             joinedload(TeamMember.atleta)
-        ).filter(TeamMember.team_id == team.id, TeamMember.ativo == True).all()
+        ).filter(TeamMember.team_id == team.id, TeamMember.ativo.is_(True)).all()
 
         membros_detailed = [_build_member_with_atleta(m) for m in membros]
         result.append({
@@ -73,13 +73,13 @@ def listar_times(racha_id: int, db: Session = Depends(get_db), current_user: Use
 
 @router.get("/{team_id}", response_model=TeamWithMembersDetailed)
 def obter_time(team_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
+    team = db.query(Team).filter(Team.id == team_id, Team.ativo.is_(True)).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
     verificar_acesso_racha(db, current_user, team.racha_id)
     membros = db.query(TeamMember).options(
         joinedload(TeamMember.atleta)
-    ).filter(TeamMember.team_id == team_id, TeamMember.ativo == True).all()
+    ).filter(TeamMember.team_id == team_id, TeamMember.ativo.is_(True)).all()
 
     membros_detailed = [_build_member_with_atleta(m) for m in membros]
     return {
@@ -113,7 +113,7 @@ def remover_time(team_id: int, db: Session = Depends(get_db), current_user: User
 
 @router.post("/{team_id}/members", response_model=TeamMemberWithAtleta, status_code=status.HTTP_201_CREATED)
 def adicionar_membro(team_id: int, payload: TeamMemberCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
+    team = db.query(Team).filter(Team.id == team_id, Team.ativo.is_(True)).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
     verificar_admin_racha(db, current_user, team.racha_id)
@@ -124,7 +124,7 @@ def adicionar_membro(team_id: int, payload: TeamMemberCreate, db: Session = Depe
     # Desativa memberships anteriores do atleta neste racha
     active_memberships = db.query(TeamMember).join(Team).filter(
         TeamMember.atleta_id == atleta.id,
-        TeamMember.ativo == True,
+        TeamMember.ativo.is_(True),
         Team.racha_id == team.racha_id
     ).all()
     for member in active_memberships:
@@ -154,7 +154,7 @@ def atualizar_membro(
     current_user: User = Depends(get_current_user)
 ):
     """Atualiza posição e status de titular/reserva de um membro do time"""
-    team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
+    team = db.query(Team).filter(Team.id == team_id, Team.ativo.is_(True)).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
     verificar_admin_racha(db, current_user, team.racha_id)
@@ -164,7 +164,7 @@ def atualizar_membro(
     ).filter(
         TeamMember.team_id == team_id,
         TeamMember.atleta_id == atleta_id,
-        TeamMember.ativo == True
+        TeamMember.ativo.is_(True)
     ).first()
 
     if not member:
@@ -182,11 +182,11 @@ def atualizar_membro(
 
 @router.delete("/{team_id}/members/{atleta_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remover_membro(team_id: int, atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    team = db.query(Team).filter(Team.id == team_id, Team.ativo == True).first()
+    team = db.query(Team).filter(Team.id == team_id, Team.ativo.is_(True)).first()
     if not team:
         raise HTTPException(status_code=404, detail="Time não encontrado")
     verificar_admin_racha(db, current_user, team.racha_id)
-    member = db.query(TeamMember).filter(TeamMember.team_id == team_id, TeamMember.atleta_id == atleta_id, TeamMember.ativo == True).first()
+    member = db.query(TeamMember).filter(TeamMember.team_id == team_id, TeamMember.atleta_id == atleta_id, TeamMember.ativo.is_(True)).first()
     if not member:
         raise HTTPException(status_code=404, detail="Atleta não está no time")
     member.ativo = False

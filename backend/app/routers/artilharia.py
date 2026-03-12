@@ -28,7 +28,7 @@ def get_or_create_stat(db: Session, atleta: Atleta) -> AtletaStat:
 @router.get("/", response_model=List[ArtilhariaItem])
 def listar_artilharia(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_acesso_racha(db, current_user, racha_id)
-    atletas = db.query(Atleta).filter(Atleta.racha_id == racha_id, Atleta.ativo == True).all()
+    atletas = db.query(Atleta).filter(Atleta.racha_id == racha_id, Atleta.ativo.is_(True)).all()
     items = []
     for atleta in atletas:
         stat = get_or_create_stat(db, atleta)

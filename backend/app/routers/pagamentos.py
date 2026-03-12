@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models import Pagamento, Atleta, StatusPagamento, TipoPagamento, User
-from app.schemas.pagamento import PagamentoCreate, PagamentoUpdate, PagamentoResponse, PagamentoAprovacao
+from app.schemas.pagamento import PagamentoCreate, PagamentoResponse, PagamentoAprovacao
 from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
 
@@ -99,7 +99,7 @@ def gerar_mensalidade(racha_id: int, referencia: str, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Racha não encontrado")
     if racha.valor_mensalidade <= 0:
         raise HTTPException(status_code=400, detail="Racha não possui mensalidade configurada")
-    atletas = db.query(Atleta).filter(Atleta.racha_id == racha_id, Atleta.ativo == True).all()
+    atletas = db.query(Atleta).filter(Atleta.racha_id == racha_id, Atleta.ativo.is_(True)).all()
     criados = 0
     for atleta in atletas:
         existing = db.query(Pagamento).filter(
