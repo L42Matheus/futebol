@@ -21,7 +21,8 @@ export default function NovoJogo() {
     e.preventDefault()
     setLoading(true)
     try {
-      const payload = { ...form, racha_id: Number(rachaId) }
+      const dataHoraCorrigida = form.data_hora ? `${form.data_hora}T12:00:00` : form.data_hora
+      const payload = { ...form, data_hora: dataHoraCorrigida, racha_id: Number(rachaId) }
       const response = await jogosApi.create(payload)
       navigate(`/racha/${rachaId}/jogos`)
     } catch (error) {

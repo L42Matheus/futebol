@@ -29,6 +29,14 @@ export default function JogoDetail() {
     }
   }
 
+
+  function parseDataJogo(dataHora) {
+  const dateStr = String(dataHora).substring(0, 10) 
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0)  
+}
+
+
   async function handleConfirmar(atletaId) { await presencasApi.confirmar(jogoId, atletaId); loadData() }
   async function handleRecusar(atletaId) { await presencasApi.recusar(jogoId, atletaId); loadData() }
   async function handleExcluir() {
@@ -52,8 +60,8 @@ export default function JogoDetail() {
       <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</h1>
-          <p className="text-gray-500">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local n?o definido'}</p>
+          <h1 className="text-xl font-bold text-gray-900">{format(parseDataJogo(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</h1>
+          <p className="text-gray-500">{format(parseDataJogo(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local n?o definido'}</p>
         </div>
         {isAdmin && (
           <button onClick={handleExcluir} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Excluir jogo">

@@ -33,6 +33,12 @@ export default function Jogos() {
     }
   }
 
+  function parseDataJogo(dataHora) {
+  const dateStr = String(dataHora).substring(0, 10) 
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0) 
+}
+
   async function handleExcluir(jogoId) {
     if (!isAdmin) return
     const ok = window.confirm('Excluir este jogo?')
@@ -80,8 +86,8 @@ export default function Jogos() {
           {jogos.map((jogo) => (
             <div key={jogo.id} className="card bg-gray-900/40 border border-gray-800 flex items-center justify-between hover:shadow-md">
               <Link to={`/racha/${rachaId}/jogo/${jogo.id}`} className="flex-1">
-                <p className="font-medium text-white">{format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
-                <p className="text-sm text-gray-400">{format(new Date(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p>
+                <p className="font-medium text-white">{format(parseDataJogo(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
+                <p className="text-sm text-gray-400">{format(parseDataJogo(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local não definido'}</p>
                 <p className="text-sm text-emerald-400 font-medium mt-1">{jogo.total_confirmados} confirmados</p>
               </Link>
               {isAdmin && (
