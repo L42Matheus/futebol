@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Users, Calendar, DollarSign, ChevronRight, Layers, Link2, LayoutGrid } from 'lucide-react'
 import { rachasApi, jogosApi, authApi } from '../services/api'
@@ -16,9 +16,7 @@ export default function RachaDetail() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
-  useEffect(() => { loadData() }, [rachaId])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const [rachaRes, jogosRes, saldoRes] = await Promise.all([rachasApi.get(rachaId), jogosApi.list(rachaId), rachasApi.getSaldo(rachaId)])
       setRacha(rachaRes.data)
@@ -29,7 +27,9 @@ export default function RachaDetail() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [rachaId])
+
+  useEffect(() => { loadData() }, [loadData])
 
   async function handleInvite() {
     try {
@@ -77,7 +77,7 @@ export default function RachaDetail() {
       )}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-gray-900">Pr?ximos Jogos</h2>
+          <h2 className="font-semibold text-gray-900">Próximos Jogos</h2>
           {isAdmin && <Link to={`/racha/${rachaId}/novo-jogo`} className="btn-secondary">Novo Jogo</Link>}
         </div>
         {jogos.length === 0 ? <div className="card text-center py-8"><Calendar size={32} className="mx-auto text-gray-400 mb-2" /><p className="text-gray-500">Nenhum jogo agendado</p></div> : (
@@ -98,3 +98,4 @@ export default function RachaDetail() {
     </div>
   )
 }
+

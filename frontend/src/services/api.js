@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = import.meta.env?.VITE_API_URL || ''
 const api = axios.create({
   baseURL: `${API_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
@@ -14,10 +14,10 @@ export function setAuthToken(token) {
   }
 }
 
-const storedToken = localStorage.getItem('auth_token')
+const storedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
 if (storedToken) setAuthToken(storedToken)
 
-function formatDateBR(value) {
+export function formatDateBR(value) {
   if (!value) return value
   if (value instanceof Date && !isNaN(value)) {
     const dd = String(value.getDate()).padStart(2, '0')
@@ -35,7 +35,7 @@ function formatDateBR(value) {
   return value
 }
 
-function normalizeJogoPayload(data) {
+export function normalizeJogoPayload(data) {
   const payload = { ...data }
   if (payload.data_hora) payload.data_hora = formatDateBR(payload.data_hora)
   if (payload.valor_campo === '' || payload.valor_campo === null) {
@@ -48,7 +48,7 @@ export const rachasApi = {
   list: () => api.get('/rachas/'),
   get: (id) => api.get(`/rachas/${id}`),
   create: (data) => api.post('/rachas/', data),
-  update: (id, data) => api.patch(`/rachas/${id}`),
+  update: (id, data) => api.patch(`/rachas/${id}`, data),
   delete: (id) => api.delete(`/rachas/${id}`),
   getSaldo: (id) => api.get(`/rachas/${id}/saldo`),
 }

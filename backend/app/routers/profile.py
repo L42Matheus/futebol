@@ -33,7 +33,7 @@ def get_or_create_profile(db: Session, user: User) -> AthleteProfile:
 
 
 def sync_atleta_foto(db: Session, user: User, foto_url: str | None):
-    atletas = db.query(Atleta).filter(Atleta.user_id == user.id, Atleta.ativo == True).all()
+    atletas = db.query(Atleta).filter(Atleta.user_id == user.id, Atleta.ativo.is_(True)).all()
     for atleta in atletas:
         atleta.foto_url = foto_url
     db.commit()

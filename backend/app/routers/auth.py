@@ -302,7 +302,7 @@ async def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db))
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     # Sempre retorna sucesso para não expor se o email existe.
-    user = db.query(User).filter(User.email == payload.email, User.ativo == True).first()
+    user = db.query(User).filter(User.email == payload.email, User.ativo.is_(True)).first()
     if user:
         token = create_password_reset_token(user.id, user.senha_hash)
         settings = get_settings()
@@ -318,7 +318,7 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     except Exception:
         raise HTTPException(status_code=400, detail="Token invalido ou expirado")
 
-    user = db.query(User).filter(User.id == user_id, User.ativo == True).first()
+    user = db.query(User).filter(User.id == user_id, User.ativo.is_(True)).first()
     if not user:
         raise HTTPException(status_code=400, detail="Token invalido ou expirado")
 

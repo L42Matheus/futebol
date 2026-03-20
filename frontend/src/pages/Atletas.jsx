@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Plus, User, Shield, Trash2 } from 'lucide-react'
 import { atletasApi } from '../services/api'
@@ -15,11 +15,11 @@ export default function Atletas() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
-  useEffect(() => { loadAtletas() }, [rachaId])
-
-  async function loadAtletas() {
+  const loadAtletas = useCallback(async () => {
     try { setAtletas((await atletasApi.list(rachaId)).data) } catch (e) { console.error(e) } finally { setLoading(false) }
-  }
+  }, [rachaId])
+
+  useEffect(() => { loadAtletas() }, [loadAtletas])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -83,3 +83,4 @@ export default function Atletas() {
     </div>
   )
 }
+
