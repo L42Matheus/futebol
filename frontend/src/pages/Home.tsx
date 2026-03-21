@@ -1,47 +1,28 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, AlertCircle, Layout as LayoutIcon, Users, Trash2 } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { TIPO_RACHA_LABELS } from '../constants'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import type { Racha, Jogo, Saldo } from '../types'
 
 export default function Home() {
-  const [rachas, setRachas] = useState([])
+  const [rachas, setRachas] = useState<Racha[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [nextGame, setNextGame] = useState(null)
-  const [saldo, setSaldo] = useState(null)
+  const [nextGame, setNextGame] = useState<Jogo | null>(null)
+  const [saldo, setSaldo] = useState<Saldo | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
   const { user } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
   const isAdmin = user?.role === 'admin'
 
-  useEffect(() => {
-    loadRachas()
-  }, [])
-
-  useEffect(() => {
-    async function loadExtras() {
-      const current = rachas[selectedIndex]
-      if (!current) return
-      try {
-        const [jogosRes, saldoRes] = await Promise.all([
-          jogosApi.list(current.id, true),
-          rachasApi.getSaldo(current.id)
-        ])
-        setNextGame(jogosRes.data?.[0] || null)
-        setSaldo(saldoRes.data || null)
-      } catch (e) {
-        console.error(e)
-        setNextGame(null)
-        setSaldo(null)
-      }
-    }
-    loadExtras()
-  }, [rachas, selectedIndex])
-
-  async function loadRachas() {
+  const loadRachas = useCallback(async () => {
     try {
       const response = await rachasApi.list()
       setRachas(response.data)
@@ -51,20 +32,46 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  async function handleDeleteRacha(e, id) {
-    e.stopPropagation()
-    if (!window.confirm('Deseja realmente excluir este racha? Esta ação não pode ser desfeita.')) return
-    try {
-      await rachasApi.delete(id)
-      setRachas(prev => prev.filter(r => r.id !== id))
-      if (selectedIndex >= rachas.length - 1) {
-        setSelectedIndex(0)
+  useEffect(() => {
+    loadRachas()
+  }, [loadRachas])
+
+  useEffect(() => {
+    const current = rachas[selectedIndex]
+    if (!current) return
+    let cancelled = false
+    async function loadExtras() {
+      try {
+        const [jogosRes, saldoRes] = await Promise.all([
+          jogosApi.list(current.id, true),
+          rachasApi.getSaldo(current.id),
+        ])
+        if (!cancelled) {
+          setNextGame(jogosRes.data?.[0] ?? null)
+          setSaldo(saldoRes.data ?? null)
+        }
+      } catch (e) {
+        console.error(e)
+        if (!cancelled) { setNextGame(null); setSaldo(null) }
       }
-    } catch (error) {
-      console.error('Erro ao excluir racha:', error)
-      alert('Erro ao excluir racha.')
+    }
+    loadExtras()
+    return () => { cancelled = true }
+  }, [rachas, selectedIndex])
+
+  async function handleDeleteConfirm() {
+    if (deleteId === null) return
+    try {
+      await rachasApi.delete(deleteId)
+      setRachas((prev) => prev.filter((r) => r.id !== deleteId))
+      if (selectedIndex >= rachas.length - 1) setSelectedIndex(0)
+      toast('Racha excluído.', 'success')
+    } catch {
+      toast('Erro ao excluir racha.', 'error')
+    } finally {
+      setDeleteId(null)
     }
   }
 
@@ -73,15 +80,18 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
       </div>
     )
   }
 
   return (
     <div className="space-y-8">
+      {/* Lista de rachas */}
       <div className="space-y-3">
-        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">Meus Rachas</p>
+        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">
+          Meus Rachas
+        </p>
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
           {rachas.length === 0 && (
             <div className="text-gray-500 text-sm">Nenhum racha cadastrado</div>
@@ -96,14 +106,18 @@ export default function Home() {
                     : 'bg-gray-900/50 border-gray-800 text-gray-400'
                 }`}
               >
-                <span className={`text-xs font-black uppercase tracking-wider ${selectedIndex === idx ? 'text-emerald-200' : 'text-gray-600'}`}>
-                  {TIPO_RACHA_LABELS[r.tipo] || r.tipo}
+                <span
+                  className={`text-xs font-black uppercase tracking-wider ${
+                    selectedIndex === idx ? 'text-emerald-200' : 'text-gray-600'
+                  }`}
+                >
+                  {TIPO_RACHA_LABELS[r.tipo] ?? r.tipo}
                 </span>
                 <span className="text-lg font-bold text-white whitespace-nowrap">{r.nome}</span>
               </button>
               {isAdmin && (
                 <button
-                  onClick={(e) => handleDeleteRacha(e, r.id)}
+                  onClick={() => setDeleteId(r.id)}
                   className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
                   title="Excluir Racha"
                 >
@@ -146,9 +160,13 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-xl font-black text-white">
-                  {nextGame ? format(new Date(nextGame.data_hora), "EEE, HH:mm", { locale: ptBR }) : 'Sem jogos'}
+                  {nextGame
+                    ? format(new Date(nextGame.data_hora), 'EEE, HH:mm', { locale: ptBR })
+                    : 'Sem jogos'}
                 </p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Calendário</p>
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                  Calendário
+                </p>
               </div>
             </button>
 
@@ -160,8 +178,12 @@ export default function Home() {
                 <AlertCircle size={24} />
               </div>
               <div>
-                <p className="text-xl font-black text-white">{saldo?.pendente_formatado || 'R$ 0,00'}</p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Pendentes</p>
+                <p className="text-xl font-black text-white">
+                  {saldo?.pendente_formatado ?? 'R$ 0,00'}
+                </p>
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                  Pendentes
+                </p>
               </div>
             </button>
 
@@ -173,9 +195,11 @@ export default function Home() {
                 <LayoutIcon size={24} />
               </div>
               <div>
-                <p className="text-xl font-black text-white mb-1 uppercase tracking-tight">Escalação</p>
+                <p className="text-xl font-black text-white mb-1 uppercase tracking-tight">
+                  Escalação
+                </p>
                 <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
-                  {TIPO_RACHA_LABELS[currentRacha.tipo] || currentRacha.tipo}
+                  {TIPO_RACHA_LABELS[currentRacha.tipo] ?? currentRacha.tipo}
                 </p>
               </div>
             </button>
@@ -189,13 +213,24 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-xl font-black text-white">{currentRacha.total_atletas}</p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Membros</p>
+                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                  Membros
+                </p>
               </div>
             </button>
           </div>
         </>
       )}
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Excluir Racha"
+        description="Deseja realmente excluir este racha? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        danger
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   )
 }
-

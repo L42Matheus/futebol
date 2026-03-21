@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { LogOut, ChevronLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
-import { profileApi } from '../services/api'
 
-const TITLES = [
+const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/$/, title: 'QuemJoga' },
   { test: /^\/novo$/, title: 'Novo Racha' },
   { test: /\/racha\/\d+$/, title: 'Racha' },
@@ -15,47 +13,40 @@ const TITLES = [
   { test: /\/novo-jogo/, title: 'Novo Jogo' },
   { test: /\/financeiro/, title: 'Financeiro' },
   { test: /\/times/, title: 'Times' },
-  { test: /\/escalacao/, title: 'Escalacao' },
+  { test: /\/escalacao/, title: 'Escalação' },
 ]
 
-export default function Layout({ children, title, showBack }) {
+interface LayoutProps {
+  title?: string
+  showBack?: boolean
+}
+
+export default function Layout({ title, showBack }: LayoutProps) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [profile, setProfile] = useState(null)
-
-  useEffect(() => {
-    let active = true
-    async function loadProfile() {
-      if (!user) {
-        setProfile(null)
-        return
-      }
-      try {
-        const res = await profileApi.me()
-        if (active) setProfile(res.data)
-      } catch (error) {
-        if (active) setProfile(null)
-      }
-    }
-    loadProfile()
-    return () => { active = false }
-  }, [user])
 
   const handleLogout = () => {
     logout()
     navigate('/perfil')
   }
 
-  const resolvedTitle = title || (TITLES.find((t) => t.test.test(location.pathname))?.title || 'QuemJoga')
-  const resolvedShowBack = typeof showBack === 'boolean' ? showBack : location.pathname !== '/'
+  const resolvedTitle =
+    title ?? (TITLES.find((t) => t.test.test(location.pathname))?.title ?? 'QuemJoga')
+  const resolvedShowBack =
+    typeof showBack === 'boolean' ? showBack : location.pathname !== '/'
+
+  // Avatar uses user data directly from AuthContext — no extra API call needed.
+  const avatarName = user?.nome ?? user?.email ?? 'Perfil'
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b0f1a] pb-24 md:pb-0 md:pl-72">
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-72 bg-[#0b0f1a] border-r border-gray-800 flex-col p-6 z-40">
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">QJ</div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">
+            QJ
+          </div>
           <span className="text-xl font-bold text-white">QuemJoga</span>
         </div>
 
@@ -105,8 +96,8 @@ export default function Layout({ children, title, showBack }) {
         </div>
         <Link to="/perfil-atleta">
           <Avatar
-            src={profile?.foto_url}
-            name={profile?.apelido || profile?.nome || user?.nome || user?.email || 'Perfil'}
+            src={undefined}
+            name={avatarName}
             size="sm"
             className="border border-gray-700"
           />
@@ -115,7 +106,7 @@ export default function Layout({ children, title, showBack }) {
 
       {/* Main Content */}
       <main className="flex-1 max-w-5xl mx-auto w-full p-6">
-        {children || <Outlet />}
+        <Outlet />
       </main>
 
       {/* Bottom Navigation Mobile */}
