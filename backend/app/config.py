@@ -1,6 +1,12 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import os
+import logging
+import warnings
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_SECRET_KEY = "change-this-secret-key-in-production"
 
 
 class Settings(BaseSettings):
@@ -12,7 +18,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://postgres:postgres@db:5432/quemjoga"
 
     # Security
-    secret_key: str = "change-this-secret-key-in-production"
+    secret_key: str = _DEFAULT_SECRET_KEY
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
@@ -48,4 +54,14 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if settings.secret_key == _DEFAULT_SECRET_KEY and not settings.debug:
+        raise RuntimeError(
+            "SECRET_KEY não foi configurada. Defina a variável de ambiente SECRET_KEY antes de iniciar em produção."
+        )
+    if settings.secret_key == _DEFAULT_SECRET_KEY:
+        warnings.warn(
+            "Usando SECRET_KEY padrão — configure a variável de ambiente SECRET_KEY antes de ir para produção.",
+            stacklevel=2,
+        )
+    return settings

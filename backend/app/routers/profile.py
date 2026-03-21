@@ -9,11 +9,12 @@ from app.models import AthleteProfile, User, Atleta
 from app.schemas.athlete_profile import AthleteProfileUpdate, AthleteProfileResponse
 from app.services.auth import get_current_user
 from app.config import get_settings
+from app.utils.file_upload import ALLOWED_IMAGE_EXTENSIONS, validate_image_mime
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 settings = get_settings()
 
-ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS
 
 
 def get_upload_dir():
@@ -62,15 +63,18 @@ def upload_foto(
     current_user: User = Depends(get_current_user)
 ):
     profile = get_or_create_profile(db, current_user)
-    ext = os.path.splitext(file.filename)[1].lower()
+    ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"Extensão não permitida. Use: {', '.join(ALLOWED_EXTENSIONS)}")
 
-    file.file.seek(0, 2)
-    file_size = file.file.tell()
+    file_bytes = file.file.read()
     file.file.seek(0)
-    if file_size > settings.max_upload_size:
+
+    if len(file_bytes) > settings.max_upload_size:
         raise HTTPException(status_code=400, detail="Arquivo muito grande")
+
+    if not validate_image_mime(file_bytes, ext):
+        raise HTTPException(status_code=400, detail="Conteúdo do arquivo não corresponde à extensão declarada.")
 
     upload_dir = os.path.join(get_upload_dir(), "profiles")
     os.makedirs(upload_dir, exist_ok=True)
@@ -83,7 +87,7 @@ def upload_foto(
     filename = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(upload_dir, filename)
     with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(file_bytes)
 
     profile.foto_url = f"/uploads/profiles/{filename}"
     db.commit()

@@ -1,6 +1,9 @@
+import logging
 import smtplib
 from email.message import EmailMessage
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 def send_password_reset_email(to_email: str, reset_link: str) -> None:
@@ -14,7 +17,7 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
 
     # Fallback para desenvolvimento sem SMTP configurado.
     if not settings.smtp_host or not settings.smtp_from_email:
-        print(f"[password-reset] Para: {to_email} | Link: {reset_link}")
+        logger.info("[password-reset] SMTP não configurado. Para: %s | Link: %s", to_email, reset_link)
         return
 
     msg = EmailMessage()

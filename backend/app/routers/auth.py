@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 from app.database import get_db
-from app.models import User, Atleta, Invite, InviteStatus, PushToken, InviteRole, TeamMember, Team, UserRole, RachaAdmin, AthleteProfile
+from app.models import User, Invite, InviteStatus, PushToken, Team, UserRole, AthleteProfile
 from app.schemas.user import (
     UserCreate,
     UserLogin,
@@ -26,6 +26,7 @@ from app.services.auth import (
 )
 from app.services.google_auth import exchange_code_for_tokens, get_google_user_info, get_google_auth_url
 from app.services.email_service import send_password_reset_email
+from app.services.invite_service import processar_invite
 from app.deps import verificar_admin_racha
 from app.config import get_settings
 
@@ -63,7 +64,6 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
     # Cria perfil básico para atleta sem convite
     if user_in.role == UserRole.ATLETA:
-        from app.models import AthleteProfile
         profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == user.id).first()
         if not profile:
             db.add(AthleteProfile(user_id=user.id, nome=user.nome, telefone=user.telefone))
@@ -72,32 +72,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     if user_in.invite_token:
         invite = db.query(Invite).filter(Invite.token == user_in.invite_token).first()
         if invite and invite.status == InviteStatus.PENDENTE:
-            if invite.role == InviteRole.ADMIN:
-                # Convite de admin: cria RachaAdmin
-                racha_admin = RachaAdmin(
-                    user_id=user.id,
-                    racha_id=invite.racha_id,
-                    is_owner=False,
-                    ativo=True,
-                )
-                db.add(racha_admin)
-            else:
-                # Convite de atleta: cria Atleta
-                profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == user.id).first()
-                atleta = Atleta(
-                    user_id=user.id,
-                    racha_id=invite.racha_id,
-                    nome=invite.nome or user.nome or "Atleta",
-                    telefone=invite.telefone or user.telefone,
-                    ativo=True,
-                    foto_url=profile.foto_url if profile else None,
-                )
-                db.add(atleta)
-                db.flush()
-                if invite.team_id:
-                    db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
-            invite.status = InviteStatus.ACEITO
-            invite.aceito_em = datetime.utcnow()
+            processar_invite(db, user, invite)
             db.commit()
     # Atleta pode criar conta sem convite, mas não terá racha até aceitar convite
 
@@ -163,43 +138,7 @@ def aceitar_invite(payload: InviteAccept, db: Session = Depends(get_db), current
     if not invite or invite.status != InviteStatus.PENDENTE:
         raise HTTPException(status_code=400, detail="Convite inválido")
 
-    if invite.role == InviteRole.ADMIN:
-        # Verifica se já é admin
-        existing_admin = db.query(RachaAdmin).filter(
-            RachaAdmin.user_id == current_user.id,
-            RachaAdmin.racha_id == invite.racha_id
-        ).first()
-        if not existing_admin:
-            racha_admin = RachaAdmin(
-                user_id=current_user.id,
-                racha_id=invite.racha_id,
-                is_owner=False,
-                ativo=True,
-            )
-            db.add(racha_admin)
-    else:
-        # Verifica se já é atleta
-        existing_atleta = db.query(Atleta).filter(
-            Atleta.user_id == current_user.id,
-            Atleta.racha_id == invite.racha_id
-        ).first()
-        if not existing_atleta:
-            profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == current_user.id).first()
-            atleta = Atleta(
-                user_id=current_user.id,
-                racha_id=invite.racha_id,
-                nome=invite.nome or current_user.nome or "Atleta",
-                telefone=invite.telefone or current_user.telefone,
-                ativo=True,
-                foto_url=profile.foto_url if profile else None,
-            )
-            db.add(atleta)
-            db.flush()
-            if invite.team_id:
-                db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
-
-    invite.status = InviteStatus.ACEITO
-    invite.aceito_em = datetime.utcnow()
+    processar_invite(db, current_user, invite)
     db.commit()
     db.refresh(invite)
     return InviteResponse.model_validate(invite)
@@ -260,39 +199,7 @@ async def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db))
     if payload.invite_token:
         invite = db.query(Invite).filter(Invite.token == payload.invite_token).first()
         if invite and invite.status == InviteStatus.PENDENTE:
-            if invite.role == InviteRole.ADMIN:
-                existing_admin = db.query(RachaAdmin).filter(
-                    RachaAdmin.user_id == user.id,
-                    RachaAdmin.racha_id == invite.racha_id
-                ).first()
-                if not existing_admin:
-                    db.add(RachaAdmin(
-                        user_id=user.id,
-                        racha_id=invite.racha_id,
-                        is_owner=False,
-                        ativo=True,
-                    ))
-            else:
-                existing_atleta = db.query(Atleta).filter(
-                    Atleta.user_id == user.id,
-                    Atleta.racha_id == invite.racha_id
-                ).first()
-                if not existing_atleta:
-                    profile = db.query(AthleteProfile).filter(AthleteProfile.user_id == user.id).first()
-                    atleta = Atleta(
-                        user_id=user.id,
-                        racha_id=invite.racha_id,
-                        nome=invite.nome or user.nome or "Atleta",
-                        telefone=invite.telefone or user.telefone,
-                        ativo=True,
-                        foto_url=profile.foto_url if profile else None,
-                    )
-                    db.add(atleta)
-                    db.flush()
-                    if invite.team_id:
-                        db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
-            invite.status = InviteStatus.ACEITO
-            invite.aceito_em = datetime.utcnow()
+            processar_invite(db, user, invite)
             db.commit()
 
     token = create_access_token({"sub": str(user.id)})

@@ -9,6 +9,7 @@ import shutil
 from pydantic import BaseModel
 
 from app.database import get_db
+from app.utils.file_upload import ALLOWED_IMAGE_EXTENSIONS, validate_image_mime
 from app.models import (
     Atleta,
     Racha,
@@ -29,8 +30,7 @@ from app.config import get_settings
 router = APIRouter(prefix="/atletas", tags=["Atletas"])
 settings = get_settings()
 
-# Extensões de imagem permitidas
-ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS
 
 
 class CartaoCreatePayload(BaseModel):
@@ -151,7 +151,7 @@ def obter_historico(atleta_id: int, db: Session = Depends(get_db), current_user:
         Pagamento.status.in_([StatusPagamento.PENDENTE, StatusPagamento.AGUARDANDO_APROVACAO])).scalar() or 0
     amarelos = db.query(func.count(Cartao.id)).filter(Cartao.atleta_id == atleta_id, Cartao.tipo == "amarelo").scalar()
     vermelhos = db.query(func.count(Cartao.id)).filter(Cartao.atleta_id == atleta_id, Cartao.tipo == "vermelho").scalar()
-    referencia_mes_atual = datetime.now().strftime("%m/%Y")
+    referencia_mes_atual = datetime.utcnow().strftime("%m/%Y")
     pagamento_mes_atual = db.query(Pagamento.id).filter(
         Pagamento.atleta_id == atleta_id,
         Pagamento.tipo == TipoPagamento.MENSALIDADE,
@@ -207,7 +207,7 @@ def adicionar_cartao(
             tipo=TipoPagamento.MULTA_AMARELO if payload.tipo == TipoCartao.AMARELO else TipoPagamento.MULTA_VERMELHO,
             valor=valor_multa,
             descricao=f"Multa por cartao {payload.tipo.value}",
-            referencia=datetime.now().strftime("%m/%Y"),
+            referencia=datetime.utcnow().strftime("%m/%Y"),
             status=StatusPagamento.PENDENTE
         )
         db.add(pagamento)
@@ -265,7 +265,7 @@ def confirmar_pagamento_atleta(
         raise HTTPException(status_code=404, detail="Atleta nao encontrado")
 
     admin = verificar_admin_racha(db, current_user, atleta.racha_id)
-    referencia = payload.referencia or datetime.now().strftime("%m/%Y")
+    referencia = payload.referencia or datetime.utcnow().strftime("%m/%Y")
 
     pagamento = db.query(Pagamento).filter(
         Pagamento.atleta_id == atleta.id,
@@ -289,7 +289,7 @@ def confirmar_pagamento_atleta(
 
         pagamento.status = StatusPagamento.APROVADO
         pagamento.aprovado_por = admin.id
-        pagamento.data_aprovacao = datetime.now()
+        pagamento.data_aprovacao = datetime.utcnow()
         pagamento.motivo_rejeicao = None
     else:
         if pagamento:
@@ -324,21 +324,28 @@ def upload_foto(
         raise HTTPException(status_code=403, detail="Sem permissão para editar este atleta")
 
     # Valida extensão do arquivo
-    ext = os.path.splitext(file.filename)[1].lower()
+    ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
             detail=f"Extensão não permitida. Use: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    # Valida tamanho do arquivo
-    file.file.seek(0, 2)  # Vai para o final
-    file_size = file.file.tell()
-    file.file.seek(0)  # Volta para o início
-    if file_size > settings.max_upload_size:
+    # Lê conteúdo do arquivo uma vez para validar tamanho e MIME
+    file_bytes = file.file.read()
+    file.file.seek(0)
+
+    if len(file_bytes) > settings.max_upload_size:
         raise HTTPException(
             status_code=400,
             detail=f"Arquivo muito grande. Máximo: {settings.max_upload_size // (1024 * 1024)}MB"
+        )
+
+    # Valida magic bytes para garantir que o conteúdo bate com a extensão
+    if not validate_image_mime(file_bytes, ext):
+        raise HTTPException(
+            status_code=400,
+            detail="Conteúdo do arquivo não corresponde à extensão declarada."
         )
 
     # Cria diretório se não existe

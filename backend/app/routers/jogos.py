@@ -39,14 +39,25 @@ def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limi
     verificar_acesso_racha(db, current_user, racha_id)
     query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado.is_(False))
     if apenas_futuros:
-        query = query.filter(Jogo.data_hora >= datetime.now())
+        query = query.filter(Jogo.data_hora >= datetime.utcnow())
     jogos = query.order_by(Jogo.data_hora).offset(skip).limit(limit).all()
-    result = []
-    for jogo in jogos:
-        confirmados = db.query(func.count(Presenca.id)).filter(
-            Presenca.jogo_id == jogo.id, Presenca.status == StatusPresenca.CONFIRMADO).scalar()
-        result.append(JogoResponse(**{c.name: getattr(jogo, c.name) for c in jogo.__table__.columns}, total_confirmados=confirmados))
-    return result
+    jogo_ids = [j.id for j in jogos]
+
+    # Busca todos os contadores de confirmados em uma única query
+    confirmados_por_jogo: dict[int, int] = {}
+    if jogo_ids:
+        rows = (
+            db.query(Presenca.jogo_id, func.count(Presenca.id))
+            .filter(Presenca.jogo_id.in_(jogo_ids), Presenca.status == StatusPresenca.CONFIRMADO)
+            .group_by(Presenca.jogo_id)
+            .all()
+        )
+        confirmados_por_jogo = {jogo_id: count for jogo_id, count in rows}
+
+    return [
+        JogoResponse(**{c.name: getattr(jogo, c.name) for c in jogo.__table__.columns}, total_confirmados=confirmados_por_jogo.get(jogo.id, 0))
+        for jogo in jogos
+    ]
 
 
 @router.get("/{jogo_id}", response_model=JogoResponse)
