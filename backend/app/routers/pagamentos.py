@@ -28,10 +28,15 @@ def criar_pagamento(pagamento: PagamentoCreate, db: Session = Depends(get_db), c
 @router.get("/", response_model=List[PagamentoResponse])
 def listar_pagamentos(racha_id: int, atleta_id: Optional[int] = None, status_filter: Optional[StatusPagamento] = None,
                       tipo: Optional[TipoPagamento] = None, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    verificar_acesso_racha(db, current_user, racha_id)
+    acesso = verificar_acesso_racha(db, current_user, racha_id)
     query = db.query(Pagamento, Atleta).join(Atleta).filter(Atleta.racha_id == racha_id)
-    if atleta_id:
+
+    # Atletas só podem ver os próprios pagamentos
+    if acesso["tipo"] == "atleta":
+        query = query.filter(Pagamento.atleta_id == acesso["obj"].id)
+    elif atleta_id:
         query = query.filter(Pagamento.atleta_id == atleta_id)
+
     if status_filter:
         query = query.filter(Pagamento.status == status_filter)
     if tipo:
@@ -80,7 +85,7 @@ def aprovar_pagamento(pagamento_id: int, aprovacao: PagamentoAprovacao, db: Sess
     if aprovacao.aprovado:
         pagamento.status = StatusPagamento.APROVADO
         pagamento.aprovado_por = admin.id
-        pagamento.data_aprovacao = datetime.now()
+        pagamento.data_aprovacao = datetime.utcnow()
         message = "Pagamento aprovado"
     else:
         pagamento.status = StatusPagamento.REJEITADO

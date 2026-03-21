@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from typing import List
 
 from app.database import get_db
@@ -61,21 +61,38 @@ def listar_rachas(
     # Une os dois
     user_racha_ids = admin_racha_ids.union(atleta_racha_ids).subquery()
 
-    query = db.query(Racha).filter(
-        Racha.ativo == ativo,
-        Racha.id.in_(user_racha_ids)
+    # Subquery: contagem de atletas ativos por racha
+    atletas_count = (
+        db.query(Atleta.racha_id, func.count(Atleta.id).label("total"))
+        .filter(Atleta.ativo.is_(True))
+        .group_by(Atleta.racha_id)
+        .subquery()
     )
-    rachas = query.offset(skip).limit(limit).all()
-    result = []
-    for racha in rachas:
-        total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo.is_(True)).scalar()
-        is_admin = db.query(RachaAdmin).filter(
-            RachaAdmin.user_id == current_user.id,
-            RachaAdmin.racha_id == racha.id,
-            RachaAdmin.ativo.is_(True)
-        ).first() is not None
-        result.append(RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=is_admin))
-    return result
+
+    # Subquery: rachas onde o usuário atual é admin
+    admin_racha_ids_set = (
+        db.query(RachaAdmin.racha_id)
+        .filter(RachaAdmin.user_id == current_user.id, RachaAdmin.ativo.is_(True))
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            Racha,
+            func.coalesce(atletas_count.c.total, 0).label("total_atletas"),
+            case((Racha.id.in_(admin_racha_ids_set), True), else_=False).label("is_admin"),
+        )
+        .outerjoin(atletas_count, atletas_count.c.racha_id == Racha.id)
+        .filter(Racha.ativo == ativo, Racha.id.in_(user_racha_ids))
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=bool(is_admin))
+        for racha, total, is_admin in rows
+    ]
 
 
 @router.get("/{racha_id}", response_model=RachaResponse)
