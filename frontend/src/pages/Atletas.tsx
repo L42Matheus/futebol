@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { POSICAO_LABELS } from '../constants'
 import ConfirmDialog from '../components/ConfirmDialog'
+import FormField from '../components/FormField'
+import { Input, Select } from '../components/Input'
 import Avatar from '../components/Avatar'
 import type { Atleta, Posicao } from '../types'
 
@@ -136,48 +138,40 @@ export default function Atletas() {
           <div className="bg-gray-900 border border-gray-800 rounded-t-2xl w-full max-w-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Novo Atleta</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="label">Nome Completo</label>
-                <input
+              <FormField label="Nome Completo">
+                <Input
                   type="text"
                   value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                  className="input"
                   required
                 />
-              </div>
-              <div>
-                <label className="label">Apelido</label>
-                <input
+              </FormField>
+              <FormField label="Apelido">
+                <Input
                   type="text"
                   value={form.apelido}
                   onChange={(e) => setForm({ ...form, apelido: e.target.value })}
-                  className="input"
                   placeholder="Como é conhecido no racha"
                 />
-              </div>
-              <div>
-                <label className="label">WhatsApp</label>
-                <input
+              </FormField>
+              <FormField label="WhatsApp">
+                <Input
                   type="tel"
                   value={form.telefone}
                   onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-                  className="input"
                   placeholder="(11) 99999-9999"
                 />
-              </div>
-              <div>
-                <label className="label">Posição</label>
-                <select
+              </FormField>
+              <FormField label="Posição">
+                <Select
                   value={form.posicao}
                   onChange={(e) => setForm({ ...form, posicao: e.target.value as Posicao })}
-                  className="input"
                 >
                   {(Object.entries(POSICAO_LABELS) as [Posicao, string][]).map(([v, l]) => (
                     <option key={v} value={v}>{l}</option>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormField>
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"

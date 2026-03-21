@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, ArrowLeft, UserCircle2, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
+import FormField from '../components/FormField'
+import { Input } from '../components/Input'
 import type { UserRole } from '../types'
 
 export default function Register() {
@@ -62,9 +64,6 @@ export default function Register() {
     }
   }
 
-  const inputClass =
-    'w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none'
-
   return (
     <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
       <div className="pt-6 px-4">
@@ -119,22 +118,18 @@ export default function Register() {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">Nome</label>
-            <input name="nome" value={form.nome} onChange={handleChange} className={inputClass} placeholder="Seu nome completo" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">E-mail</label>
-            <input type="email" name="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="seu@email.com" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">Telefone</label>
-            <input name="telefone" value={form.telefone} onChange={handleChange} className={inputClass} placeholder="(11) 99999-9999" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">Senha</label>
-            <input type="password" name="senha" value={form.senha} onChange={handleChange} className={inputClass} placeholder="Crie uma senha" required />
-          </div>
+          <FormField label="Nome">
+            <Input name="nome" value={form.nome} onChange={handleChange} placeholder="Seu nome completo" />
+          </FormField>
+          <FormField label="E-mail">
+            <Input type="email" name="email" value={form.email} onChange={handleChange} placeholder="seu@email.com" />
+          </FormField>
+          <FormField label="Telefone">
+            <Input name="telefone" value={form.telefone} onChange={handleChange} placeholder="(11) 99999-9999" />
+          </FormField>
+          <FormField label="Senha">
+            <Input type="password" name="senha" value={form.senha} onChange={handleChange} placeholder="Crie uma senha" required />
+          </FormField>
 
           <button
             type="submit"

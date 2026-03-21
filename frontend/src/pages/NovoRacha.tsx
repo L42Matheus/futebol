@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { rachasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import FormField from '../components/FormField'
+import { Input, Select } from '../components/Input'
 import type { TipoRacha } from '../types'
 
 interface RachaForm {
@@ -80,62 +82,52 @@ export default function NovoRacha() {
 
       {!inviteLinks ? (
         <form onSubmit={handleSubmit} className="card space-y-4">
-          <div>
-            <label className="label">Nome do Racha</label>
-            <input
+          <FormField label="Nome do Racha">
+            <Input
               type="text"
               name="nome"
               value={form.nome}
               onChange={handleChange}
               placeholder="Ex: Racha do Sábado"
-              className="input"
               required
             />
-          </div>
-          <div>
-            <label className="label">Tipo de Racha</label>
-            <select name="tipo" value={form.tipo} onChange={handleChange} className="input">
+          </FormField>
+          <FormField label="Tipo de Racha">
+            <Select name="tipo" value={form.tipo} onChange={handleChange}>
               <option value="campo">Campo (11x11) — até 40 atletas</option>
               <option value="society">Society (7x7) — até 30 atletas</option>
               <option value="futsal">Futsal (5x5) — até 20 atletas</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Mensalidade (R$)</label>
-            <input
+            </Select>
+          </FormField>
+          <FormField label="Mensalidade (R$)" hint="Deixe 0 se não cobra mensalidade fixa">
+            <Input
               type="number"
               name="valor_mensalidade"
               value={form.valor_mensalidade / 100}
               onChange={handleChange}
               placeholder="0"
-              className="input"
               min="0"
             />
-            <p className="text-xs text-gray-500 mt-1">Deixe 0 se não cobra mensalidade fixa</p>
-          </div>
+          </FormField>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Multa Amarelo (R$)</label>
-              <input
+            <FormField label="Multa Amarelo (R$)">
+              <Input
                 type="number"
                 name="valor_cartao_amarelo"
                 value={form.valor_cartao_amarelo / 100}
                 onChange={handleChange}
-                className="input"
                 min="0"
               />
-            </div>
-            <div>
-              <label className="label">Multa Vermelho (R$)</label>
-              <input
+            </FormField>
+            <FormField label="Multa Vermelho (R$)">
+              <Input
                 type="number"
                 name="valor_cartao_vermelho"
                 value={form.valor_cartao_vermelho / 100}
                 onChange={handleChange}
-                className="input"
                 min="0"
               />
-            </div>
+            </FormField>
           </div>
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? 'Criando...' : 'Criar Racha'}
@@ -147,24 +139,12 @@ export default function NovoRacha() {
           <p className="text-gray-400">
             Compartilhe os links abaixo para que atletas e administradores criem a conta.
           </p>
-          <div>
-            <label className="label">Link para Atletas</label>
-            <input
-              className="input"
-              readOnly
-              value={inviteLinks.atleta}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-          </div>
-          <div>
-            <label className="label">Link para Administradores</label>
-            <input
-              className="input"
-              readOnly
-              value={inviteLinks.admin}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-          </div>
+          <FormField label="Link para Atletas">
+            <Input readOnly value={inviteLinks.atleta} onFocus={(e) => e.currentTarget.select()} />
+          </FormField>
+          <FormField label="Link para Administradores">
+            <Input readOnly value={inviteLinks.admin} onFocus={(e) => e.currentTarget.select()} />
+          </FormField>
           <button
             className="btn-primary w-full"
             onClick={() => createdRachaId && navigate(`/racha/${createdRachaId}`)}

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import FormField from '../components/FormField'
+import { Input, Textarea } from '../components/Input'
 
 interface JogoForm {
   data_hora: string
@@ -70,60 +72,27 @@ export default function NovoJogo() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Novo Jogo</h1>
       <form onSubmit={handleSubmit} className="card space-y-4">
-        <div>
-          <label className="label">Data</label>
-          <input
-            type="date"
-            name="data_hora"
-            value={form.data_hora}
-            onChange={handleChange}
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <label className="label">Local</label>
-          <input
-            type="text"
-            name="local"
-            value={form.local}
-            onChange={handleChange}
-            placeholder="Ex: Plinio Lemos"
-            className="input"
-          />
-        </div>
-        <div>
-          <label className="label">Endereço</label>
-          <input
-            type="text"
-            name="endereco"
-            value={form.endereco}
-            onChange={handleChange}
-            placeholder="Ex: Campina Grande PB"
-            className="input"
-          />
-        </div>
-        <div>
-          <label className="label">Valor do Campo (R$) — opcional</label>
-          <input
+        <FormField label="Data">
+          <Input type="date" name="data_hora" value={form.data_hora} onChange={handleChange} required />
+        </FormField>
+        <FormField label="Local">
+          <Input type="text" name="local" value={form.local} onChange={handleChange} placeholder="Ex: Plinio Lemos" />
+        </FormField>
+        <FormField label="Endereço">
+          <Input type="text" name="endereco" value={form.endereco} onChange={handleChange} placeholder="Ex: Campina Grande PB" />
+        </FormField>
+        <FormField label="Valor do Campo (R$) — opcional">
+          <Input
             type="number"
             name="valor_campo"
             value={form.valor_campo === '' ? '' : form.valor_campo / 100}
             onChange={handleChange}
-            className="input"
             min="0"
           />
-        </div>
-        <div>
-          <label className="label">Observações</label>
-          <textarea
-            name="observacoes"
-            value={form.observacoes}
-            onChange={handleChange}
-            className="input"
-            rows={3}
-          />
-        </div>
+        </FormField>
+        <FormField label="Observações">
+          <Textarea name="observacoes" value={form.observacoes} onChange={handleChange} rows={3} />
+        </FormField>
         <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? 'Salvando...' : 'Criar Jogo'}
         </button>
