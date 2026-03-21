@@ -1,6 +1,5 @@
-﻿import { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Layout from '../components/Layout'
 import { rachasApi } from '../services/api'
 
 export default function FinanceiroHub() {
@@ -22,8 +21,6 @@ export default function FinanceiroHub() {
   }, [navigate])
 
   return (
-    <Layout title="Caixa" showBack>
-      <div className="flex items-center justify-center h-64 text-gray-400">Carregando...</div>
-    </Layout>
+    <div className="flex items-center justify-center h-64 text-gray-400">Carregando...</div>
   )
 }

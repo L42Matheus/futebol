@@ -1,12 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { ShieldCheck, UserCircle2, Trophy } from 'lucide-react'
-import { useAccountType } from '../context/AccountTypeContext'
 import { useAuth } from '../context/AuthContext'
 
 export default function ChooseRole() {
   const navigate = useNavigate()
-  const { setAccountType } = useAccountType()
   const { isAuthenticated, loading } = useAuth()
 
   useEffect(() => {
@@ -15,9 +13,8 @@ export default function ChooseRole() {
     }
   }, [isAuthenticated, loading, navigate])
 
-  function handleChoose(value: 'ATLETA' | 'ADMIN') {
-    setAccountType(value)
-    navigate('/login')
+  function handleChoose(role: 'atleta' | 'admin') {
+    navigate(`/login?fromRole=${role}`)
   }
 
   return (
@@ -41,7 +38,7 @@ export default function ChooseRole() {
           {/* Card Atleta */}
           <button
             className="w-full bg-gray-900/40 rounded-2xl p-6 border-2 border-gray-800 hover:border-emerald-500 transition-all active:scale-[0.98]"
-            onClick={() => handleChoose('ATLETA')}
+            onClick={() => handleChoose('atleta')}
           >
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center flex-shrink-0">
@@ -69,7 +66,7 @@ export default function ChooseRole() {
           {/* Card Admin */}
           <button
             className="w-full bg-gray-900/40 rounded-2xl p-6 border-2 border-gray-800 hover:border-emerald-500 transition-all active:scale-[0.98]"
-            onClick={() => handleChoose('ADMIN')}
+            onClick={() => handleChoose('admin')}
           >
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center flex-shrink-0">

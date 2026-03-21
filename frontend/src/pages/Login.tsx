@@ -4,6 +4,8 @@ import { Trophy, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
 import authService from '../services/auth'
+import FormField from '../components/FormField'
+import { Input } from '../components/Input'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -140,30 +142,22 @@ export default function Login() {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">
-              E-mail ou Telefone
-            </label>
-            <input
+          <FormField label="E-mail ou Telefone">
+            <Input
               name="identificador"
               value={form.identificador}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none"
               placeholder="seu@email.com"
               required
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">
-              Senha
-            </label>
-            <input
+          <FormField label="Senha">
+            <Input
               type="password"
               name="senha"
               value={form.senha}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800/50 border border-gray-700 text-white placeholder:text-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none"
               placeholder="Digite sua senha"
               required
             />
@@ -172,7 +166,7 @@ export default function Login() {
                 Esqueci minha senha
               </Link>
             </div>
-          </div>
+          </FormField>
 
           <button
             type="submit"
