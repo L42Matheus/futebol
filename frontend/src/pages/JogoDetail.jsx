@@ -77,8 +77,30 @@ export default function JogoDetail() {
       <div><h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Check className="text-green-600" size={20} />Confirmados ({lista.confirmados.length})</h2>
         <div className="card divide-y">{lista.confirmados.length === 0 ? <p className="text-gray-500 text-center py-4">Nenhum confirmado ainda</p> : lista.confirmados.map((a) => <div key={a.atleta_id} className="py-3 flex items-center justify-between"><div><p className="font-medium">{a.apelido || a.nome}</p><p className="text-xs text-gray-500 capitalize">{a.posicao}</p></div><span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Confirmado</span></div>)}</div>
       </div>
-      <div><h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Clock className="text-orange-500" size={20} />Pendentes ({lista.pendentes.length})</h2>
-        <div className="card divide-y">{lista.pendentes.length === 0 ? <p className="text-gray-500 text-center py-4">Todos responderam</p> : lista.pendentes.map((a) => <div key={a.atleta_id} className="py-3 flex items-center justify-between"><div><p className="font-medium">{a.apelido || a.nome}</p><p className="text-xs text-gray-500 capitalize">{a.posicao}</p></div><div className="flex gap-2"><button onClick={() => handleConfirmar(a.atleta_id)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"><Check size={16} /></button><button onClick={() => handleRecusar(a.atleta_id)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"><X size={16} /></button></div></div>)}</div>
+      <div>
+        <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Clock className="text-orange-500" size={20} />Pendentes ({lista.pendentes.length})</h2>
+        <div className="card divide-y">
+          {lista.pendentes.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">Todos responderam</p>
+          ) : (
+            lista.pendentes.map((a) => (
+              <div key={a.atleta_id} className="py-3 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{a.apelido || a.nome}</p>
+                  <p className="text-xs text-gray-500 capitalize">{a.posicao}</p>
+                </div>
+                <div className="flex gap-2">
+                  {(isAdmin || Number(user?.id) === Number(a.user_id)) && (
+                    <>
+                      <button onClick={() => handleConfirmar(a.atleta_id)} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"><Check size={16} /></button>
+                      <button onClick={() => handleRecusar(a.atleta_id)} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"><X size={16} /></button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   )
