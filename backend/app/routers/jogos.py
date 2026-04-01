@@ -94,7 +94,7 @@ def obter_lista_presenca(jogo_id: int, db: Session = Depends(get_db), current_us
     presencas = db.query(Presenca, Atleta).join(Atleta).filter(Presenca.jogo_id == jogo_id).all()
     confirmados, pendentes, recusados = [], [], []
     for presenca, atleta in presencas:
-        item = {"atleta_id": atleta.id, "nome": atleta.nome, "apelido": atleta.apelido,
+        item = {"atleta_id": atleta.id, "user_id": atleta.user_id, "nome": atleta.nome, "apelido": atleta.apelido,
                 "posicao": atleta.posicao.value, "status": presenca.status.value}
         if presenca.status == StatusPresenca.CONFIRMADO:
             confirmados.append(item)

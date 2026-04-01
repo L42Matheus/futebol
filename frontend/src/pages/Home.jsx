@@ -41,6 +41,13 @@ export default function Home() {
     loadExtras()
   }, [rachas, selectedIndex])
 
+
+  function parseDataJogo(dataHora) {
+  const dateStr = String(dataHora).substring(0, 10) 
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0)  
+}
+
   async function loadRachas() {
     try {
       const response = await rachasApi.list()
@@ -146,7 +153,7 @@ export default function Home() {
               </div>
               <div>
                 <p className="text-xl font-black text-white">
-                  {nextGame ? format(new Date(nextGame.data_hora), "EEE, HH:mm", { locale: ptBR }) : 'Sem jogos'}
+                  {nextGame ? format(parseDataJogo(nextGame.data_hora), "EEE, HH:mm", { locale: ptBR }) : 'Sem jogos'}
                 </p>
                 <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Calendário</p>
               </div>
