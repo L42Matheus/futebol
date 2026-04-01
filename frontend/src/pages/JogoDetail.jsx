@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, X, Clock, Trash2 } from 'lucide-react'
 import { jogosApi, presencasApi } from '../services/api'
@@ -15,9 +15,7 @@ export default function JogoDetail() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
-  useEffect(() => { loadData() }, [jogoId])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const [jogoRes, listaRes] = await Promise.all([jogosApi.get(jogoId), jogosApi.getLista(jogoId)])
       setJogo(jogoRes.data)
@@ -27,7 +25,9 @@ export default function JogoDetail() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [jogoId])
+
+  useEffect(() => { loadData() }, [loadData])
 
 
   function parseDataJogo(dataHora) {
@@ -105,3 +105,4 @@ export default function JogoDetail() {
     </div>
   )
 }
+

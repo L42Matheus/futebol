@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react'
+﻿/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useEffect, useContext, useCallback } from 'react'
 import authService from '../services/auth'
 
 const AuthContext = createContext(null)
@@ -9,10 +10,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [sessionId, setSessionId] = useState(null)
 
-  // Carrega usuário na inicialização
   useEffect(() => {
     const loadUser = async () => {
-      // Verifica se há sessão válida
       if (!authService.isSessionValid()) {
         setLoading(false)
         return
@@ -80,7 +79,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = useCallback(async () => {
     try {
-      const currentUser = await authService.getCurrentUser(true) // força refresh
+      const currentUser = await authService.getCurrentUser(true)
       setUser(currentUser)
       return currentUser
     } catch (error) {
@@ -108,3 +107,4 @@ export const AuthProvider = ({ children }) => {
 }
 
 export const useAuth = () => useContext(AuthContext)
+

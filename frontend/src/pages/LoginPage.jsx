@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { authApi, setAuthToken } from '../services/api'
 import authService from '../services/auth'
@@ -11,14 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
-  useEffect(() => {
-    const code = searchParams.get('code')
-    if (code) {
-      handleGoogleCallback(code)
-    }
-  }, [searchParams])
-
-  async function handleGoogleCallback(code) {
+  const handleGoogleCallback = useCallback(async (code) => {
     setGoogleLoading(true)
     try {
       const redirectUri = `${window.location.origin}/login`
@@ -35,7 +28,14 @@ export default function LoginPage() {
     } finally {
       setGoogleLoading(false)
     }
-  }
+  }, [navigate])
+
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      handleGoogleCallback(code)
+    }
+  }, [handleGoogleCallback, searchParams])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -147,3 +147,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

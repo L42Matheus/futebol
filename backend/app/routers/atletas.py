@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
@@ -63,12 +62,12 @@ def criar_atleta(atleta: AtletaCreate, db: Session = Depends(get_db), current_us
     racha = db.query(Racha).filter(Racha.id == atleta.racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
-    total_atletas = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == atleta.racha_id, Atleta.ativo == True).scalar()
+    total_atletas = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == atleta.racha_id, Atleta.ativo.is_(True)).scalar()
     if total_atletas >= racha.max_atletas:
         raise HTTPException(status_code=400, detail=f"Limite de {racha.max_atletas} atletas atingido")
     if atleta.is_admin:
         total_admins = db.query(func.count(Atleta.id)).filter(
-            Atleta.racha_id == atleta.racha_id, Atleta.is_admin == True, Atleta.ativo == True).scalar()
+            Atleta.racha_id == atleta.racha_id, Atleta.is_admin.is_(True), Atleta.ativo.is_(True)).scalar()
         if total_admins >= 5:
             raise HTTPException(status_code=400, detail="Limite de 5 administradores atingido")
     db_atleta = Atleta(**atleta.model_dump())
@@ -115,7 +114,7 @@ def atualizar_atleta(atleta_id: int, atleta_update: AtletaUpdate, db: Session = 
     update_data = atleta_update.model_dump(exclude_unset=True)
     if update_data.get("is_admin") and not atleta.is_admin:
         total_admins = db.query(func.count(Atleta.id)).filter(
-            Atleta.racha_id == atleta.racha_id, Atleta.is_admin == True, Atleta.ativo == True).scalar()
+            Atleta.racha_id == atleta.racha_id, Atleta.is_admin.is_(True), Atleta.ativo.is_(True)).scalar()
         if total_admins >= 5:
             raise HTTPException(status_code=400, detail="Limite de 5 administradores atingido")
     for field, value in update_data.items():

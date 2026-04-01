@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -82,3 +82,4 @@ export default function NovoJogo() {
     </div>
   )
 }
+

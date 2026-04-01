@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User
 from app.schemas.jogo import JogoCreate, JogoUpdate, JogoResponse
 from app.services.auth import get_current_user
-from app.deps import verificar_acesso_racha, verificar_admin_racha
+from app.deps import verificar_acesso_racha
 
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
 
@@ -26,7 +26,7 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: Us
     db.add(db_jogo)
     db.commit()
     db.refresh(db_jogo)
-    atletas = db.query(Atleta).filter(Atleta.racha_id == jogo.racha_id, Atleta.ativo == True).all()
+    atletas = db.query(Atleta).filter(Atleta.racha_id == jogo.racha_id, Atleta.ativo.is_(True)).all()
     for atleta in atletas:
         presenca = Presenca(jogo_id=db_jogo.id, atleta_id=atleta.id, status=StatusPresenca.PENDENTE)
         db.add(presenca)
@@ -37,7 +37,7 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: Us
 @router.get("/", response_model=List[JogoResponse])
 def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limit: int = 50, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_acesso_racha(db, current_user, racha_id)
-    query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado == False)
+    query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado.is_(False))
     if apenas_futuros:
         query = query.filter(Jogo.data_hora >= datetime.now())
     jogos = query.order_by(Jogo.data_hora).offset(skip).limit(limit).all()
