@@ -30,10 +30,12 @@ export default function JogoDetail() {
   useEffect(() => { loadData() }, [loadData])
 
 
-  function parseDataJogo(dataHora) {
-  const dateStr = String(dataHora).substring(0, 10) 
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day, 12, 0, 0)  
+function parseDataJogo(dataHora) {
+  const str = String(dataHora)
+  const [datePart, timePart] = str.includes('T') ? str.split('T') : str.split(' ')
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = (timePart || '12:00').split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute, 0)
 }
 
 
@@ -60,7 +62,7 @@ export default function JogoDetail() {
       <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="text-gray-500"><ArrowLeft size={24} /></button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">{format(parseDataJogo(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</h1>
+          <h1 className="text-xl font-bold text-white">{format(parseDataJogo(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}</h1>
           <p className="text-gray-500">{format(parseDataJogo(jogo.data_hora), 'HH:mm')} - {jogo.local || 'Local n?o definido'}</p>
         </div>
         {isAdmin && (
@@ -74,11 +76,11 @@ export default function JogoDetail() {
         <div className="card text-center py-3"><p className="text-2xl font-bold text-orange-500">{lista.total_pendentes}</p><p className="text-xs text-gray-500">Pendentes</p></div>
         <div className="card text-center py-3"><p className="text-2xl font-bold text-red-500">{lista.total_recusados}</p><p className="text-xs text-gray-500">Recusados</p></div>
       </div>
-      <div><h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Check className="text-green-600" size={20} />Confirmados ({lista.confirmados.length})</h2>
-        <div className="card divide-y">{lista.confirmados.length === 0 ? <p className="text-gray-500 text-center py-4">Nenhum confirmado ainda</p> : lista.confirmados.map((a) => <div key={a.atleta_id} className="py-3 flex items-center justify-between"><div><p className="font-medium">{a.apelido || a.nome}</p><p className="text-xs text-gray-500 capitalize">{a.posicao}</p></div><span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Confirmado</span></div>)}</div>
+      <div><h2 className="font-semibold text-white mb-3 flex items-center gap-2"><Check className="text-green-600" size={20} />Confirmados ({lista.confirmados.length})</h2>
+        <div className="card divide-y">{lista.confirmados.length === 0 ? <p className="text-gray-500 text-center py-4">Nenhum confirmado ainda</p> : lista.confirmados.map((a) => <div key={a.atleta_id} className="py-3 flex items-center justify-between"><div><p className="font-medium text-white">{a.apelido || a.nome}</p><p className="text-xs text-gray-500 capitalize">{a.posicao}</p></div><span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Confirmado</span></div>)}</div>
       </div>
       <div>
-        <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2"><Clock className="text-orange-500" size={20} />Pendentes ({lista.pendentes.length})</h2>
+        <h2 className="font-semibold text-white mb-3 flex items-center gap-2"><Clock className="text-orange-500" size={20} />Pendentes ({lista.pendentes.length})</h2>
         <div className="card divide-y">
           {lista.pendentes.length === 0 ? (
             <p className="text-gray-500 text-center py-4">Todos responderam</p>
@@ -86,7 +88,7 @@ export default function JogoDetail() {
             lista.pendentes.map((a) => (
               <div key={a.atleta_id} className="py-3 flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{a.apelido || a.nome}</p>
+                  <p className="font-medium text-white">{a.apelido || a.nome}</p>
                   <p className="text-xs text-gray-500 capitalize">{a.posicao}</p>
                 </div>
                 <div className="flex gap-2">

@@ -11,6 +11,7 @@ export default function NovoJogo() {
   const isAdmin = user?.role === 'admin'
   const [form, setForm] = useState({
     data_hora: '',
+    horario: '',
     local: '',
     endereco: '',
     valor_campo: '',
@@ -21,8 +22,11 @@ export default function NovoJogo() {
     e.preventDefault()
     setLoading(true)
     try {
-      const dataHoraCorrigida = form.data_hora ? `${form.data_hora}T12:00:00` : form.data_hora
-      const payload = { ...form, data_hora: dataHoraCorrigida, racha_id: Number(rachaId) }
+      const dataHoraCorrigida = form.data_hora && form.horario
+      ? `${form.data_hora}T${form.horario}:00`
+      : form.data_hora
+      const { horario, ...formSemHorario } = form
+      const payload = { ...formSemHorario, data_hora: dataHoraCorrigida, racha_id: Number(rachaId) }
       const response = await jogosApi.create(payload)
       navigate(`/racha/${rachaId}/jogos`)
     } catch (error) {
@@ -58,6 +62,10 @@ export default function NovoJogo() {
         <div>
           <label className="label">Data</label>
           <input type="date" name="data_hora" value={form.data_hora} onChange={handleChange} className="input" required />
+        </div>
+        <div>
+          <label htmlFor="" className="label">Horario</label>
+          <input type="time" name="horario" value={form.horario} onChange={handleChange} className="input" required />
         </div>
         <div>
           <label className="label">Local</label>

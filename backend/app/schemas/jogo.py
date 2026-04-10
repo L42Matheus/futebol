@@ -3,6 +3,30 @@ from typing import Optional
 from datetime import datetime, date, time
 
 
+def _parse_dt(value):
+    """Centraliza o parse de data/hora para reutilizar em JogoBase e JogoUpdate."""
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=None) 
+    if isinstance(value, date):
+        return datetime.combine(value, time.min)
+    if isinstance(value, str):
+        for fmt in (
+            "%Y-%m-%dT%H:%M:%S", 
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%d",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y %H:%M",
+            "%d/%m/%Y",
+        ):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+    return value
+
+
 class JogoBase(BaseModel):
     data_hora: datetime
     local: Optional[str] = Field(None, max_length=200)
@@ -13,18 +37,7 @@ class JogoBase(BaseModel):
     @field_validator("data_hora", mode="before")
     @classmethod
     def parse_data_hora(cls, value):
-        if isinstance(value, datetime):
-            return value
-        if isinstance(value, date):
-            return datetime.combine(value, time.min)
-        if isinstance(value, str):
-            for fmt in ("%d/%m/%Y", "%d/%m/%Y %H:%M", "%d/%m/%Y %H:%M:%S"):
-                try:
-                    parsed = datetime.strptime(value, fmt)
-                    return parsed
-                except ValueError:
-                    continue
-        return value
+        return _parse_dt(value)
 
 
 class JogoCreate(JogoBase):
@@ -45,18 +58,7 @@ class JogoUpdate(BaseModel):
     def parse_data_hora(cls, value):
         if value is None:
             return value
-        if isinstance(value, datetime):
-            return value
-        if isinstance(value, date):
-            return datetime.combine(value, time.min)
-        if isinstance(value, str):
-            for fmt in ("%d/%m/%Y", "%d/%m/%Y %H:%M", "%d/%m/%Y %H:%M:%S"):
-                try:
-                    parsed = datetime.strptime(value, fmt)
-                    return parsed
-                except ValueError:
-                    continue
-        return value
+        return _parse_dt(value)
 
 
 class JogoResponse(JogoBase):
