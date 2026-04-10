@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
 from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User
@@ -11,6 +11,8 @@ from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
 
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
+
+BRT = timezone(timedelta(hours=-3)) 
 
 
 @router.post("/", response_model=JogoResponse, status_code=status.HTTP_201_CREATED)
@@ -39,7 +41,8 @@ def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limi
     verificar_acesso_racha(db, current_user, racha_id)
     query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado == False)
     if apenas_futuros:
-        query = query.filter(Jogo.data_hora >= datetime.now())
+        agora_brt = datetime.now(BRT).replace(tzinfo=None) 
+        query = query.filter(Jogo.data_hora >= agora_brt)
     jogos = query.order_by(Jogo.data_hora).offset(skip).limit(limit).all()
     result = []
     for jogo in jogos:

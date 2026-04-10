@@ -33,10 +33,12 @@ export default function Jogos() {
     }
   }
 
-  function parseDataJogo(dataHora) {
-  const dateStr = String(dataHora).substring(0, 10) 
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day, 12, 0, 0) 
+function parseDataJogo(dataHora) {
+  const str = String(dataHora)
+  const [datePart, timePart] = str.includes('T') ? str.split('T') : str.split(' ')
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = (timePart || '12:00').split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute, 0)
 }
 
   async function handleExcluir(jogoId) {

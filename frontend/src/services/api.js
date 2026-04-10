@@ -20,17 +20,17 @@ if (storedToken) setAuthToken(storedToken)
 function formatDateBR(value) {
   if (!value) return value
   if (value instanceof Date && !isNaN(value)) {
-    const dd = String(value.getDate()).padStart(2, '0')
-    const mm = String(value.getMonth() + 1).padStart(2, '0')
     const yyyy = value.getFullYear()
-    return `${dd}/${mm}/${yyyy}`
+    const mm = String(value.getMonth() + 1).padStart(2, '0')
+    const dd = String(value.getDate()).padStart(2, '0')
+    const hh = String(value.getHours()).padStart(2, '0')
+    const min = String(value.getMinutes()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}:00`
   }
   if (typeof value === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) return value
     if (/^\d{2}\/\d{2}\/\d{4}/.test(value)) return value
-    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-      const [yyyy, mm, dd] = value.split('T')[0].split('-')
-      return `${dd}/${mm}/${yyyy}`
-    }
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) return `${value}T00:00:00`
   }
   return value
 }
@@ -144,4 +144,3 @@ export const profileApi = {
 }
 
 export default api
-
