@@ -98,6 +98,7 @@ export const pagamentosApi = {
 }
 
 export const billingApi = {
+  getConfig: () => api.get('/billing/config'),
   createAdminSubscriptionCheckout: () => api.post('/billing/admin-subscription/checkout'),
   syncAdminSubscription: (sessionId) => api.post('/billing/admin-subscription/sync', { session_id: sessionId }),
 }

@@ -1,8 +1,13 @@
 from pydantic import BaseModel
+from typing import Optional
+
+
+class BillingConfigResponse(BaseModel):
+    publishable_key: str
 
 
 class BillingCheckoutResponse(BaseModel):
-    checkout_url: str
+    client_secret: str
     session_id: str
 
 

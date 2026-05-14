@@ -24,9 +24,11 @@ class Settings(BaseSettings):
 
     # Stripe
     stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
-    stripe_admin_monthly_price_cents: int = 3000
+    stripe_admin_monthly_price_cents: int = 2900
     stripe_admin_monthly_currency: str = "brl"
+    stripe_trial_period_days: int = 7
 
     # Email (SMTP)
     smtp_host: str = ""

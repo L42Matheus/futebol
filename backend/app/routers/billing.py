@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.database import get_db
 from app.models import User
-from app.schemas.billing import BillingCheckoutResponse, BillingSyncRequest
+from app.schemas.billing import BillingCheckoutResponse, BillingConfigResponse, BillingSyncRequest
 from app.schemas.user import UserResponse
 from app.services.auth import get_current_user
 from app.services.stripe_billing import (
@@ -16,6 +16,12 @@ from app.services.stripe_billing import (
 )
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
+
+
+@router.get("/config", response_model=BillingConfigResponse)
+def get_billing_config():
+    settings = get_settings()
+    return BillingConfigResponse(publishable_key=settings.stripe_publishable_key)
 
 
 def _find_user_for_subscription(db: Session, subscription) -> User | None:
@@ -53,15 +59,16 @@ def create_admin_subscription_checkout(
 
     checkout_payload = {
         "mode": "subscription",
-        "success_url": (
+        "ui_mode": "embedded_page",
+        "return_url": (
             f"{settings.frontend_url}/admin-assinatura"
             "?checkout=success&session_id={CHECKOUT_SESSION_ID}"
         ),
-        "cancel_url": f"{settings.frontend_url}/admin-assinatura?checkout=canceled",
         "client_reference_id": str(current_user.id),
         "metadata": {"user_id": str(current_user.id), "billing_scope": "admin_access"},
         "subscription_data": {
             "metadata": {"user_id": str(current_user.id), "billing_scope": "admin_access"},
+            "trial_period_days": settings.stripe_trial_period_days,
         },
         "line_items": [
             {
@@ -71,8 +78,8 @@ def create_admin_subscription_checkout(
                     "unit_amount": settings.stripe_admin_monthly_price_cents,
                     "recurring": {"interval": "month"},
                     "product_data": {
-                        "name": "Acesso administrativo QuemJoga",
-                        "description": "Mensalidade para liberar acesso administrativo",
+                        "name": "QuemJoga Pro",
+                        "description": "Gestão completa de rachas com trial de 7 dias grátis",
                     },
                 },
             }
@@ -90,7 +97,7 @@ def create_admin_subscription_checkout(
         db.commit()
 
     return BillingCheckoutResponse(
-        checkout_url=checkout_session.url,
+        client_secret=checkout_session.client_secret,
         session_id=checkout_session.id,
     )
 
@@ -105,7 +112,7 @@ def sync_admin_subscription(
     stripe = get_stripe_module()
 
     session = stripe.checkout.Session.retrieve(payload.session_id)
-    metadata = getattr(session, "metadata", {}) or {}
+    metadata = session.metadata.to_dict() if hasattr(session.metadata, "to_dict") else (session.metadata or {})
     session_user_id = metadata.get("user_id") or getattr(session, "client_reference_id", None)
 
     if str(session_user_id) != str(current_user.id):
