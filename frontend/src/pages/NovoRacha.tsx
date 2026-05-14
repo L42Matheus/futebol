@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, Dribbble } from 'lucide-react'
 import { rachasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -134,22 +135,86 @@ export default function NovoRacha() {
           </button>
         </form>
       ) : (
-        <div className="card space-y-4">
-          <h2 className="text-lg font-semibold text-white">Racha criado com sucesso!</h2>
-          <p className="text-gray-400">
-            Compartilhe os links abaixo para que atletas e administradores criem a conta.
-          </p>
-          <FormField label="Link para Atletas">
-            <Input readOnly value={inviteLinks.atleta} onFocus={(e) => e.currentTarget.select()} />
-          </FormField>
-          <FormField label="Link para Administradores">
-            <Input readOnly value={inviteLinks.admin} onFocus={(e) => e.currentTarget.select()} />
-          </FormField>
+        <div className="space-y-6">
+          {/* Header de Sucesso */}
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <CheckCircle className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Racha criado!</h2>
+            <p className="text-gray-400">
+              Compartilhe os convites para sua galera entrar.
+            </p>
+          </div>
+
+          {/* Cards de Convite */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Card Atleta */}
+            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/40">
+              {/* Imagem/Gradiente de fundo */}
+              <div className="h-36 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
+                <Dribbble className="w-20 h-20 text-white/90" strokeWidth={1.5} />
+              </div>
+
+              {/* Conteúdo */}
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="w-5 h-5 text-emerald-400" />
+                  <h3 className="font-bold text-white text-lg">Atletas</h3>
+                </div>
+                <p className="text-sm text-gray-400 mb-4">Para quem vai jogar no racha</p>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteLinks.atleta)
+                    toast('Link de atleta copiado!', 'success')
+                  }}
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy size={18} />
+                  Copiar Link
+                </button>
+              </div>
+            </div>
+
+            {/* Card Admin */}
+            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/40">
+              {/* Imagem/Gradiente de fundo */}
+              <div className="h-36 bg-gradient-to-br from-amber-600 via-orange-500 to-yellow-400 flex items-center justify-center relative">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
+                <ClipboardList className="w-20 h-20 text-white/90" strokeWidth={1.5} />
+              </div>
+
+              {/* Conteúdo */}
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <ClipboardList className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-bold text-white text-lg">Administradores</h3>
+                </div>
+                <p className="text-sm text-gray-400 mb-4">Para quem organiza o racha</p>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteLinks.admin)
+                    toast('Link de admin copiado!', 'success')
+                  }}
+                  className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy size={18} />
+                  Copiar Link
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Botão Ir para Racha */}
           <button
-            className="btn-primary w-full"
+            className="btn-primary w-full flex items-center justify-center gap-2 py-4"
             onClick={() => createdRachaId && navigate(`/racha/${createdRachaId}`)}
           >
             Ir para o Racha
+            <ArrowRight size={20} />
           </button>
         </div>
       )}

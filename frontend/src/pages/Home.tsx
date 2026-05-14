@@ -92,9 +92,6 @@ function parseDataJogo(dataHora) {
       <div className="space-y-3">
         <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">Meus Rachas</p>
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
-          {rachas.length === 0 && (
-            <div className="text-gray-500 text-sm">Nenhum racha cadastrado</div>
-          )}
           {rachas.map((r, idx) => (
             <div key={r.id} className="relative flex-shrink-0 group">
               <button
@@ -123,6 +120,13 @@ function parseDataJogo(dataHora) {
           ))}
         </div>
       </div>
+
+      {/* Estado vazio - Nenhum racha */}
+      {rachas.length === 0 && (
+        <div className="text-gray-500 text-sm text-center py-8">
+          Nenhum racha cadastrado
+        </div>
+      )}
 
       {currentRacha && (
         <>

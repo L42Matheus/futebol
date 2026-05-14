@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { LogOut, ChevronLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -17,11 +18,12 @@ const TITLES: Array<{ test: RegExp; title: string }> = [
 ]
 
 interface LayoutProps {
+  children?: ReactNode
   title?: string
   showBack?: boolean
 }
 
-export default function Layout({ title, showBack }: LayoutProps) {
+export default function Layout({ children, title, showBack }: LayoutProps) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -51,11 +53,11 @@ export default function Layout({ title, showBack }: LayoutProps) {
         </div>
 
         <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter(item => !item.isFab).map((item) => {
             if (item.adminOnly && user?.role !== 'admin') return null
             if (item.athleteOnly && user?.role !== 'atleta') return null
-            if (item.isFab) return null
             const active = location.pathname === item.path
+
             return (
               <Link
                 key={item.path}
@@ -71,6 +73,17 @@ export default function Layout({ title, showBack }: LayoutProps) {
               </Link>
             )
           })}
+
+          {/* Botão Criar Racha - apenas para admins */}
+          {user?.role === 'admin' && (
+            <Link
+              to="/novo"
+              className="flex items-center gap-3 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors mt-4"
+            >
+              {NAV_ITEMS.find(item => item.isFab)?.icon}
+              Criar Racha
+            </Link>
+          )}
         </nav>
 
         <div className="space-y-1 pt-4 border-t border-gray-800">
@@ -106,7 +119,7 @@ export default function Layout({ title, showBack }: LayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 max-w-5xl mx-auto w-full p-6">
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
 
       {/* Bottom Navigation Mobile */}

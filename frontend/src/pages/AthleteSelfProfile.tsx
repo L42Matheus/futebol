@@ -74,8 +74,16 @@ export default function AthleteSelfProfile() {
 
   if (!profile) {
     return (
-      <Layout>
-        <div className="text-gray-400">Atleta nao encontrado</div>
+      <Layout title="Meu Perfil" showBack={false}>
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <p className="text-gray-400 mb-4">Carregando perfil...</p>
+          <button
+            onClick={() => navigate('/perfil-basico')}
+            className="text-emerald-500 hover:underline"
+          >
+            Editar perfil
+          </button>
+        </div>
       </Layout>
     )
   }
