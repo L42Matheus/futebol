@@ -13,6 +13,11 @@ export default function PrivateRoute() {
   const [checkedRachas, setCheckedRachas] = useState(false)
   const [hasRacha, setHasRacha] = useState(true)
   const isAdminSubscriptionRoute = location.pathname === '/admin-assinatura'
+  const canAccessWithoutBilling = [
+    '/admin-assinatura',
+    '/perfil-atleta',
+    '/perfil-basico',
+  ].includes(location.pathname)
 
   useEffect(() => {
     async function checkRachas() {
@@ -61,7 +66,7 @@ export default function PrivateRoute() {
     return <Navigate to="/perfil-atleta" replace />
   }
 
-  if (user?.role === 'admin' && user.admin_billing_active === false && !isAdminSubscriptionRoute) {
+  if (user?.role === 'admin' && user.admin_billing_active === false && !canAccessWithoutBilling) {
     return <Navigate to="/admin-assinatura" state={{ from: location }} replace />
   }
 
