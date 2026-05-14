@@ -9,6 +9,12 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Jogo, JogoLista } from '../types'
 
+function parseGameDate(dataHora: string) {
+  const dateStr = String(dataHora).substring(0, 10)
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0)
+}
+
 export default function JogoDetail() {
   const { jogoId } = useParams<{ jogoId: string }>()
   const navigate = useNavigate()
@@ -85,11 +91,10 @@ export default function JogoDetail() {
       <div className="flex items-center gap-4">
         <div className="flex-1">
           <h1 className="text-xl font-bold text-white">
-            {format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
+            {format(parseGameDate(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
           </h1>
           <p className="text-gray-400">
-            {format(new Date(jogo.data_hora), 'HH:mm')} —{' '}
-            {jogo.local ?? 'Local não definido'}
+            {format(parseGameDate(jogo.data_hora), 'HH:mm')} - {jogo.local ?? 'Local não definido'}
           </p>
         </div>
         {isAdmin && (
@@ -118,7 +123,6 @@ export default function JogoDetail() {
         </div>
       </div>
 
-      {/* Confirmados */}
       <div>
         <h2 className="font-semibold text-white mb-3 flex items-center gap-2">
           <Check className="text-emerald-500" size={20} />
@@ -140,7 +144,6 @@ export default function JogoDetail() {
         </div>
       </div>
 
-      {/* Pendentes */}
       <div>
         <h2 className="font-semibold text-white mb-3 flex items-center gap-2">
           <Clock className="text-amber-400" size={20} />

@@ -9,6 +9,12 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Racha, Jogo } from '../types'
 
+function parseGameDate(dataHora: string) {
+  const dateStr = String(dataHora).substring(0, 10)
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0)
+}
+
 export default function Jogos() {
   const { rachaId } = useParams<{ rachaId: string }>()
   const [racha, setRacha] = useState<Racha | null>(null)
@@ -100,10 +106,10 @@ export default function Jogos() {
             <div key={jogo.id} className="card flex items-center justify-between">
               <Link to={`/racha/${rachaId}/jogo/${jogo.id}`} className="flex-1">
                 <p className="font-medium text-white">
-                  {format(new Date(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                  {format(parseGameDate(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
                 </p>
                 <p className="text-sm text-gray-400">
-                  {format(new Date(jogo.data_hora), 'HH:mm')} —{' '}
+                  {format(parseGameDate(jogo.data_hora), 'HH:mm')} -{' '}
                   {jogo.local ?? 'Local não definido'}
                 </p>
                 <p className="text-sm text-emerald-400 font-medium mt-1">

@@ -34,7 +34,8 @@ export default function NovoJogo() {
     if (!rachaId) return
     setLoading(true)
     try {
-      const payload = { ...form, racha_id: Number(rachaId) }
+      const dataHoraCorrigida = form.data_hora ? `${form.data_hora}T12:00:00` : form.data_hora
+      const payload = { ...form, data_hora: dataHoraCorrigida, racha_id: Number(rachaId) }
       await jogosApi.create(payload)
       navigate(`/racha/${rachaId}/jogos`)
     } catch (error) {
@@ -81,7 +82,7 @@ export default function NovoJogo() {
         <FormField label="Endereço">
           <Input type="text" name="endereco" value={form.endereco} onChange={handleChange} placeholder="Ex: Campina Grande PB" />
         </FormField>
-        <FormField label="Valor do Campo (R$) — opcional">
+        <FormField label="Valor do Campo (R$) - opcional">
           <Input
             type="number"
             name="valor_campo"

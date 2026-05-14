@@ -10,6 +10,12 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Racha, Jogo, Saldo } from '../types'
 
+function parseGameDate(dataHora: string) {
+  const dateStr = String(dataHora).substring(0, 10)
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 12, 0, 0)
+}
+
 export default function Home() {
   const [rachas, setRachas] = useState<Racha[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,6 +48,7 @@ export default function Home() {
     const current = rachas[selectedIndex]
     if (!current) return
     let cancelled = false
+
     async function loadExtras() {
       try {
         const [jogosRes, saldoRes] = await Promise.all([
@@ -52,13 +59,19 @@ export default function Home() {
           setNextGame(jogosRes.data?.[0] ?? null)
           setSaldo(saldoRes.data ?? null)
         }
-      } catch (e) {
-        console.error(e)
-        if (!cancelled) { setNextGame(null); setSaldo(null) }
+      } catch (error) {
+        console.error(error)
+        if (!cancelled) {
+          setNextGame(null)
+          setSaldo(null)
+        }
       }
     }
+
     loadExtras()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [rachas, selectedIndex])
 
   async function handleDeleteConfirm() {
@@ -87,7 +100,6 @@ export default function Home() {
 
   return (
     <div className="space-y-8">
-      {/* Lista de rachas */}
       <div className="space-y-3">
         <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">
           Meus Rachas
@@ -161,7 +173,7 @@ export default function Home() {
               <div>
                 <p className="text-xl font-black text-white">
                   {nextGame
-                    ? format(new Date(nextGame.data_hora), 'EEE, HH:mm', { locale: ptBR })
+                    ? format(parseGameDate(nextGame.data_hora), 'EEE, HH:mm', { locale: ptBR })
                     : 'Sem jogos'}
                 </p>
                 <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
