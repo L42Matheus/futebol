@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     reset_password_expire_minutes: int = 30
 
+    # Stripe
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_admin_monthly_price_cents: int = 2900
+    stripe_admin_monthly_currency: str = "brl"
+    stripe_trial_period_days: int = 7
+
     # Email (SMTP)
     smtp_host: str = ""
     smtp_port: int = 587

@@ -14,6 +14,14 @@ function generateSessionId() {
 let userCache = null
 let userCacheTime = 0
 
+function canUseCachedUser(user) {
+  if (!user) return false
+  if (user.role === 'admin' && typeof user.admin_billing_active !== 'boolean') {
+    return false
+  }
+  return true
+}
+
 const authService = {
   async login(identificador, senha) {
     const response = await authApi.login({ identificador, senha })
@@ -87,7 +95,11 @@ const authService = {
 
   async getCurrentUser(forceRefresh = false) {
     // Tenta usar cache em memÃ³ria primeiro
-    if (!forceRefresh && userCache && Date.now() - userCacheTime < CACHE_DURATION) {
+    if (
+      !forceRefresh &&
+      canUseCachedUser(userCache) &&
+      Date.now() - userCacheTime < CACHE_DURATION
+    ) {
       return userCache
     }
 
@@ -96,7 +108,7 @@ const authService = {
       const cached = localStorage.getItem(USER_CACHE_KEY)
       if (cached) {
         const { user, timestamp } = JSON.parse(cached)
-        if (Date.now() - timestamp < CACHE_DURATION) {
+        if (canUseCachedUser(user) && Date.now() - timestamp < CACHE_DURATION) {
           userCache = user
           userCacheTime = timestamp
           return user
