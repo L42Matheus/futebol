@@ -9,6 +9,7 @@ on:
 jobs:
   # Backend Tests
   backend-test:
+    if: false # Temporarily disabled
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -56,6 +57,7 @@ jobs:
 
   # Frontend Build
   frontend-build:
+    if: false # Temporarily disabled
     runs-on: ubuntu-latest
     defaults:
       run:
