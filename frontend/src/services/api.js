@@ -97,6 +97,11 @@ export const pagamentosApi = {
   gerarMensalidade: (rachaId, referencia) => api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`),
 }
 
+export const billingApi = {
+  createAdminSubscriptionCheckout: () => api.post('/billing/admin-subscription/checkout'),
+  syncAdminSubscription: (sessionId) => api.post('/billing/admin-subscription/sync', { session_id: sessionId }),
+}
+
 export const teamsApi = {
   list: (rachaId) => api.get(`/teams/?racha_id=${rachaId}`),
   get: (teamId) => api.get(`/teams/${teamId}`),
