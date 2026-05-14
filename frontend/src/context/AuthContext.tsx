@@ -106,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async (): Promise<User> => {
     const currentUser = await authService.getCurrentUser(true)
     setUser(currentUser)
+    setIsAuthenticated(true)
+    setSessionId(authService.getSessionId())
     return currentUser
   }, [])
 

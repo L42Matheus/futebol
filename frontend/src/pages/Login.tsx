@@ -12,7 +12,8 @@ export default function Login() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('invite') || ''
-  const { login, isAuthenticated, loading: authLoading } = useAuth()
+  const fromRole = searchParams.get('fromRole') || 'atleta'
+  const { login, refreshUser, isAuthenticated, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ identificador: '', senha: '' })
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -65,8 +66,16 @@ export default function Login() {
     try {
       const redirectUri = `${window.location.origin}/login`
       const pendingInvite = localStorage.getItem('pending_invite_token')
-      await authService.loginWithGoogle(code, redirectUri, pendingInvite || undefined)
+      const pendingRole = localStorage.getItem('pending_login_role') || fromRole
+      await authService.loginWithGoogle(
+        code,
+        redirectUri,
+        pendingInvite || undefined,
+        pendingRole,
+      )
+      await refreshUser()
       localStorage.removeItem('pending_invite_token')
+      localStorage.removeItem('pending_login_role')
 
       const redirectTo =
         localStorage.getItem('login_redirect') ||
@@ -90,6 +99,7 @@ export default function Login() {
       if (inviteToken) {
         localStorage.setItem('pending_invite_token', inviteToken)
       }
+      localStorage.setItem('pending_login_role', fromRole)
       if ((location.state as any)?.from?.pathname) {
         localStorage.setItem('login_redirect', (location.state as any).from.pathname)
       }
@@ -213,7 +223,14 @@ export default function Login() {
 
           <p className="text-sm text-gray-500 text-center pt-2">
             Nao tem conta?{' '}
-            <Link className="text-emerald-500 font-medium hover:underline" to={inviteToken ? `/register?invite=${inviteToken}` : '/register'}>
+            <Link
+              className="text-emerald-500 font-medium hover:underline"
+              to={
+                inviteToken
+                  ? `/register?invite=${inviteToken}`
+                  : `/register?fromRole=${fromRole}`
+              }
+            >
               Cadastre-se
             </Link>
           </p>

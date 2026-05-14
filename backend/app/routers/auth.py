@@ -185,7 +185,7 @@ async def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db))
             nome=google_user.get("name", email.split("@")[0]),
             email=email,
             senha_hash=hash_password(uuid.uuid4().hex),
-            role=UserRole.ATLETA,
+            role=payload.role,
             ativo=True,
         )
         db.add(user)

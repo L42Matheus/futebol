@@ -67,8 +67,8 @@ const authService = {
     return response.data
   },
 
-  async loginWithGoogle(code, redirectUri, inviteToken = null) {
-    const payload = { code, redirect_uri: redirectUri }
+  async loginWithGoogle(code, redirectUri, inviteToken = null, role = 'atleta') {
+    const payload = { code, redirect_uri: redirectUri, role }
     if (inviteToken) payload.invite_token = inviteToken
     const response = await authApi.googleAuth(payload)
     const token = response.data.access_token

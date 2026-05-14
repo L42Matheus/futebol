@@ -53,6 +53,7 @@ class GoogleAuthRequest(BaseModel):
     code: str
     redirect_uri: str
     invite_token: Optional[str] = None
+    role: UserRole = UserRole.ATLETA
 
 
 class ForgotPasswordRequest(BaseModel):
