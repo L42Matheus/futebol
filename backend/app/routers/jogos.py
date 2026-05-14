@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
 from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User
@@ -11,6 +11,8 @@ from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha
 
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
+
+BRT = timezone(timedelta(hours=-3)) 
 
 
 @router.post("/", response_model=JogoResponse, status_code=status.HTTP_201_CREATED)
@@ -39,7 +41,8 @@ def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limi
     verificar_acesso_racha(db, current_user, racha_id)
     query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado.is_(False))
     if apenas_futuros:
-        query = query.filter(Jogo.data_hora >= datetime.utcnow())
+        agora_brt = datetime.now(BRT).replace(tzinfo=None)
+        query = query.filter(Jogo.data_hora >= agora_brt)
     jogos = query.order_by(Jogo.data_hora).offset(skip).limit(limit).all()
     jogo_ids = [j.id for j in jogos]
 
@@ -105,7 +108,7 @@ def obter_lista_presenca(jogo_id: int, db: Session = Depends(get_db), current_us
     presencas = db.query(Presenca, Atleta).join(Atleta).filter(Presenca.jogo_id == jogo_id).all()
     confirmados, pendentes, recusados = [], [], []
     for presenca, atleta in presencas:
-        item = {"atleta_id": atleta.id, "nome": atleta.nome, "apelido": atleta.apelido,
+        item = {"atleta_id": atleta.id, "user_id": atleta.user_id, "nome": atleta.nome, "apelido": atleta.apelido,
                 "posicao": atleta.posicao.value, "status": presenca.status.value}
         if presenca.status == StatusPresenca.CONFIRMADO:
             confirmados.append(item)

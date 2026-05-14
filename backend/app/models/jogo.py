@@ -9,15 +9,15 @@ class Jogo(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     racha_id = Column(Integer, ForeignKey("rachas.id"), nullable=False)
-    data_hora = Column(DateTime(timezone=True), nullable=False)
+    data_hora = Column(DateTime(timezone=False), nullable=False)
     local = Column(String(200), nullable=True)
     endereco = Column(String(300), nullable=True)
     valor_campo = Column(Integer, default=0)
     observacoes = Column(Text, nullable=True)
     finalizado = Column(Boolean, default=False)
     cancelado = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=False), server_default=func.now())  
+    updated_at = Column(DateTime(timezone=False), onupdate=func.now())  
 
     racha = relationship("Racha", back_populates="jogos")
     presencas = relationship("Presenca", back_populates="jogo", cascade="all, delete-orphan")

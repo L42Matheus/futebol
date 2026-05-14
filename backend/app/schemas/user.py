@@ -33,6 +33,10 @@ class UserResponse(UserBase):
     id: int
     ativo: bool
     role: UserRole
+    admin_billing_active: bool
+    admin_subscription_status: Optional[str] = None
+    admin_subscription_started_at: Optional[datetime] = None
+    admin_subscription_current_period_end: Optional[datetime] = None
     created_at: datetime
 
     class Config:
