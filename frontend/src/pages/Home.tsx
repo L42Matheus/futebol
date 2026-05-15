@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, AlertCircle, Layout as LayoutIcon, Users, Trash2 } from 'lucide-react'
+import { Calendar, AlertCircle, Layout as LayoutIcon, Users, Trash2, Plus } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { TIPO_RACHA_LABELS } from '../constants'
@@ -118,6 +118,15 @@ function parseDataJogo(dataHora) {
               )}
             </div>
           ))}
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/novo')}
+              className="flex-shrink-0 px-6 py-4 rounded-3xl border-2 border-dashed border-gray-700 hover:border-emerald-500 hover:bg-emerald-500/5 transition-all flex flex-col items-center justify-center min-w-[100px] min-h-[76px] group"
+            >
+              <Plus size={24} className="text-gray-600 group-hover:text-emerald-500 transition-colors" />
+              <span className="text-xs font-bold text-gray-600 group-hover:text-emerald-500 transition-colors mt-1">Novo</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -130,25 +139,6 @@ function parseDataJogo(dataHora) {
 
       {currentRacha && (
         <>
-          <ul className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {[
-              { label: 'Jogos', path: `/racha/${currentRacha.id}/jogos` },
-              { label: 'Atletas', path: `/racha/${currentRacha.id}/atletas` },
-              { label: 'Times', path: `/racha/${currentRacha.id}/times` },
-              { label: 'Escalação', path: `/racha/${currentRacha.id}/escalacao` },
-              { label: 'Financeiro', path: `/racha/${currentRacha.id}/financeiro` },
-            ].map((item) => (
-              <li key={item.label}>
-                <button
-                  onClick={() => navigate(item.path)}
-                  className="px-4 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors whitespace-nowrap"
-                >
-                  {item.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}

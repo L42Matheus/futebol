@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { LogOut, ChevronLeft } from 'lucide-react'
+import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
@@ -41,10 +41,22 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   // Avatar uses user data directly from AuthContext — no extra API call needed.
   const avatarName = user?.nome ?? user?.email ?? 'Perfil'
 
+  // Extrair rachaId da URL para nav contextual
+  const rachaMatch = location.pathname.match(/\/racha\/(\d+)/)
+  const rachaId = rachaMatch ? rachaMatch[1] : null
+
+  const RACHA_NAV_ITEMS = rachaId ? [
+    { path: `/racha/${rachaId}/jogos`, label: 'Jogos', icon: <Calendar size={18} /> },
+    { path: `/racha/${rachaId}/atletas`, label: 'Atletas', icon: <Users size={18} /> },
+    { path: `/racha/${rachaId}/times`, label: 'Times', icon: <Layers size={18} /> },
+    { path: `/racha/${rachaId}/escalacao`, label: 'Escalação', icon: <LayoutGrid size={18} /> },
+    { path: `/racha/${rachaId}/financeiro`, label: 'Financeiro', icon: <DollarSign size={18} /> },
+  ] : []
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0f1a] pb-24 md:pb-0 md:pl-72">
+    <div className="min-h-screen flex flex-col bg-[#0b0f1a] pb-24 md:pb-0 md:pl-64">
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-72 bg-[#0b0f1a] border-r border-gray-800 flex-col p-6 z-40">
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-[#0b0f1a] border-r border-gray-800 flex-col p-5 z-40">
         <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">
             QJ
@@ -52,7 +64,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           <span className="text-xl font-bold text-white">QuemJoga</span>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto">
           {NAV_ITEMS.filter(item => !item.isFab).map((item) => {
             if (item.adminOnly && user?.role !== 'admin') return null
             if (item.athleteOnly && user?.role !== 'atleta') return null
@@ -74,6 +86,30 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
             )
           })}
 
+          {/* Nav contextual do racha */}
+          {rachaId && (
+            <div className="mt-6 pt-4 border-t border-gray-800">
+              <p className="px-4 mb-2 text-[10px] uppercase font-black text-gray-600 tracking-widest">Este Racha</p>
+              {RACHA_NAV_ITEMS.map((item) => {
+                const active = location.pathname === item.path
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors ${
+                      active
+                        ? 'bg-emerald-500/10 text-emerald-500 font-semibold'
+                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    }`}
+                  >
+                    {item.icon}
+                    <span className="text-sm">{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
           {/* Botão Criar Racha - apenas para admins */}
           {user?.role === 'admin' && (
             <Link
@@ -86,14 +122,36 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           )}
         </nav>
 
-        <div className="space-y-1 pt-4 border-t border-gray-800">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"
-          >
-            <LogOut size={20} />
-            Sair
-          </button>
+        {/* Usuário logado */}
+        <div className="pt-4 border-t border-gray-800">
+          <div className="flex items-center gap-3 px-2 py-3">
+            <Avatar
+              src={undefined}
+              name={avatarName}
+              size="md"
+              className="border-2 border-gray-700"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{user?.nome || 'Usuário'}</p>
+              <p className="text-xs text-gray-500 capitalize">{user?.role === 'admin' ? 'Administrador' : 'Atleta'}</p>
+            </div>
+          </div>
+          <div className="flex gap-1 mt-2">
+            <Link
+              to="/perfil-atleta"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <Settings size={14} />
+              Perfil
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <LogOut size={14} />
+              Sair
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -123,39 +181,49 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
       </main>
 
       {/* Bottom Navigation Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b0f1a]/95 backdrop-blur-xl border-t border-gray-800 px-8 h-20 flex items-center justify-between z-50">
-        {NAV_ITEMS.map((item) => {
-          if (item.adminOnly && user?.role !== 'admin') return null
-          if (item.athleteOnly && user?.role !== 'atleta') return null
-          const active = location.pathname === item.path
+      {(() => {
+        const isAdmin = user?.role === 'admin'
+        const filteredItems = NAV_ITEMS.filter(item => {
+          if (item.adminOnly && !isAdmin) return false
+          if (item.athleteOnly && user?.role !== 'atleta') return false
+          if (item.isFab && !isAdmin) return false
+          return true
+        })
 
-          if (item.isFab) {
-            return (
-              <div key={item.path} className="relative -top-6">
+        return (
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b0f1a]/95 backdrop-blur-xl border-t border-gray-800 px-6 h-20 flex items-center justify-around z-50">
+            {filteredItems.map((item) => {
+              const active = location.pathname === item.path
+
+              if (item.isFab) {
+                return (
+                  <div key={item.path} className="relative -top-6">
+                    <Link
+                      to={item.path}
+                      className="w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/40 border-4 border-[#0b0f1a] active:scale-95 transition-transform"
+                    >
+                      {item.icon}
+                    </Link>
+                  </div>
+                )
+              }
+
+              return (
                 <Link
+                  key={item.path}
                   to={item.path}
-                  className="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/40 border-4 border-[#0b0f1a] active:scale-95 transition-transform"
+                  className={`flex flex-col items-center gap-1 transition-colors ${
+                    active ? 'text-emerald-500' : 'text-gray-500'
+                  }`}
                 >
                   {item.icon}
+                  <span className="text-[10px] font-bold">{item.label}</span>
                 </Link>
-              </div>
-            )
-          }
-
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center gap-1 transition-colors ${
-                active ? 'text-emerald-500' : 'text-gray-500'
-              }`}
-            >
-              {item.icon}
-              <span className="text-[10px] font-bold">{item.label}</span>
-            </Link>
-          )
-        })}
-      </nav>
+              )
+            })}
+          </nav>
+        )
+      })()}
     </div>
   )
 }
