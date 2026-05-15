@@ -6,6 +6,7 @@ import { authApi } from '../services/api'
 import authService from '../services/auth'
 import FormField from '../components/FormField'
 import { Input } from '../components/Input'
+import { RoleConflictScreen, AthleteNotAdminScreen } from '../components/errors'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -13,18 +14,23 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('invite') || ''
   const fromRole = searchParams.get('fromRole') || 'atleta'
-  const { login, refreshUser, isAuthenticated, loading: authLoading } = useAuth()
+  const { login, logout, refreshUser, isAuthenticated, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ identificador: '', senha: '' })
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+  const [roleConflict, setRoleConflict] = useState(false)
+  const [athleteNotAdmin, setAthleteNotAdmin] = useState(false)
+  const [processingCallback, setProcessingCallback] = useState(false)
 
   useEffect(() => {
+    // Não redirecionar automaticamente se estamos processando o callback do Google
+    if (processingCallback) return
     if (!authLoading && isAuthenticated) {
       const redirectTo = (location.state as any)?.from?.pathname || '/'
       navigate(redirectTo, { replace: true })
     }
-  }, [isAuthenticated, authLoading, navigate, location.state])
+  }, [isAuthenticated, authLoading, navigate, location.state, processingCallback])
 
   useEffect(() => {
     const code = searchParams.get('code')
@@ -63,6 +69,7 @@ export default function Login() {
   async function handleGoogleCallback(code: string) {
     setError('')
     setGoogleLoading(true)
+    setProcessingCallback(true)
     try {
       const redirectUri = `${window.location.origin}/login`
       const pendingInvite = localStorage.getItem('pending_invite_token')
@@ -73,9 +80,23 @@ export default function Login() {
         pendingInvite || undefined,
         pendingRole,
       )
-      await refreshUser()
+      const currentUser = await refreshUser()
       localStorage.removeItem('pending_invite_token')
       localStorage.removeItem('pending_login_role')
+
+      // Verifica se o role do usuário é diferente do escolhido
+      if (pendingRole === 'atleta' && currentUser?.role === 'admin') {
+        setRoleConflict(true)
+        setGoogleLoading(false)
+        return
+      }
+
+      // Verifica se atleta tentou logar como admin
+      if (pendingRole === 'admin' && currentUser?.role === 'atleta') {
+        setAthleteNotAdmin(true)
+        setGoogleLoading(false)
+        return
+      }
 
       const redirectTo =
         localStorage.getItem('login_redirect') ||
@@ -83,9 +104,11 @@ export default function Login() {
         '/'
       localStorage.removeItem('login_redirect')
 
+      setProcessingCallback(false)
       navigate(redirectTo, { replace: true })
     } catch (err) {
       setError('Falha no login com Google. Tente novamente.')
+      setProcessingCallback(false)
       navigate('/login', { replace: true })
     } finally {
       setGoogleLoading(false)
@@ -121,6 +144,42 @@ export default function Login() {
           <p className="mt-4 text-gray-300">Conectando com Google...</p>
         </div>
       </div>
+    )
+  }
+
+  if (roleConflict) {
+    return (
+      <RoleConflictScreen
+        onContinueAsAdmin={() => {
+          setRoleConflict(false)
+          setProcessingCallback(false)
+          navigate('/', { replace: true })
+        }}
+        onUseOtherEmail={() => {
+          setRoleConflict(false)
+          setProcessingCallback(false)
+          logout()
+          navigate('/perfil', { replace: true })
+        }}
+      />
+    )
+  }
+
+  if (athleteNotAdmin) {
+    return (
+      <AthleteNotAdminScreen
+        onContinueAsAthlete={() => {
+          setAthleteNotAdmin(false)
+          setProcessingCallback(false)
+          navigate('/', { replace: true })
+        }}
+        onUseOtherEmail={() => {
+          setAthleteNotAdmin(false)
+          setProcessingCallback(false)
+          logout()
+          navigate('/perfil', { replace: true })
+        }}
+      />
     )
   }
 
