@@ -88,7 +88,7 @@ function parseDataJogo(dataHora) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 overflow-x-hidden">
       <div className="space-y-3">
         <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">Meus Rachas</p>
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -132,8 +132,25 @@ function parseDataJogo(dataHora) {
 
       {/* Estado vazio - Nenhum racha */}
       {rachas.length === 0 && (
-        <div className="text-gray-500 text-sm text-center py-8">
-          Nenhum racha cadastrado
+        <div className="flex flex-col items-center justify-center py-16 px-6">
+          <div className="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-6">
+            <Users size={40} className="text-gray-600" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Nenhum racha ainda</h3>
+          <p className="text-gray-500 text-sm text-center mb-6 max-w-xs">
+            {isAdmin
+              ? 'Crie seu primeiro racha para começar a organizar seus jogos e atletas.'
+              : 'Você ainda não participa de nenhum racha. Peça para um admin te adicionar.'}
+          </p>
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/novo')}
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-2xl transition-colors"
+            >
+              <Plus size={20} />
+              Criar Primeiro Racha
+            </button>
+          )}
         </div>
       )}
 
@@ -155,9 +172,11 @@ function parseDataJogo(dataHora) {
               </div>
             </button>
 
-            <button
+            <div
               onClick={() => isAdmin && navigate(`/racha/${currentRacha.id}/financeiro`)}
-              className="bg-gray-900/40 border border-gray-800 p-5 rounded-[2.5rem] flex flex-col justify-between aspect-square group hover:border-emerald-500/50 transition-all"
+              className={`bg-gray-900/40 border border-gray-800 p-5 rounded-[2.5rem] flex flex-col justify-between aspect-square ${
+                isAdmin ? 'cursor-pointer group hover:border-emerald-500/50 transition-all' : ''
+              }`}
             >
               <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
                 <AlertCircle size={24} />
@@ -166,7 +185,7 @@ function parseDataJogo(dataHora) {
                 <p className="text-xl font-black text-white">{saldo?.pendente_formatado || 'R$ 0,00'}</p>
                 <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Pendentes</p>
               </div>
-            </button>
+            </div>
 
             <button
               onClick={() => navigate(`/racha/${currentRacha.id}/escalacao`)}
