@@ -7,7 +7,7 @@ class BillingConfigResponse(BaseModel):
 
 
 class BillingCheckoutResponse(BaseModel):
-    client_secret: str
+    url: str
     session_id: str
 
 

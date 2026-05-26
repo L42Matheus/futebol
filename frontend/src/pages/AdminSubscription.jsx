@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { loadStripe } from '@stripe/stripe-js'
-import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import { AlertCircle, CheckCircle2, Trophy } from 'lucide-react'
 import { billingApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -31,11 +29,9 @@ export default function AdminSubscription() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, refreshUser } = useAuth()
-  const [stripePromise, setStripePromise] = useState(null)
-  const [showCheckout, setShowCheckout] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState('')
-  const [loadingConfig, setLoadingConfig] = useState(true)
 
   const checkoutStatus = searchParams.get('checkout')
   const sessionId = searchParams.get('session_id')
@@ -44,23 +40,6 @@ export default function AdminSubscription() {
     () => formatDateTime(user?.admin_subscription_current_period_end),
     [user?.admin_subscription_current_period_end],
   )
-
-  useEffect(() => {
-    async function loadConfig() {
-      try {
-        const response = await billingApi.getConfig()
-        const { publishable_key } = response.data
-        if (publishable_key) {
-          setStripePromise(loadStripe(publishable_key))
-        }
-      } catch (err) {
-        setError('Não foi possível carregar a configuração do Stripe.')
-      } finally {
-        setLoadingConfig(false)
-      }
-    }
-    loadConfig()
-  }, [])
 
   useEffect(() => {
     if (user?.role && user.role !== 'admin') {
@@ -97,22 +76,16 @@ export default function AdminSubscription() {
     syncSubscription()
   }, [checkoutStatus, navigate, refreshUser, searchParams, sessionId, setSearchParams, syncing, user?.role])
 
-  const fetchClientSecret = useCallback(async () => {
-    const response = await billingApi.createAdminSubscriptionCheckout()
-    return response.data.client_secret
-  }, [])
-
-  function handleStartTrial() {
+  async function handleStartTrial() {
     setError('')
-    setShowCheckout(true)
-  }
-
-  if (loadingConfig) {
-    return (
-      <div className="min-h-screen bg-[#0b0f1a] text-white flex items-center justify-center">
-        <div className="text-gray-400">Carregando...</div>
-      </div>
-    )
+    setLoading(true)
+    try {
+      const response = await billingApi.createAdminSubscriptionCheckout()
+      window.location.href = response.data.url
+    } catch (err) {
+      setError('Não foi possível iniciar o checkout. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -165,32 +138,17 @@ export default function AdminSubscription() {
             </div>
           )}
 
-          {!showCheckout ? (
-            <>
-              <button
-                type="button"
-                onClick={handleStartTrial}
-                disabled={syncing || !stripePromise}
-                className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-black py-4 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {syncing ? 'Confirmando pagamento...' : 'Começar Teste Grátis de 7 Dias'}
-              </button>
-              <p className="text-center text-gray-500 text-xs mt-4">
-                Cancele quando quiser. Sem compromisso.
-              </p>
-            </>
-          ) : (
-            <div className="mt-4">
-              {stripePromise && (
-                <EmbeddedCheckoutProvider
-                  stripe={stripePromise}
-                  options={{ fetchClientSecret }}
-                >
-                  <EmbeddedCheckout className="stripe-checkout" />
-                </EmbeddedCheckoutProvider>
-              )}
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={handleStartTrial}
+            disabled={syncing || loading}
+            className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-black font-black py-4 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {syncing ? 'Confirmando pagamento...' : loading ? 'Redirecionando...' : 'Começar Teste Grátis de 7 Dias'}
+          </button>
+          <p className="text-center text-gray-500 text-xs mt-4">
+            Cancele quando quiser. Sem compromisso.
+          </p>
         </div>
       </div>
     </div>

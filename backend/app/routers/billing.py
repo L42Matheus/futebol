@@ -59,11 +59,11 @@ def create_admin_subscription_checkout(
 
     checkout_payload = {
         "mode": "subscription",
-        "ui_mode": "embedded_page",
-        "return_url": (
+        "success_url": (
             f"{settings.frontend_url}/admin-assinatura"
             "?checkout=success&session_id={CHECKOUT_SESSION_ID}"
         ),
+        "cancel_url": f"{settings.frontend_url}/admin-assinatura?checkout=canceled",
         "client_reference_id": str(current_user.id),
         "metadata": {"user_id": str(current_user.id), "billing_scope": "admin_access"},
         "subscription_data": {
@@ -97,7 +97,7 @@ def create_admin_subscription_checkout(
         db.commit()
 
     return BillingCheckoutResponse(
-        client_secret=checkout_session.client_secret,
+        url=checkout_session.url,
         session_id=checkout_session.id,
     )
 
