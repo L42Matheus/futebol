@@ -18,7 +18,6 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
-import AdminSubscription from './pages/AdminSubscription'
 import PrivateRoute from './components/PrivateRoute'
 import NoRacha from './pages/NoRacha'
 import AthleteSelfProfile from './pages/AthleteSelfProfile'
@@ -36,7 +35,6 @@ export default function AppRoutes() {
         <Route path="/register" element={<Register />} />
 
         <Route element={<PrivateRoute />}>
-          <Route path="/admin-assinatura" element={<AdminSubscription />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="financeiro" element={<FinanceiroHub />} />

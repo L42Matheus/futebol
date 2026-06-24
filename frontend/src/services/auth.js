@@ -15,11 +15,7 @@ let userCache = null
 let userCacheTime = 0
 
 function canUseCachedUser(user) {
-  if (!user) return false
-  if (user.role === 'admin' && typeof user.admin_billing_active !== 'boolean') {
-    return false
-  }
-  return true
+  return Boolean(user)
 }
 
 const authService = {

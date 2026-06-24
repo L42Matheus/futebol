@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User, UserRole
 from app.schemas.racha import RachaCreate, RachaUpdate, RachaResponse
 from app.services.auth import get_current_user
-from app.deps import verificar_acesso_racha, verificar_admin_racha, verificar_assinatura_admin
+from app.deps import verificar_acesso_racha, verificar_admin_racha
 
 router = APIRouter(prefix="/rachas", tags=["Rachas"])
 
@@ -21,7 +21,6 @@ def get_max_atletas(tipo: TipoRacha) -> int:
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Apenas administradores podem criar racha")
-    verificar_assinatura_admin(current_user)
     db_racha = Racha(**racha.model_dump(), max_atletas=get_max_atletas(racha.tipo))
     db.add(db_racha)
     db.commit()
