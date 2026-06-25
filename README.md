@@ -55,6 +55,7 @@ No serviço da Railway:
 - Root directory: `frontend`
 - Build: Dockerfile ou `npm ci && npm run build`
 - Start: `npm run start`
+- Public Networking port: `3000`
 
 Variáveis:
 
