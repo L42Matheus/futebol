@@ -161,12 +161,11 @@ export default function Login() {
       }
 
       const redirectUri = `${window.location.origin}/login`
-      if (isSupabaseConfigured()) {
-        await signInWithGoogleViaSupabase(redirectUri)
-        return
+      if (!isSupabaseConfigured()) {
+        throw new Error('Supabase não configurado para login Google.')
       }
-      const url = await authService.getGoogleAuthUrl(redirectUri)
-      window.location.href = url
+
+      await signInWithGoogleViaSupabase(redirectUri)
     } catch (err) {
       setError('Login com Google nao disponivel no momento.')
       setGoogleLoading(false)
