@@ -24,7 +24,7 @@ export default function ChooseRole() {
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
           <Trophy size={32} />
         </div>
-        <h1 className="text-2xl font-bold text-white">QuemJoga</h1>
+        <h1 className="text-2xl font-bold text-white">QuemJogaFC</h1>
         <p className="text-gray-400 mt-1">Organize seu racha sem estresse</p>
       </div>
 

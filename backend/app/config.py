@@ -11,7 +11,7 @@ _DEFAULT_SECRET_KEY = "change-this-secret-key-in-production"
 
 class Settings(BaseSettings):
     # App
-    app_name: str = "QuemJoga API"
+    app_name: str = "QuemJogaFC API"
     debug: bool = True
 
     # Database

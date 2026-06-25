@@ -56,8 +56,12 @@ export default function Atletas() {
       loadAtletas()
       toast('Atleta adicionado com sucesso!', 'success')
     } catch (error: unknown) {
-      const detail =
-        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      const apiError = error as {
+        message?: string
+        response?: { data?: { detail?: string } }
+      }
+      const detail = apiError.response?.data?.detail ?? apiError.message
+      console.error('Erro ao adicionar atleta:', apiError)
       toast(detail ?? 'Erro ao adicionar atleta', 'error')
     }
   }

@@ -16,15 +16,19 @@ export function getSupabaseClient(): SupabaseClient {
     )
   }
 
-  client ??= createClient(supabaseUrl, supabasePublishableKey)
+  client ??= createClient(supabaseUrl, supabasePublishableKey, {
+    auth: {
+      detectSessionInUrl: true,
+      flowType: 'implicit',
+    },
+  })
   return client
 }
 
 /**
  * Inicia o OAuth com Google pelo Supabase.
  *
- * Ainda não é usado pelo login atual: a troca só deve ser ativada depois que a
- * API aceitar e validar os JWTs emitidos pelo Supabase.
+ * O callback deve voltar para a tela de login, que finaliza a sessão local.
  */
 export async function signInWithGoogleViaSupabase(redirectTo: string): Promise<void> {
   const { error } = await getSupabaseClient().auth.signInWithOAuth({

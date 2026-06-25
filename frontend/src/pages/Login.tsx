@@ -4,6 +4,7 @@ import { Trophy, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
 import authService from '../services/auth'
+import { isSupabaseConfigured, signInWithGoogleViaSupabase } from '../services/supabase'
 import FormField from '../components/FormField'
 import { Input } from '../components/Input'
 import { RoleConflictScreen, AthleteNotAdminScreen } from '../components/errors'
@@ -34,8 +35,14 @@ export default function Login() {
 
   useEffect(() => {
     const code = searchParams.get('code')
-    if (code) {
+    if (code && !isSupabaseConfigured()) {
       void handleGoogleCallback(code)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      void handleSupabaseGoogleCallback()
     }
   }, [searchParams])
 
@@ -115,6 +122,32 @@ export default function Login() {
     }
   }
 
+  async function handleSupabaseGoogleCallback() {
+    setError('')
+    setGoogleLoading(true)
+    setProcessingCallback(true)
+    try {
+      const currentUser = await authService.completeSupabaseGoogleLogin()
+      if (!currentUser) return
+
+      await refreshUser()
+      localStorage.removeItem('pending_invite_token')
+      localStorage.removeItem('pending_login_role')
+      const redirectTo =
+        localStorage.getItem('login_redirect') ||
+        (location.state as any)?.from?.pathname ||
+        '/'
+      localStorage.removeItem('login_redirect')
+      navigate(redirectTo, { replace: true })
+    } catch (err) {
+      console.error('Falha ao concluir login Supabase:', err)
+      setError('Falha no login com Google. Tente novamente.')
+    } finally {
+      setProcessingCallback(false)
+      setGoogleLoading(false)
+    }
+  }
+
   async function handleGoogleLogin() {
     setError('')
     setGoogleLoading(true)
@@ -128,6 +161,10 @@ export default function Login() {
       }
 
       const redirectUri = `${window.location.origin}/login`
+      if (isSupabaseConfigured()) {
+        await signInWithGoogleViaSupabase(redirectUri)
+        return
+      }
       const url = await authService.getGoogleAuthUrl(redirectUri)
       window.location.href = url
     } catch (err) {

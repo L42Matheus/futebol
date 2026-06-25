@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def send_password_reset_email(to_email: str, reset_link: str) -> None:
     settings = get_settings()
-    subject = "Redefinicao de senha - QuemJoga"
+    subject = "Redefinicao de senha - QuemJogaFC"
     body = (
         "Recebemos um pedido para redefinir sua senha.\n\n"
         f"Acesse este link para criar uma nova senha:\n{reset_link}\n\n"

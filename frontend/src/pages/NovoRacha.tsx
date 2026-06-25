@@ -43,18 +43,31 @@ export default function NovoRacha() {
     try {
       const response = await rachasApi.create(form)
       setCreatedRachaId(response.data.id)
-      const [inviteAtleta, inviteAdmin] = await Promise.all([
-        authApi.createInvite({ racha_id: response.data.id, role: 'atleta' }),
-        authApi.createInvite({ racha_id: response.data.id, role: 'admin' }),
-      ])
-      const base = window.location.origin
-      setInviteLinks({
-        atleta: `${base}/register?invite=${inviteAtleta.data.token}`,
-        admin: `${base}/register?invite=${inviteAdmin.data.token}`,
-      })
+
+      try {
+        const [inviteAtleta, inviteAdmin] = await Promise.all([
+          authApi.createInvite({ racha_id: response.data.id, role: 'atleta' }),
+          authApi.createInvite({ racha_id: response.data.id, role: 'admin' }),
+        ])
+        const base = window.location.origin
+        setInviteLinks({
+          atleta: `${base}/register?invite=${inviteAtleta.data.token}`,
+          admin: `${base}/register?invite=${inviteAdmin.data.token}`,
+        })
+      } catch (inviteError) {
+        console.error('Racha criado, mas os convites falharam:', inviteError)
+        toast('Racha criado. A geração de convites será ajustada na próxima etapa.', 'success')
+        navigate(`/racha/${response.data.id}`)
+      }
     } catch (error) {
-      console.error('Erro ao criar racha:', error)
-      toast('Erro ao criar racha. Tente novamente.', 'error')
+      const details = error as { message?: string; details?: string; hint?: string; code?: string }
+      console.error('Erro ao criar racha:', {
+        message: details?.message,
+        code: details?.code,
+        details: details?.details,
+        hint: details?.hint,
+      })
+      toast(details?.message || 'Erro ao criar racha. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }
