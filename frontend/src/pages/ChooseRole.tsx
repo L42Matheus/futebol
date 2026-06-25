@@ -9,7 +9,7 @@ export default function ChooseRole() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate('/', { replace: true })
+      navigate('/app', { replace: true })
     }
   }, [isAuthenticated, loading, navigate])
 

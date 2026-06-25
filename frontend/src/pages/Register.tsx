@@ -24,7 +24,7 @@ export default function Register() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate('/', { replace: true })
+      navigate('/app', { replace: true })
     }
   }, [isAuthenticated, authLoading, navigate])
 
@@ -56,7 +56,7 @@ export default function Register() {
     setLoading(true)
     try {
       await register(form.email, form.telefone, form.senha, form.nome, inviteToken, resolvedRole)
-      navigate('/', { replace: true })
+      navigate('/app', { replace: true })
     } catch {
       setError('Falha no cadastro. Verifique os dados.')
     } finally {

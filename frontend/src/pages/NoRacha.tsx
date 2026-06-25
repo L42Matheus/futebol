@@ -84,7 +84,7 @@ export default function NoRacha() {
       navigate(-1)
       return
     }
-    navigate('/')
+    navigate('/app')
   }
 
   function handleLogoutAction() {

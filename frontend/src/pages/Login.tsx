@@ -28,7 +28,7 @@ export default function Login() {
     // Não redirecionar automaticamente se estamos processando o callback do Google
     if (processingCallback) return
     if (!authLoading && isAuthenticated) {
-      const redirectTo = (location.state as any)?.from?.pathname || '/'
+      const redirectTo = (location.state as any)?.from?.pathname || '/app'
       navigate(redirectTo, { replace: true })
     }
   }, [isAuthenticated, authLoading, navigate, location.state, processingCallback])
@@ -64,7 +64,7 @@ export default function Login() {
           // Ignore invite accept errors after login.
         }
       }
-      const redirectTo = (location.state as any)?.from?.pathname || '/'
+      const redirectTo = (location.state as any)?.from?.pathname || '/app'
       navigate(redirectTo, { replace: true })
     } catch (err: any) {
       setError('Falha no login. Verifique os dados.')
@@ -108,7 +108,7 @@ export default function Login() {
       const redirectTo =
         localStorage.getItem('login_redirect') ||
         (location.state as any)?.from?.pathname ||
-        '/'
+        '/app'
       localStorage.removeItem('login_redirect')
 
       setProcessingCallback(false)
@@ -136,7 +136,7 @@ export default function Login() {
       const redirectTo =
         localStorage.getItem('login_redirect') ||
         (location.state as any)?.from?.pathname ||
-        '/'
+        '/app'
       localStorage.removeItem('login_redirect')
       navigate(redirectTo, { replace: true })
     } catch (err) {
@@ -190,7 +190,7 @@ export default function Login() {
         onContinueAsAdmin={() => {
           setRoleConflict(false)
           setProcessingCallback(false)
-          navigate('/', { replace: true })
+          navigate('/app', { replace: true })
         }}
         onUseOtherEmail={() => {
           setRoleConflict(false)
@@ -208,7 +208,7 @@ export default function Login() {
         onContinueAsAthlete={() => {
           setAthleteNotAdmin(false)
           setProcessingCallback(false)
-          navigate('/', { replace: true })
+          navigate('/app', { replace: true })
         }}
         onUseOtherEmail={() => {
           setAthleteNotAdmin(false)

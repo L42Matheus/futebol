@@ -6,7 +6,7 @@ import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
-  { test: /^\/$/, title: 'QuemJogaFC' },
+  { test: /^\/app$/, title: 'QuemJogaFC' },
   { test: /^\/novo$/, title: 'Novo Racha' },
   { test: /\/racha\/\d+$/, title: 'Racha' },
   { test: /\/atletas/, title: 'Atletas' },
@@ -36,7 +36,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   const resolvedTitle =
     title ?? (TITLES.find((t) => t.test.test(location.pathname))?.title ?? 'QuemJogaFC')
   const resolvedShowBack =
-    typeof showBack === 'boolean' ? showBack : location.pathname !== '/'
+    typeof showBack === 'boolean' ? showBack : location.pathname !== '/app'
 
   // Avatar uses user data directly from AuthContext — no extra API call needed.
   const avatarName = user?.nome ?? user?.email ?? 'Perfil'
@@ -199,7 +199,10 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
         return (
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b0f1a]/95 backdrop-blur-xl border-t border-gray-800 px-6 h-20 flex items-center justify-around z-50">
             {filteredItems.map((item) => {
-              const active = location.pathname === item.path
+              const active =
+                location.pathname === item.path ||
+                (item.path === '/financeiro' && isFinanceiroRoute) ||
+                (item.path === '/jogos' && isJogosRoute)
 
               if (item.isFab) {
                 return (

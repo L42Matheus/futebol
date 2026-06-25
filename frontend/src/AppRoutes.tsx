@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import Landing from './pages/Landing'
 import Home from './pages/Home'
 import RachaDetail from './pages/RachaDetail'
 import JogoDetail from './pages/JogoDetail'
@@ -27,6 +28,7 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/perfil" element={<ChooseRole />} />
         <Route path="/perfil-basico" element={<NoRacha />} />
         <Route path="/perfil-atleta" element={<AthleteSelfProfile />} />
@@ -36,8 +38,8 @@ export default function AppRoutes() {
         <Route path="/register" element={<Register />} />
 
         <Route element={<PrivateRoute />}>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
+          <Route element={<Layout />}>
+            <Route path="app" element={<Home />} />
             <Route path="jogos" element={<JogosHub />} />
             <Route path="financeiro" element={<FinanceiroHub />} />
             <Route path="novo" element={<NovoRacha />} />

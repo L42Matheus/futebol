@@ -43,6 +43,65 @@ npm install
 npm run dev
 ```
 
+## Deploy de teste na Railway
+
+Para validar o app fora do localhost, o caminho mais simples é criar primeiro um serviço
+para o frontend e usar o Supabase como backend principal do MVP.
+
+### Frontend
+
+No serviço da Railway:
+
+- Root directory: `frontend`
+- Build: Dockerfile ou `npm ci && npm run build`
+- Start: `npm run start`
+
+Variáveis:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica-anon
+VITE_API_URL=
+```
+
+Se também subir o FastAPI em outro serviço, preencha:
+
+```env
+VITE_API_URL=https://sua-api.up.railway.app
+```
+
+### Backend FastAPI, opcional para teste completo
+
+No serviço da Railway:
+
+- Root directory: `backend`
+- Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+Variáveis importantes:
+
+```env
+DEBUG=false
+SECRET_KEY=troque-por-uma-chave-forte
+DATABASE_URL=postgresql://...
+FRONTEND_URL=https://seu-front.up.railway.app
+CORS_ORIGINS=https://seu-front.up.railway.app
+```
+
+### Google/Supabase Auth
+
+Depois que a Railway gerar a URL do frontend, cadastre no Supabase:
+
+```txt
+https://seu-front.up.railway.app/login
+https://seu-front.up.railway.app/**
+```
+
+No Google Cloud, mantenha o callback do Supabase:
+
+```txt
+https://seu-projeto.supabase.co/auth/v1/callback
+```
+
 ## API Endpoints
 
 | Recurso | Endpoints |
