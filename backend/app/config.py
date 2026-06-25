@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     # Supabase (used to verify Supabase-issued access tokens server-side)
     supabase_url: str = ""
+    supabase_anon_key: str = ""
 
     # Email (SMTP)
     smtp_host: str = ""
