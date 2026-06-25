@@ -61,6 +61,78 @@ async function getSupabaseUser() {
   return data.user
 }
 
+const SUPABASE_PROFILE_KEY = 'supabase_profile'
+const SUPABASE_ARTILHARIA_KEY = 'supabase_artilharia'
+const SUPABASE_PAGAMENTOS_KEY = 'supabase_pagamentos'
+const SUPABASE_TEMPORADAS_KEY = 'supabase_temporadas'
+const SUPABASE_TEAMS_KEY = 'supabase_teams'
+const SUPABASE_TEAM_MEMBERS_KEY = 'supabase_team_members'
+
+function readSupabaseProfileCache(userId) {
+  try {
+    const raw = localStorage.getItem(SUPABASE_PROFILE_KEY)
+    if (!raw) return {}
+
+    const cache = JSON.parse(raw)
+    return cache?.[userId] || {}
+  } catch {
+    return {}
+  }
+}
+
+function writeSupabaseProfileCache(userId, profile) {
+  const raw = localStorage.getItem(SUPABASE_PROFILE_KEY)
+  const cache = raw ? JSON.parse(raw) : {}
+  cache[userId] = profile
+  localStorage.setItem(SUPABASE_PROFILE_KEY, JSON.stringify(cache))
+}
+
+function buildSupabaseProfile(user) {
+  const metadata = user.user_metadata || {}
+  const cachedProfile = readSupabaseProfileCache(user.id)
+  const fallbackName = metadata.full_name || metadata.name || user.email?.split('@')[0] || 'Atleta'
+
+  return {
+    id: user.id,
+    user_id: user.id,
+    email: user.email,
+    nome: cachedProfile.nome || fallbackName,
+    apelido: cachedProfile.apelido || metadata.name || '',
+    telefone: cachedProfile.telefone || user.phone || '',
+    posicao: cachedProfile.posicao || '',
+    perna_boa: cachedProfile.perna_boa || '',
+    numero_camisa: cachedProfile.numero_camisa || null,
+    foto_url: cachedProfile.foto_url || metadata.avatar_url || metadata.picture || null,
+  }
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+function readLocalCache(key, fallback = {}) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function writeLocalCache(key, value) {
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
+function nextLocalId(items) {
+  const ids = (items || []).map((item) => Number(item.id) || 0)
+  return ids.length ? Math.max(...ids) + 1 : 1
+}
+
 function maxAtletasPorTipo(tipo) {
   return { campo: 40, society: 30, futsal: 20 }[tipo] || 30
 }
@@ -210,10 +282,28 @@ export const atletasApi = {
     throwSupabaseError(error)
     return supabaseResponse(null)
   },
-  getHistorico: (id) => api.get(`/atletas/${id}/historico`),
+  getHistorico: (id) => {
+    if (!isSupabaseConfigured()) return api.get(`/atletas/${id}/historico`)
+
+    const pagamentos = readLocalCache(SUPABASE_PAGAMENTOS_KEY, {})
+    return supabaseResponse({
+      financeiro: {
+        pagamento_confirmado_mes_atual: Boolean(pagamentos[id]?.confirmado),
+      },
+    })
+  },
   addCartao: (id, tipo, payload = {}) => api.post(`/atletas/${id}/cartoes`, { tipo, ...payload }),
   removeCartao: (id, tipo) => api.post(`/atletas/${id}/cartoes/remover`, { tipo }),
-  confirmarPagamento: (id, confirmado, payload = {}) => api.post(`/atletas/${id}/confirmar-pagamento`, { confirmado, ...payload }),
+  confirmarPagamento: (id, confirmado, payload = {}) => {
+    if (!isSupabaseConfigured()) {
+      return api.post(`/atletas/${id}/confirmar-pagamento`, { confirmado, ...payload })
+    }
+
+    const pagamentos = readLocalCache(SUPABASE_PAGAMENTOS_KEY, {})
+    pagamentos[id] = { confirmado, ...payload, updated_at: new Date().toISOString() }
+    writeLocalCache(SUPABASE_PAGAMENTOS_KEY, pagamentos)
+    return supabaseResponse({ financeiro: { pagamento_confirmado_mes_atual: confirmado } })
+  },
   uploadFoto: (id, file) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -283,7 +373,21 @@ export const jogosApi = {
     throwSupabaseError(error)
     return supabaseResponse(data)
   },
-  getLista: (jogoId) => api.get(`/jogos/${jogoId}/lista`),
+  async getLista(jogoId) {
+    if (!isSupabaseConfigured()) return api.get(`/jogos/${jogoId}/lista`)
+
+    // A confirmação de presença ainda será migrada para o Supabase. Enquanto isso,
+    // a tela pode renderizar sem tentar acessar o FastAPI desligado.
+    return supabaseResponse({
+      jogo_id: Number(jogoId),
+      confirmados: [],
+      recusados: [],
+      pendentes: [],
+      total_confirmados: 0,
+      total_recusados: 0,
+      total_pendentes: 0,
+    })
+  },
 }
 
 export const presencasApi = {
@@ -293,27 +397,201 @@ export const presencasApi = {
 }
 
 export const pagamentosApi = {
-  list: (rachaId, params = {}) => api.get(`/pagamentos/?racha_id=${rachaId}`, { params }),
-  create: (data) => api.post('/pagamentos/', data),
-  enviarComprovante: (id, url) => api.patch(`/pagamentos/${id}/comprovante?comprovante_url=${encodeURIComponent(url)}`),
-  aprovar: (id, adminId, aprovado, motivo = null) => api.post(`/pagamentos/${id}/aprovar?admin_id=${adminId}`, { aprovado, motivo_rejeicao: motivo }),
-  getPendentes: (rachaId) => api.get(`/pagamentos/pendentes/${rachaId}`),
-  gerarMensalidade: (rachaId, referencia) => api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`),
+  list: (rachaId, params = {}) => {
+    if (!isSupabaseConfigured()) return api.get(`/pagamentos/?racha_id=${rachaId}`, { params })
+    return supabaseResponse([])
+  },
+  create: (data) => {
+    if (!isSupabaseConfigured()) return api.post('/pagamentos/', data)
+    return supabaseResponse({ ...data, id: crypto.randomUUID(), status: 'pendente' })
+  },
+  enviarComprovante: (id, url) => {
+    if (!isSupabaseConfigured()) return api.patch(`/pagamentos/${id}/comprovante?comprovante_url=${encodeURIComponent(url)}`)
+    return supabaseResponse({ id, comprovante_url: url, status: 'aguardando_aprovacao' })
+  },
+  aprovar: (id, adminId, aprovado, motivo = null) => {
+    if (!isSupabaseConfigured()) return api.post(`/pagamentos/${id}/aprovar?admin_id=${adminId}`, { aprovado, motivo_rejeicao: motivo })
+    return supabaseResponse({ id, admin_id: adminId, status: aprovado ? 'aprovado' : 'rejeitado', motivo_rejeicao: motivo })
+  },
+  getPendentes: (rachaId) => {
+    if (!isSupabaseConfigured()) return api.get(`/pagamentos/pendentes/${rachaId}`)
+    return supabaseResponse([])
+  },
+  gerarMensalidade: (rachaId, referencia) => {
+    if (!isSupabaseConfigured()) return api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`)
+    return supabaseResponse({ racha_id: Number(rachaId), referencia, cobrancas_criadas: 0 })
+  },
+}
+
+export const temporadasApi = {
+  async list(rachaId) {
+    const temporadas = readLocalCache(SUPABASE_TEMPORADAS_KEY, [])
+      .filter((temporada) => Number(temporada.racha_id) === Number(rachaId))
+      .sort((a, b) => {
+        if (a.ano !== b.ano) return Number(b.ano) - Number(a.ano)
+        return Number(b.mes) - Number(a.mes)
+      })
+
+    return supabaseResponse(temporadas)
+  },
+
+  async getActive(rachaId) {
+    const temporadas = (await temporadasApi.list(rachaId)).data
+    const active = temporadas.find((temporada) => temporada.status === 'ativa') || temporadas[0] || null
+    return supabaseResponse(active)
+  },
+
+  async create(data) {
+    const temporadas = readLocalCache(SUPABASE_TEMPORADAS_KEY, [])
+    const existingActiveIndex = temporadas.findIndex(
+      (temporada) =>
+        Number(temporada.racha_id) === Number(data.racha_id) &&
+        temporada.status === 'ativa',
+    )
+
+    if (existingActiveIndex >= 0 && data.status === 'ativa') {
+      temporadas[existingActiveIndex] = {
+        ...temporadas[existingActiveIndex],
+        status: 'encerrada',
+        encerrada_em: new Date().toISOString(),
+      }
+    }
+
+    const temporada = {
+      id: nextLocalId(temporadas),
+      racha_id: Number(data.racha_id),
+      nome: data.nome,
+      mes: Number(data.mes),
+      ano: Number(data.ano),
+      status: data.status || 'ativa',
+      campeao_team_id: data.campeao_team_id || null,
+      created_at: new Date().toISOString(),
+    }
+
+    temporadas.push(temporada)
+    writeLocalCache(SUPABASE_TEMPORADAS_KEY, temporadas)
+    return supabaseResponse(temporada)
+  },
+
+  async setCampeao(temporadaId, teamId) {
+    const temporadas = readLocalCache(SUPABASE_TEMPORADAS_KEY, [])
+    const updated = temporadas.map((temporada) =>
+      Number(temporada.id) === Number(temporadaId)
+        ? { ...temporada, campeao_team_id: Number(teamId), status: 'encerrada' }
+        : temporada,
+    )
+    writeLocalCache(SUPABASE_TEMPORADAS_KEY, updated)
+    return supabaseResponse(updated.find((temporada) => Number(temporada.id) === Number(temporadaId)))
+  },
 }
 
 export const teamsApi = {
-  list: (rachaId) => api.get(`/teams/?racha_id=${rachaId}`),
-  get: (teamId) => api.get(`/teams/${teamId}`),
-  create: (data) => api.post('/teams/', data),
-  update: (teamId, data) => api.patch(`/teams/${teamId}`, data),
-  remove: (teamId) => api.delete(`/teams/${teamId}`),
-  addMember: (teamId, atletaId, options = {}) => api.post(`/teams/${teamId}/members`, {
-    atleta_id: atletaId,
-    is_titular: options.is_titular,
-    posicao_escalacao: options.posicao_escalacao
-  }),
-  updateMember: (teamId, atletaId, data) => api.patch(`/teams/${teamId}/members/${atletaId}`, data),
-  removeMember: (teamId, atletaId) => api.delete(`/teams/${teamId}/members/${atletaId}`),
+  list: (rachaId, temporadaId = null) => {
+    if (!isSupabaseConfigured()) return api.get(`/teams/?racha_id=${rachaId}`)
+
+    const teams = readLocalCache(SUPABASE_TEAMS_KEY, [])
+      .filter((team) => Number(team.racha_id) === Number(rachaId))
+      .filter((team) => !temporadaId || Number(team.temporada_id) === Number(temporadaId))
+    const members = readLocalCache(SUPABASE_TEAM_MEMBERS_KEY, [])
+
+    return supabaseResponse(teams.map((team) => ({
+      ...team,
+      membros: members.filter((member) => Number(member.team_id) === Number(team.id)),
+    })))
+  },
+  get: (teamId) => {
+    if (!isSupabaseConfigured()) return api.get(`/teams/${teamId}`)
+
+    const teams = readLocalCache(SUPABASE_TEAMS_KEY, [])
+    const members = readLocalCache(SUPABASE_TEAM_MEMBERS_KEY, [])
+    const team = teams.find((item) => Number(item.id) === Number(teamId))
+    return supabaseResponse(team ? {
+      ...team,
+      membros: members.filter((member) => Number(member.team_id) === Number(teamId)),
+    } : null)
+  },
+  create: (data) => {
+    if (!isSupabaseConfigured()) return api.post('/teams/', data)
+
+    const teams = readLocalCache(SUPABASE_TEAMS_KEY, [])
+    const team = {
+      id: nextLocalId(teams),
+      racha_id: Number(data.racha_id),
+      temporada_id: data.temporada_id ? Number(data.temporada_id) : null,
+      nome: data.nome,
+      cor: data.cor || null,
+      created_at: new Date().toISOString(),
+    }
+    teams.push(team)
+    writeLocalCache(SUPABASE_TEAMS_KEY, teams)
+    return supabaseResponse(team)
+  },
+  update: (teamId, data) => {
+    if (!isSupabaseConfigured()) return api.patch(`/teams/${teamId}`, data)
+
+    const teams = readLocalCache(SUPABASE_TEAMS_KEY, [])
+    const updated = teams.map((team) => Number(team.id) === Number(teamId) ? { ...team, ...data } : team)
+    writeLocalCache(SUPABASE_TEAMS_KEY, updated)
+    return supabaseResponse(updated.find((team) => Number(team.id) === Number(teamId)))
+  },
+  remove: (teamId) => {
+    if (!isSupabaseConfigured()) return api.delete(`/teams/${teamId}`)
+
+    const teams = readLocalCache(SUPABASE_TEAMS_KEY, [])
+    const members = readLocalCache(SUPABASE_TEAM_MEMBERS_KEY, [])
+    writeLocalCache(SUPABASE_TEAMS_KEY, teams.filter((team) => Number(team.id) !== Number(teamId)))
+    writeLocalCache(SUPABASE_TEAM_MEMBERS_KEY, members.filter((member) => Number(member.team_id) !== Number(teamId)))
+    return supabaseResponse(null)
+  },
+  addMember: (teamId, atletaId, options = {}) => {
+    if (!isSupabaseConfigured()) {
+      return api.post(`/teams/${teamId}/members`, {
+        atleta_id: atletaId,
+        is_titular: options.is_titular,
+        posicao_escalacao: options.posicao_escalacao
+      })
+    }
+
+    const members = readLocalCache(SUPABASE_TEAM_MEMBERS_KEY, [])
+    const alreadyExists = members.some(
+      (member) => Number(member.team_id) === Number(teamId) && Number(member.atleta_id) === Number(atletaId),
+    )
+
+    if (alreadyExists) return supabaseResponse(null)
+
+    const member = {
+      id: nextLocalId(members),
+      team_id: Number(teamId),
+      atleta_id: Number(atletaId),
+      is_titular: options.is_titular ?? true,
+      posicao_escalacao: options.posicao_escalacao || null,
+    }
+    members.push(member)
+    writeLocalCache(SUPABASE_TEAM_MEMBERS_KEY, members)
+    return supabaseResponse(member)
+  },
+  updateMember: (teamId, atletaId, data) => {
+    if (!isSupabaseConfigured()) return api.patch(`/teams/${teamId}/members/${atletaId}`, data)
+
+    const members = readLocalCache(SUPABASE_TEAM_MEMBERS_KEY, [])
+    const updated = members.map((member) =>
+      Number(member.team_id) === Number(teamId) && Number(member.atleta_id) === Number(atletaId)
+        ? { ...member, ...data }
+        : member,
+    )
+    writeLocalCache(SUPABASE_TEAM_MEMBERS_KEY, updated)
+    return supabaseResponse(updated.find((member) => Number(member.team_id) === Number(teamId) && Number(member.atleta_id) === Number(atletaId)))
+  },
+  removeMember: (teamId, atletaId) => {
+    if (!isSupabaseConfigured()) return api.delete(`/teams/${teamId}/members/${atletaId}`)
+
+    const members = readLocalCache(SUPABASE_TEAM_MEMBERS_KEY, [])
+    writeLocalCache(
+      SUPABASE_TEAM_MEMBERS_KEY,
+      members.filter((member) => !(Number(member.team_id) === Number(teamId) && Number(member.atleta_id) === Number(atletaId))),
+    )
+    return supabaseResponse(null)
+  },
 }
 
 export const authApi = {
@@ -347,21 +625,105 @@ export const authApi = {
 }
 
 export const artilhariaApi = {
-  list: (rachaId) => api.get(`/artilharia/?racha_id=${rachaId}`),
-  update: (rachaId, atletaId, data) => api.patch(`/artilharia/${atletaId}?racha_id=${rachaId}`, data),
+  async list(rachaId) {
+    if (!isSupabaseConfigured()) return api.get(`/artilharia/?racha_id=${rachaId}`)
+
+    const atletasRes = await atletasApi.list(rachaId)
+    const statsCache = readLocalCache(SUPABASE_ARTILHARIA_KEY, {})
+    const rachaStats = statsCache[rachaId] || {}
+
+    return supabaseResponse((atletasRes.data || []).map((atleta) => ({
+      atleta_id: atleta.id,
+      nome: atleta.nome,
+      apelido: atleta.apelido,
+      foto_url: atleta.foto_url,
+      posicao: atleta.posicao,
+      gols: rachaStats[atleta.id]?.gols || 0,
+      assistencias: rachaStats[atleta.id]?.assistencias || 0,
+    })))
+  },
+  update: (rachaId, atletaId, data) => {
+    if (!isSupabaseConfigured()) return api.patch(`/artilharia/${atletaId}?racha_id=${rachaId}`, data)
+
+    const statsCache = readLocalCache(SUPABASE_ARTILHARIA_KEY, {})
+    statsCache[rachaId] = {
+      ...(statsCache[rachaId] || {}),
+      [atletaId]: {
+        ...(statsCache[rachaId]?.[atletaId] || {}),
+        ...data,
+      },
+    }
+    writeLocalCache(SUPABASE_ARTILHARIA_KEY, statsCache)
+    return supabaseResponse(statsCache[rachaId][atletaId])
+  },
 }
 
 export const profileApi = {
-  me: () => api.get('/profile/me'),
-  update: (data) => api.patch('/profile/me', data),
-  uploadFoto: (file) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return api.post('/profile/me/foto', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+  async me() {
+    if (!isSupabaseConfigured()) return api.get('/profile/me')
+
+    const user = await getSupabaseUser()
+    return supabaseResponse(buildSupabaseProfile(user))
   },
-  removerFoto: () => api.delete('/profile/me/foto'),
+
+  async update(data) {
+    if (!isSupabaseConfigured()) return api.patch('/profile/me', data)
+
+    const supabase = getSupabaseClient()
+    const user = await getSupabaseUser()
+    const currentProfile = buildSupabaseProfile(user)
+    const updatedProfile = {
+      ...currentProfile,
+      ...data,
+      numero_camisa: data.numero_camisa || null,
+    }
+
+    writeSupabaseProfileCache(user.id, updatedProfile)
+
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        full_name: updatedProfile.nome,
+        name: updatedProfile.apelido || updatedProfile.nome,
+        avatar_url: updatedProfile.foto_url,
+      },
+    })
+
+    if (error) {
+      console.warn('Não foi possível sincronizar metadata do perfil no Supabase:', error.message)
+    }
+
+    return supabaseResponse(updatedProfile)
+  },
+
+  async uploadFoto(file) {
+    if (!isSupabaseConfigured()) {
+      const formData = new FormData()
+      formData.append('file', file)
+      return api.post('/profile/me/foto', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+
+    const user = await getSupabaseUser()
+    const currentProfile = buildSupabaseProfile(user)
+    const updatedProfile = {
+      ...currentProfile,
+      foto_url: await readFileAsDataUrl(file),
+    }
+
+    writeSupabaseProfileCache(user.id, updatedProfile)
+    return supabaseResponse(updatedProfile)
+  },
+
+  removerFoto: async () => {
+    if (!isSupabaseConfigured()) return api.delete('/profile/me/foto')
+
+    const user = await getSupabaseUser()
+    const currentProfile = buildSupabaseProfile(user)
+    const updatedProfile = { ...currentProfile, foto_url: null }
+    writeSupabaseProfileCache(user.id, updatedProfile)
+    return supabaseResponse(updatedProfile)
+  },
 }
 
 export default api

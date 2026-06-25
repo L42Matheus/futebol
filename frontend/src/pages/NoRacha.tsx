@@ -55,6 +55,8 @@ export default function NoRacha() {
           perna_boa: profileRes.data.perna_boa || '',
           numero_camisa: profileRes.data.numero_camisa?.toString() || '',
         })
+      } catch (error) {
+        console.error('Erro ao carregar perfil básico:', error)
       } finally {
         setLoading(false)
       }

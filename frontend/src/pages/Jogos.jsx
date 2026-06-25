@@ -10,7 +10,7 @@ export default function Jogos() {
   const { rachaId } = useParams()
   const [racha, setRacha] = useState(null)
   const [jogos, setJogos] = useState([])
-  const [apenasFuturos, setApenasFuturos] = useState(true)
+  const [apenasFuturos, setApenasFuturos] = useState(false)
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -109,4 +109,3 @@ function parseDataJogo(dataHora) {
     </div>
   )
 }
-

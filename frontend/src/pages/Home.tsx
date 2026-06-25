@@ -1,6 +1,15 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, AlertCircle, Layout as LayoutIcon, Users, Trash2, Plus } from 'lucide-react'
+import {
+  Calendar,
+  AlertCircle,
+  Layout as LayoutIcon,
+  Users,
+  Trash2,
+  Plus,
+  Trophy,
+  Layers,
+} from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { TIPO_RACHA_LABELS } from '../constants'
@@ -78,6 +87,64 @@ function parseDataJogo(dataHora) {
   }
 
   const currentRacha = rachas[selectedIndex]
+  const quickActions = currentRacha ? [
+    {
+      label: 'Jogos',
+      subtitle: nextGame
+        ? format(parseDataJogo(nextGame.data_hora), "EEE, HH:mm", { locale: ptBR })
+        : 'Sem jogos',
+      icon: <Calendar size={24} />,
+      color: 'text-blue-500',
+      bg: 'bg-blue-500/10',
+      path: `/racha/${currentRacha.id}/jogos`,
+      disabled: false,
+    },
+    {
+      label: 'Atletas',
+      subtitle: `${currentRacha.total_atletas || 0} membros`,
+      icon: <Users size={24} />,
+      color: 'text-purple-500',
+      bg: 'bg-purple-500/10',
+      path: `/racha/${currentRacha.id}/atletas`,
+      disabled: false,
+    },
+    {
+      label: 'Times',
+      subtitle: 'Temporada',
+      icon: <Layers size={24} />,
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-500/10',
+      path: `/racha/${currentRacha.id}/times`,
+      disabled: false,
+    },
+    {
+      label: 'Escalação',
+      subtitle: TIPO_RACHA_LABELS[currentRacha.tipo] || currentRacha.tipo,
+      icon: <LayoutIcon size={24} />,
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-500/10',
+      path: `/racha/${currentRacha.id}/escalacao`,
+      disabled: false,
+    },
+    {
+      label: 'Ranking',
+      subtitle: 'Gols e assistências',
+      icon: <Trophy size={24} />,
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
+      path: '/artilharia',
+      disabled: false,
+    },
+    {
+      label: 'Caixa',
+      subtitle: saldo?.pendente_formatado || 'R$ 0,00',
+      icon: <AlertCircle size={24} />,
+      color: 'text-orange-400',
+      bg: 'bg-orange-500/10',
+      path: `/racha/${currentRacha.id}/financeiro`,
+      disabled: !isAdmin,
+    },
+  ] : []
 
   if (loading) {
     return (
@@ -90,44 +157,61 @@ function parseDataJogo(dataHora) {
   return (
     <div className="space-y-8 overflow-x-hidden">
       <div className="space-y-3">
-        <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest px-1">Meus Rachas</p>
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+        <div className="px-1">
+          <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Meus Rachas</p>
+        </div>
+
+        <div className="flex items-stretch gap-3 overflow-x-auto no-scrollbar pb-2">
           {rachas.map((r, idx) => (
             <div key={r.id} className="relative flex-shrink-0 group">
               <button
                 onClick={() => setSelectedIndex(idx)}
-                className={`px-6 py-4 rounded-3xl border-2 transition-all flex flex-col gap-1 min-w-[140px] ${
+                className={`px-5 py-3 rounded-3xl border transition-all flex flex-col items-start justify-center min-w-[132px] min-h-[76px] ${
                   selectedIndex === idx
                     ? 'bg-emerald-600 border-emerald-400 shadow-lg shadow-emerald-900/20'
                     : 'bg-gray-900/50 border-gray-800 text-gray-400'
                 }`}
               >
-                <span className={`text-xs font-black uppercase tracking-wider ${selectedIndex === idx ? 'text-emerald-200' : 'text-gray-600'}`}>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedIndex === idx ? 'text-emerald-200' : 'text-gray-600'}`}>
                   {TIPO_RACHA_LABELS[r.tipo] || r.tipo}
                 </span>
-                <span className="text-lg font-bold text-white whitespace-nowrap">{r.nome}</span>
+                <span className="text-lg font-black text-white whitespace-nowrap">{r.nome}</span>
               </button>
-              {isAdmin && (
+              {isAdmin && selectedIndex === idx && (
                 <button
                   onClick={(e) => handleDeleteRacha(e, r.id)}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
+                  className="absolute -top-1.5 -right-1.5 w-7 h-7 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"
                   title="Excluir Racha"
                 >
-                  <Trash2 size={12} strokeWidth={3} />
+                  <Trash2 size={13} strokeWidth={3} />
                 </button>
               )}
             </div>
           ))}
+
           {isAdmin && (
             <button
               onClick={() => navigate('/novo')}
-              className="flex-shrink-0 px-6 py-4 rounded-3xl border-2 border-dashed border-gray-700 hover:border-emerald-500 hover:bg-emerald-500/5 transition-all flex flex-col items-center justify-center min-w-[100px] min-h-[76px] group"
+              className="flex-shrink-0 px-5 py-3 rounded-3xl border border-dashed border-gray-700 hover:border-emerald-500 hover:bg-emerald-500/5 transition-all flex flex-col items-center justify-center min-w-[92px] min-h-[76px] group"
             >
-              <Plus size={24} className="text-gray-600 group-hover:text-emerald-500 transition-colors" />
+              <Plus size={22} className="text-gray-600 group-hover:text-emerald-500 transition-colors" />
               <span className="text-xs font-bold text-gray-600 group-hover:text-emerald-500 transition-colors mt-1">Novo</span>
             </button>
           )}
         </div>
+
+        {currentRacha && (
+          <div className="flex items-center justify-between gap-3 px-1">
+            <p className="text-sm text-gray-400 truncate">
+              Gerenciando <span className="font-bold text-white">{currentRacha.nome}</span>
+            </p>
+            <div>
+              <span className="rounded-full bg-gray-900/80 border border-gray-800 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                {currentRacha.total_atletas || 0} atletas
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Estado vazio - Nenhum racha */}
@@ -155,69 +239,35 @@ function parseDataJogo(dataHora) {
       )}
 
       {currentRacha && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}
-              className="bg-gray-900/40 border border-gray-800 p-5 rounded-[2.5rem] flex flex-col justify-between aspect-square group hover:border-emerald-500/50 transition-all"
-            >
-              <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center">
-                <Calendar size={24} />
-              </div>
-              <div>
-                <p className="text-xl font-black text-white">
-                  {nextGame ? format(parseDataJogo(nextGame.data_hora), "EEE, HH:mm", { locale: ptBR }) : 'Sem jogos'}
-                </p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Calendário</p>
-              </div>
-            </button>
-
-            <div
-              onClick={() => isAdmin && navigate(`/racha/${currentRacha.id}/financeiro`)}
-              className={`bg-gray-900/40 border border-gray-800 p-5 rounded-[2.5rem] flex flex-col justify-between aspect-square ${
-                isAdmin ? 'cursor-pointer group hover:border-emerald-500/50 transition-all' : ''
-              }`}
-            >
-              <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
-                <AlertCircle size={24} />
-              </div>
-              <div>
-                <p className="text-xl font-black text-white">{saldo?.pendente_formatado || 'R$ 0,00'}</p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Pendentes</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/escalacao`)}
-              className="bg-gray-900/40 border border-gray-800 p-5 rounded-[2.5rem] flex flex-col justify-between aspect-square group hover:border-emerald-500/50 transition-all"
-            >
-              <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center">
-                <LayoutIcon size={24} />
-              </div>
-              <div>
-                <p className="text-xl font-black text-white mb-1 uppercase tracking-tight">Escalação</p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
-                  {TIPO_RACHA_LABELS[currentRacha.tipo] || currentRacha.tipo}
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate(`/racha/${currentRacha.id}/atletas`)}
-              className="bg-gray-900/40 border border-gray-800 p-5 rounded-[2.5rem] flex flex-col justify-between aspect-square group hover:border-emerald-500/50 transition-all"
-            >
-              <div className="w-12 h-12 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center">
-                <Users size={24} />
-              </div>
-              <div>
-                <p className="text-xl font-black text-white">{currentRacha.total_atletas}</p>
-                <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Membros</p>
-              </div>
-            </button>
+        <div className="space-y-3">
+          <div className="px-1">
+            <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Ações do Racha</p>
+            <p className="text-sm text-gray-400">Acesse rapidamente as áreas principais.</p>
           </div>
-        </>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {quickActions.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                disabled={action.disabled}
+                onClick={() => navigate(action.path)}
+                className="bg-gray-900/40 border border-gray-800 p-4 rounded-[2rem] flex flex-col justify-between min-h-[145px] text-left group hover:border-emerald-500/50 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <div className={`w-12 h-12 ${action.bg} ${action.color} rounded-2xl flex items-center justify-center`}>
+                  {action.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg md:text-xl font-black text-white truncate">{action.label}</p>
+                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider truncate">
+                    {action.subtitle}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
 }
-

@@ -89,6 +89,7 @@ export interface Team {
   id: number
   nome: string
   racha_id: number
+  temporada_id?: number | null
   cor?: string
 }
 

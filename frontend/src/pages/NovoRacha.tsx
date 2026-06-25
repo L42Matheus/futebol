@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, Dribbble } from 'lucide-react'
-import { rachasApi, authApi } from '../services/api'
+import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, Dribbble, CalendarDays } from 'lucide-react'
+import { rachasApi, authApi, temporadasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import FormField from '../components/FormField'
@@ -14,6 +14,10 @@ interface RachaForm {
   valor_mensalidade: number
   valor_cartao_amarelo: number
   valor_cartao_vermelho: number
+  criar_temporada: boolean
+  temporada_nome: string
+  temporada_mes: number
+  temporada_ano: number
 }
 
 interface InviteLinks {
@@ -23,6 +27,7 @@ interface InviteLinks {
 
 export default function NovoRacha() {
   const navigate = useNavigate()
+  const now = new Date()
   const [loading, setLoading] = useState(false)
   const [inviteLinks, setInviteLinks] = useState<InviteLinks | null>(null)
   const [createdRachaId, setCreatedRachaId] = useState<number | null>(null)
@@ -32,6 +37,10 @@ export default function NovoRacha() {
     valor_mensalidade: 0,
     valor_cartao_amarelo: 1000,
     valor_cartao_vermelho: 2000,
+    criar_temporada: true,
+    temporada_nome: `Temporada ${now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`,
+    temporada_mes: now.getMonth() + 1,
+    temporada_ano: now.getFullYear(),
   })
   const { user } = useAuth()
   const { toast } = useToast()
@@ -41,8 +50,25 @@ export default function NovoRacha() {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await rachasApi.create(form)
+      const {
+        criar_temporada,
+        temporada_nome,
+        temporada_mes,
+        temporada_ano,
+        ...rachaPayload
+      } = form
+      const response = await rachasApi.create(rachaPayload)
       setCreatedRachaId(response.data.id)
+
+      if (criar_temporada) {
+        await temporadasApi.create({
+          racha_id: response.data.id,
+          nome: temporada_nome,
+          mes: temporada_mes,
+          ano: temporada_ano,
+          status: 'ativa',
+        })
+      }
 
       try {
         const [inviteAtleta, inviteAdmin] = await Promise.all([
@@ -74,10 +100,17 @@ export default function NovoRacha() {
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target
+    const { name, value, type } = e.target
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
     setForm((prev) => ({
       ...prev,
-      [name]: name.includes('valor') ? parseInt(value) * 100 : value,
+      [name]: type === 'checkbox'
+        ? checked
+        : name.includes('valor')
+          ? parseInt(value) * 100
+          : name.includes('temporada_mes') || name.includes('temporada_ano')
+            ? parseInt(value)
+            : value,
     }))
   }
 
@@ -143,8 +176,73 @@ export default function NovoRacha() {
               />
             </FormField>
           </div>
+
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="criar_temporada"
+                checked={form.criar_temporada}
+                onChange={handleChange}
+                className="mt-1 h-4 w-4 accent-emerald-500"
+              />
+              <span>
+                <span className="flex items-center gap-2 font-semibold text-white">
+                  <CalendarDays size={18} className="text-emerald-400" />
+                  Criar temporada inicial
+                </span>
+                <span className="block text-sm text-gray-400 mt-1">
+                  Ideal para rachas mensais com times fixos, tabela e campeão do mês.
+                </span>
+              </span>
+            </label>
+
+            {form.criar_temporada && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <FormField label="Nome da temporada">
+                    <Input
+                      type="text"
+                      name="temporada_nome"
+                      value={form.temporada_nome}
+                      onChange={handleChange}
+                      placeholder="Ex: Temporada Junho/2026"
+                      required={form.criar_temporada}
+                    />
+                  </FormField>
+                </div>
+                <FormField label="Mês">
+                  <Select name="temporada_mes" value={form.temporada_mes} onChange={handleChange}>
+                    <option value={1}>Janeiro</option>
+                    <option value={2}>Fevereiro</option>
+                    <option value={3}>Março</option>
+                    <option value={4}>Abril</option>
+                    <option value={5}>Maio</option>
+                    <option value={6}>Junho</option>
+                    <option value={7}>Julho</option>
+                    <option value={8}>Agosto</option>
+                    <option value={9}>Setembro</option>
+                    <option value={10}>Outubro</option>
+                    <option value={11}>Novembro</option>
+                    <option value={12}>Dezembro</option>
+                  </Select>
+                </FormField>
+                <FormField label="Ano">
+                  <Input
+                    type="number"
+                    name="temporada_ano"
+                    value={form.temporada_ano}
+                    onChange={handleChange}
+                    min="2024"
+                    max="2100"
+                  />
+                </FormField>
+              </div>
+            )}
+          </div>
+
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Criando...' : 'Criar Racha'}
+            {loading ? 'Criando...' : form.criar_temporada ? 'Criar Racha e Temporada' : 'Criar Racha'}
           </button>
         </form>
       ) : (

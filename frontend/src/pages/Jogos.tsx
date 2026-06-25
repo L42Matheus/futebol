@@ -19,7 +19,7 @@ export default function Jogos() {
   const { rachaId } = useParams<{ rachaId: string }>()
   const [racha, setRacha] = useState<Racha | null>(null)
   const [jogos, setJogos] = useState<Jogo[]>([])
-  const [apenasFuturos, setApenasFuturos] = useState(true)
+  const [apenasFuturos, setApenasFuturos] = useState(false)
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const { user } = useAuth()

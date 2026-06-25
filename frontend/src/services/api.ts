@@ -164,8 +164,38 @@ export const pagamentosApi = {
     api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`),
 }
 
+interface Temporada {
+  id: number
+  racha_id: number
+  nome: string
+  mes: number
+  ano: number
+  status: 'ativa' | 'encerrada'
+  campeao_team_id?: number | null
+}
+
+export const temporadasApi = {
+  list: (_rachaId: number | string): Promise<AxiosResponse<Temporada[]>> =>
+    Promise.resolve({ data: [], status: 200, statusText: 'OK', headers: {}, config: {} } as AxiosResponse<Temporada[]>),
+  getActive: (_rachaId: number | string): Promise<AxiosResponse<Temporada | null>> =>
+    Promise.resolve({ data: null, status: 200, statusText: 'OK', headers: {}, config: {} } as AxiosResponse<Temporada | null>),
+  create: (data: Omit<Temporada, 'id'>): Promise<AxiosResponse<Temporada>> =>
+    Promise.resolve({ data: { ...data, id: Date.now() }, status: 200, statusText: 'OK', headers: {}, config: {} } as AxiosResponse<Temporada>),
+  setCampeao: (
+    _temporadaId: number | string,
+    _teamId: number | string,
+  ): Promise<AxiosResponse<Temporada | null>> =>
+    Promise.resolve({
+      data: null,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+    } as AxiosResponse<Temporada | null>),
+}
+
 export const teamsApi = {
-  list: (rachaId: number | string): Promise<AxiosResponse<Team[]>> =>
+  list: (rachaId: number | string, _temporadaId?: number | string | null): Promise<AxiosResponse<Team[]>> =>
     api.get(`/teams/?racha_id=${rachaId}`),
   get: (teamId: number | string): Promise<AxiosResponse<Team>> =>
     api.get(`/teams/${teamId}`),
