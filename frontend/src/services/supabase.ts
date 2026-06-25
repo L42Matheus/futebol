@@ -18,7 +18,11 @@ export function getSupabaseClient(): SupabaseClient {
 
   client ??= createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
-      detectSessionInUrl: true,
+      // Lemos o access_token do hash manualmente em completeSupabaseGoogleLogin.
+      // Deixar o supabase-js processar dispara /auth/v1/user, que aqui sempre
+      // dispara mesmo quando o backend já validou via JWKS.
+      detectSessionInUrl: false,
+      persistSession: false,
       flowType: 'implicit',
     },
   })
