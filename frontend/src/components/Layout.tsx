@@ -44,6 +44,8 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   // Extrair rachaId da URL para nav contextual
   const rachaMatch = location.pathname.match(/\/racha\/(\d+)/)
   const rachaId = rachaMatch ? rachaMatch[1] : null
+  const isFinanceiroRoute = location.pathname === '/financeiro' || /\/racha\/\d+\/financeiro$/.test(location.pathname)
+  const showRachaNav = Boolean(rachaId) && !isFinanceiroRoute
 
   const RACHA_NAV_ITEMS = rachaId ? [
     { path: `/racha/${rachaId}/jogos`, label: 'Jogos', icon: <Calendar size={18} /> },
@@ -68,7 +70,9 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           {NAV_ITEMS.filter(item => !item.isFab).map((item) => {
             if (item.adminOnly && user?.role !== 'admin') return null
             if (item.athleteOnly && user?.role !== 'atleta') return null
-            const active = location.pathname === item.path
+            const active =
+              location.pathname === item.path ||
+              (item.path === '/financeiro' && isFinanceiroRoute)
 
             return (
               <Link
@@ -87,7 +91,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           })}
 
           {/* Nav contextual do racha */}
-          {rachaId && (
+          {showRachaNav && (
             <div className="mt-6 pt-4 border-t border-gray-800">
               <p className="px-4 mb-2 text-[10px] uppercase font-black text-gray-600 tracking-widest">Este Racha</p>
               {RACHA_NAV_ITEMS.map((item) => {

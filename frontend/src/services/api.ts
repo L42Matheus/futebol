@@ -42,6 +42,13 @@ interface JogoPayload {
   [key: string]: unknown
 }
 
+interface JogoPlacarPayload {
+  time_a_nome?: string
+  time_b_nome?: string
+  placar_time_a: number
+  placar_time_b: number
+}
+
 export function normalizeJogoPayload(data: JogoPayload): Record<string, unknown> {
   const payload: Record<string, unknown> = { ...data }
   if (payload['data_hora']) payload['data_hora'] = formatDateBR(payload['data_hora'] as Date | string)
@@ -110,6 +117,10 @@ export const jogosApi = {
     api.post('/jogos/', normalizeJogoPayload(data)),
   update: (id: number | string, data: JogoPayload): Promise<AxiosResponse<Jogo>> =>
     api.patch(`/jogos/${id}`, normalizeJogoPayload(data)),
+  updatePlacar: (
+    id: number | string,
+    data: JogoPlacarPayload,
+  ): Promise<AxiosResponse<Jogo>> => api.patch(`/jogos/${id}`, data),
   cancel: (id: number | string): Promise<AxiosResponse<void>> => api.delete(`/jogos/${id}`),
   getLista: (jogoId: number | string): Promise<AxiosResponse<JogoLista>> =>
     api.get(`/jogos/${jogoId}/lista`),

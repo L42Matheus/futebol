@@ -41,6 +41,13 @@ export interface Jogo {
   total_confirmados: number
   racha_id: number
   valor_campo?: number
+  time_a_nome?: string
+  time_b_nome?: string
+  placar_time_a?: number | null
+  placar_time_b?: number | null
+  vencedor?: 'time_a' | 'time_b' | 'empate' | null
+  finalizado?: boolean
+  status?: string
 }
 
 export type PagamentoStatus = 'pendente' | 'aguardando_aprovacao' | 'aprovado' | 'rejeitado'

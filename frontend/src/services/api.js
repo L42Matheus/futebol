@@ -67,6 +67,7 @@ const SUPABASE_PAGAMENTOS_KEY = 'supabase_pagamentos'
 const SUPABASE_TEMPORADAS_KEY = 'supabase_temporadas'
 const SUPABASE_TEAMS_KEY = 'supabase_teams'
 const SUPABASE_TEAM_MEMBERS_KEY = 'supabase_team_members'
+const SUPABASE_JOGO_PLACARES_KEY = 'supabase_jogo_placares'
 
 function readSupabaseProfileCache(userId) {
   try {
@@ -131,6 +132,36 @@ function writeLocalCache(key, value) {
 function nextLocalId(items) {
   const ids = (items || []).map((item) => Number(item.id) || 0)
   return ids.length ? Math.max(...ids) + 1 : 1
+}
+
+function getLocalJogoPlacar(jogoId) {
+  const placares = readLocalCache(SUPABASE_JOGO_PLACARES_KEY, {})
+  return placares?.[jogoId] || {}
+}
+
+function withLocalJogoPlacar(jogo) {
+  if (!jogo) return jogo
+  return { ...jogo, ...getLocalJogoPlacar(jogo.id) }
+}
+
+function normalizePlacarPayload(data = {}) {
+  const placarTimeA = Number(data.placar_time_a)
+  const placarTimeB = Number(data.placar_time_b)
+  const timeANome = data.time_a_nome?.trim?.() || 'Time A'
+  const timeBNome = data.time_b_nome?.trim?.() || 'Time B'
+  const vencedor =
+    placarTimeA === placarTimeB ? 'empate' : placarTimeA > placarTimeB ? 'time_a' : 'time_b'
+
+  return {
+    time_a_nome: timeANome,
+    time_b_nome: timeBNome,
+    placar_time_a: placarTimeA,
+    placar_time_b: placarTimeB,
+    vencedor,
+    finalizado: true,
+    status: 'finalizado',
+    updated_at: new Date().toISOString(),
+  }
 }
 
 function maxAtletasPorTipo(tipo) {
@@ -328,7 +359,7 @@ export const jogosApi = {
 
     const { data, error } = await query
     throwSupabaseError(error)
-    return supabaseResponse((data || []).map((jogo) => ({ ...jogo, total_confirmados: 0 })))
+    return supabaseResponse((data || []).map((jogo) => withLocalJogoPlacar({ ...jogo, total_confirmados: 0 })))
   },
 
   async get(id) {
@@ -336,7 +367,7 @@ export const jogosApi = {
 
     const { data, error } = await getSupabaseClient().from('jogos').select('*').eq('id', id).single()
     throwSupabaseError(error)
-    return supabaseResponse({ ...data, total_confirmados: 0 })
+    return supabaseResponse(withLocalJogoPlacar({ ...data, total_confirmados: 0 }))
   },
 
   async create(data) {
@@ -359,6 +390,21 @@ export const jogosApi = {
       .single()
     throwSupabaseError(error)
     return supabaseResponse(jogo)
+  },
+
+  async updatePlacar(id, data) {
+    const payload = normalizePlacarPayload(data)
+
+    if (!isSupabaseConfigured()) {
+      return api.patch(`/jogos/${id}`, payload)
+    }
+
+    // MVP: enquanto a tabela de resultados não existe no Supabase, mantemos o
+    // placar localmente para validar o fluxo visual sem quebrar a agenda.
+    const placares = readLocalCache(SUPABASE_JOGO_PLACARES_KEY, {})
+    placares[id] = { ...(placares[id] || {}), ...payload }
+    writeLocalCache(SUPABASE_JOGO_PLACARES_KEY, placares)
+    return supabaseResponse({ id: Number(id), ...payload })
   },
 
   async cancel(id) {

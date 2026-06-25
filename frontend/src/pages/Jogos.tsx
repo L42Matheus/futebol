@@ -15,6 +15,19 @@ function parseGameDate(dataHora: string) {
   return new Date(year, month - 1, day, 12, 0, 0)
 }
 
+function hasGameScore(jogo: Jogo) {
+  return jogo.placar_time_a !== null && jogo.placar_time_a !== undefined
+    && jogo.placar_time_b !== null && jogo.placar_time_b !== undefined
+}
+
+function getWinnerLabel(jogo: Jogo) {
+  if (!hasGameScore(jogo)) return null
+  if (jogo.placar_time_a === jogo.placar_time_b) return 'Empate'
+  return jogo.placar_time_a! > jogo.placar_time_b!
+    ? jogo.time_a_nome || 'Time A'
+    : jogo.time_b_nome || 'Time B'
+}
+
 export default function Jogos() {
   const { rachaId } = useParams<{ rachaId: string }>()
   const [racha, setRacha] = useState<Racha | null>(null)
@@ -102,32 +115,48 @@ export default function Jogos() {
         </div>
       ) : (
         <div className="space-y-2">
-          {jogos.map((jogo) => (
-            <div key={jogo.id} className="card flex items-center justify-between">
-              <Link to={`/racha/${rachaId}/jogo/${jogo.id}`} className="flex-1">
-                <p className="font-medium text-white">
-                  {format(parseGameDate(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
-                </p>
-                <p className="text-sm text-gray-400">
-                  {format(parseGameDate(jogo.data_hora), 'HH:mm')} -{' '}
-                  {jogo.local ?? 'Local não definido'}
-                </p>
-                <p className="text-sm text-emerald-400 font-medium mt-1">
-                  {jogo.total_confirmados} confirmados
-                </p>
-              </Link>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setDeleteId(jogo.id)}
-                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                  title="Excluir jogo"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          ))}
+          {jogos.map((jogo) => {
+            const winnerLabel = getWinnerLabel(jogo)
+
+            return (
+              <div key={jogo.id} className="card flex items-center justify-between">
+                <Link to={`/racha/${rachaId}/jogo/${jogo.id}`} className="flex-1">
+                  <p className="font-medium text-white">
+                    {format(parseGameDate(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {format(parseGameDate(jogo.data_hora), 'HH:mm')} -{' '}
+                    {jogo.local ?? 'Local não definido'}
+                  </p>
+                  {hasGameScore(jogo) ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-bold text-emerald-400">
+                        {jogo.time_a_nome || 'Time A'} {jogo.placar_time_a} x {jogo.placar_time_b}{' '}
+                        {jogo.time_b_nome || 'Time B'}
+                      </span>
+                      <span className="text-xs font-semibold text-gray-400">
+                        {winnerLabel === 'Empate' ? 'Empate' : `Vencedor: ${winnerLabel}`}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-emerald-400 font-medium mt-1">
+                      {jogo.total_confirmados} confirmados
+                    </p>
+                  )}
+                </Link>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteId(jogo.id)}
+                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                    title="Excluir jogo"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 

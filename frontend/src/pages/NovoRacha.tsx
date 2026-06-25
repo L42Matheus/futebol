@@ -8,6 +8,8 @@ import FormField from '../components/FormField'
 import { Input, Select } from '../components/Input'
 import type { TipoRacha } from '../types'
 
+const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
+
 interface RachaForm {
   nome: string
   tipo: TipoRacha
@@ -59,6 +61,7 @@ export default function NovoRacha() {
       } = form
       const response = await rachasApi.create(rachaPayload)
       setCreatedRachaId(response.data.id)
+      localStorage.setItem(SELECTED_RACHA_KEY, String(response.data.id))
 
       if (criar_temporada) {
         await temporadasApi.create({
