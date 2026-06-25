@@ -91,31 +91,26 @@ const authService = {
   },
 
   async completeSupabaseGoogleLogin(): Promise<User | null> {
-    const supabase = getSupabaseClient()
-    let { data: { session } } = await supabase.auth.getSession()
-
-    if (!session) {
-      const code = new URL(window.location.href).searchParams.get('code')
-      if (code) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) throw error
-        session = data.session
-      }
-    }
-
-    if (!session?.access_token) return null
+    // Lê o access_token diretamente do hash da URL devolvido pelo Supabase no
+    // fluxo implicit. Evita depender de supabase.auth.getSession() que chama
+    // /auth/v1/user e falha quando a apikey publishable não é aceita.
+    const hash = window.location.hash.startsWith('#')
+      ? window.location.hash.slice(1)
+      : window.location.hash
+    const params = new URLSearchParams(hash)
+    const accessToken = params.get('access_token')
+    if (!accessToken) return null
 
     const pendingInvite = localStorage.getItem('pending_invite_token')
     const pendingRole = localStorage.getItem('pending_login_role') || 'atleta'
 
     const response = await authApi.supabaseExchange({
-      access_token: session.access_token,
+      access_token: accessToken,
       invite_token: pendingInvite || undefined,
       role: pendingRole,
     })
 
     saveSession(response.data.access_token, response.data.user)
-    await supabase.auth.signOut().catch(() => undefined)
     window.history.replaceState({}, document.title, window.location.pathname)
     return response.data.user
   },
