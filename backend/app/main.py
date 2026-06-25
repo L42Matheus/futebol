@@ -7,6 +7,7 @@ import os
 from app.config import get_settings
 from app.database import engine, Base
 from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams, profile, artilharia
+from app.schema_compat import ensure_schema_compatibility
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,6 +18,7 @@ logging.basicConfig(
 settings = get_settings()
 
 Base.metadata.create_all(bind=engine)
+ensure_schema_compatibility(engine)
 
 # Cria diretório de uploads se não existe
 upload_path = settings.get_upload_path()

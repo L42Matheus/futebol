@@ -52,6 +52,10 @@ class JogoUpdate(BaseModel):
     observacoes: Optional[str] = None
     finalizado: Optional[bool] = None
     cancelado: Optional[bool] = None
+    time_a_nome: Optional[str] = Field(None, max_length=80)
+    time_b_nome: Optional[str] = Field(None, max_length=80)
+    placar_time_a: Optional[int] = Field(None, ge=0)
+    placar_time_b: Optional[int] = Field(None, ge=0)
 
     @field_validator("data_hora", mode="before")
     @classmethod
@@ -66,6 +70,10 @@ class JogoResponse(JogoBase):
     racha_id: int
     finalizado: bool
     cancelado: bool
+    time_a_nome: Optional[str] = None
+    time_b_nome: Optional[str] = None
+    placar_time_a: Optional[int] = None
+    placar_time_b: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     total_confirmados: int = 0

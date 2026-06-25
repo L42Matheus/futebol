@@ -80,7 +80,10 @@ def atualizar_jogo(jogo_id: int, jogo_update: JogoUpdate, db: Session = Depends(
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
     verificar_acesso_racha(db, current_user, jogo.racha_id)
-    for field, value in jogo_update.model_dump(exclude_unset=True).items():
+    update_data = jogo_update.model_dump(exclude_unset=True)
+    if "placar_time_a" in update_data and "placar_time_b" in update_data:
+        update_data["finalizado"] = True
+    for field, value in update_data.items():
         setattr(jogo, field, value)
     db.commit()
     db.refresh(jogo)
