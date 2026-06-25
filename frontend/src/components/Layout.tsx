@@ -45,6 +45,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   const rachaMatch = location.pathname.match(/\/racha\/(\d+)/)
   const rachaId = rachaMatch ? rachaMatch[1] : null
   const isFinanceiroRoute = location.pathname === '/financeiro' || /\/racha\/\d+\/financeiro$/.test(location.pathname)
+  const isJogosRoute = location.pathname === '/jogos' || /\/racha\/\d+\/(jogos|novo-jogo|jogo\/\d+)/.test(location.pathname)
   const showRachaNav = Boolean(rachaId) && !isFinanceiroRoute
 
   const RACHA_NAV_ITEMS = rachaId ? [
@@ -72,7 +73,8 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
             if (item.athleteOnly && user?.role !== 'atleta') return null
             const active =
               location.pathname === item.path ||
-              (item.path === '/financeiro' && isFinanceiroRoute)
+              (item.path === '/financeiro' && isFinanceiroRoute) ||
+              (item.path === '/jogos' && isJogosRoute)
 
             return (
               <Link

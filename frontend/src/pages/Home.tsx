@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Calendar,
   AlertCircle,
+  Layers,
   Layout as LayoutIcon,
   Users,
   Plus,
@@ -146,11 +147,11 @@ function parseDataJogo(dataHora) {
       path: `/racha/${currentRacha.id}/escalacao`,
     },
     {
-      label: 'Ranking',
-      icon: <Trophy size={24} />,
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
-      path: '/artilharia',
+      label: 'Times',
+      icon: <Layers size={24} />,
+      color: 'text-purple-400',
+      bg: 'bg-purple-500/10',
+      path: `/racha/${currentRacha.id}/times`,
     },
   ] : []
 

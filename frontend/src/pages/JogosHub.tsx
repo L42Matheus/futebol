@@ -4,7 +4,7 @@ import { rachasApi } from '../services/api'
 
 const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
 
-export default function FinanceiroHub() {
+export default function JogosHub() {
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function FinanceiroHub() {
           rachas.find((racha) => String(racha.id) === savedRachaId) || rachas[0]
 
         if (selectedRacha) {
-          navigate(`/racha/${selectedRacha.id}/financeiro`, { replace: true })
+          navigate(`/racha/${selectedRacha.id}/jogos`, { replace: true })
         }
       } catch (e) {
         console.error(e)

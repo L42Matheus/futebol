@@ -1,11 +1,14 @@
-﻿import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut } from 'lucide-react'
+import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown } from 'lucide-react'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
-import { POSICAO_LABELS, PERNA_LABELS } from '../constants'
+import { POSICAO_LABELS, PERNA_LABELS, TIPO_RACHA_LABELS } from '../constants'
 import { useAuth } from '../context/AuthContext'
 import { profileApi, rachasApi } from '../services/api'
+import type { Racha } from '../types'
+
+const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
 
 export default function AthleteSelfProfile() {
   const { user, logout } = useAuth()
@@ -13,6 +16,8 @@ export default function AthleteSelfProfile() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [hasRacha, setHasRacha] = useState(false)
+  const [rachas, setRachas] = useState<Racha[]>([])
+  const [selectedRachaId, setSelectedRachaId] = useState('')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -23,8 +28,15 @@ export default function AthleteSelfProfile() {
           profileApi.me(),
           rachasApi.list(),
         ])
+        const rachasList: Racha[] = Array.isArray(rachasRes.data) ? rachasRes.data : []
+        const savedRachaId = localStorage.getItem(SELECTED_RACHA_KEY)
+        const selectedRacha =
+          rachasList.find((racha) => String(racha.id) === savedRachaId) || rachasList[0]
+
         setProfile(profileRes.data)
-        setHasRacha(Array.isArray(rachasRes.data) && rachasRes.data.length > 0)
+        setRachas(rachasList)
+        setSelectedRachaId(selectedRacha ? String(selectedRacha.id) : '')
+        setHasRacha(rachasList.length > 0)
       } catch (e) {
         console.error(e)
       } finally {
@@ -37,6 +49,12 @@ export default function AthleteSelfProfile() {
   const handleLogoutAction = () => {
     logout()
     navigate('/perfil')
+  }
+
+  function handleSelectRacha(event: ChangeEvent<HTMLSelectElement>) {
+    const rachaId = event.target.value
+    localStorage.setItem(SELECTED_RACHA_KEY, rachaId)
+    setSelectedRachaId(rachaId)
   }
 
   async function handlePhotoUpload(e) {
@@ -87,6 +105,8 @@ export default function AthleteSelfProfile() {
       </Layout>
     )
   }
+
+  const selectedRacha = rachas.find((racha) => String(racha.id) === selectedRachaId)
 
   return (
     <Layout title="Meu Perfil" showBack={false}>
@@ -141,6 +161,48 @@ export default function AthleteSelfProfile() {
             </div>
           </div>
         </div>
+
+        {selectedRacha && (
+          <div className={`relative rounded-[2rem] border border-gray-800 bg-gray-900/40 p-4 transition-colors ${rachas.length > 1 ? 'cursor-pointer hover:border-emerald-500/40' : ''}`}>
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-inner shadow-emerald-950/30">
+                <span className="text-lg font-black text-emerald-300">7</span>
+                <span className="absolute -top-1.5 text-[8px] font-black uppercase tracking-wider text-emerald-200/60">
+                  QJ
+                </span>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Racha ativo</p>
+                <p className="text-xl font-black text-white truncate">
+                  {selectedRacha.nome}{' '}
+                  <span className="text-gray-500">
+                    {TIPO_RACHA_LABELS[selectedRacha.tipo] || selectedRacha.tipo}
+                  </span>
+                </p>
+              </div>
+
+              {rachas.length > 1 && (
+                <ChevronDown size={24} className="shrink-0 text-gray-400" />
+              )}
+            </div>
+
+            {rachas.length > 1 && (
+              <select
+                aria-label="Selecionar racha"
+                value={selectedRachaId}
+                onChange={handleSelectRacha}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              >
+                {rachas.map((racha) => (
+                  <option key={racha.id} value={String(racha.id)}>
+                    {racha.nome}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gray-900/40 p-5 rounded-3xl border border-gray-800 flex items-center gap-4">
