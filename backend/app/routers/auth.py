@@ -12,6 +12,7 @@ from app.schemas.user import (
     UserResponse,
     TokenResponse,
     GoogleAuthRequest,
+    SupabaseExchangeRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
 )
@@ -25,6 +26,7 @@ from app.services.auth import (
     get_current_user,
 )
 from app.services.google_auth import exchange_code_for_tokens, get_google_user_info, get_google_auth_url
+from app.services.supabase_auth import get_supabase_user
 from app.services.email_service import send_password_reset_email
 from app.services.invite_service import processar_invite
 from app.deps import verificar_admin_racha
@@ -194,6 +196,48 @@ async def google_auth(payload: GoogleAuthRequest, db: Session = Depends(get_db))
 
         profile = AthleteProfile(user_id=user.id, nome=user.nome, telefone=None)
         db.add(profile)
+        db.commit()
+
+    if payload.invite_token:
+        invite = db.query(Invite).filter(Invite.token == payload.invite_token).first()
+        if invite and invite.status == InviteStatus.PENDENTE:
+            processar_invite(db, user, invite)
+            db.commit()
+
+    token = create_access_token({"sub": str(user.id)})
+    return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+
+
+@router.post("/supabase-exchange", response_model=TokenResponse)
+async def supabase_exchange(payload: SupabaseExchangeRequest, db: Session = Depends(get_db)):
+    """Troca um access_token do Supabase por um JWT local."""
+    try:
+        supabase_user = await get_supabase_user(payload.access_token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token Supabase inválido: {str(e)}")
+
+    email = supabase_user.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email não disponível na conta Supabase")
+
+    metadata = supabase_user.get("user_metadata") or {}
+    nome = metadata.get("full_name") or metadata.get("name") or email.split("@")[0]
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        user = User(
+            nome=nome,
+            email=email,
+            senha_hash=hash_password(uuid.uuid4().hex),
+            role=payload.role,
+            ativo=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        db.add(AthleteProfile(user_id=user.id, nome=user.nome, telefone=None))
         db.commit()
 
     if payload.invite_token:

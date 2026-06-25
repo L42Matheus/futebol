@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     reset_password_expire_minutes: int = 30
 
+    # Supabase (used to verify Supabase-issued access tokens server-side)
+    supabase_url: str = ""
+
     # Email (SMTP)
     smtp_host: str = ""
     smtp_port: int = 587

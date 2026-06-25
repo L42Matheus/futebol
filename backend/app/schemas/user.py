@@ -52,6 +52,12 @@ class GoogleAuthRequest(BaseModel):
     role: UserRole = UserRole.ATLETA
 
 
+class SupabaseExchangeRequest(BaseModel):
+    access_token: str
+    invite_token: Optional[str] = None
+    role: UserRole = UserRole.ATLETA
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

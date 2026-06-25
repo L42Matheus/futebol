@@ -260,6 +260,11 @@ export const authApi = {
     api.get('/auth/google/url', { params: { redirect_uri: redirectUri, state } }),
   googleAuth: (data: Record<string, unknown>): Promise<AxiosResponse<AuthResponse>> =>
     api.post('/auth/google', data),
+  supabaseExchange: (data: {
+    access_token: string
+    invite_token?: string | null
+    role?: string
+  }): Promise<AxiosResponse<AuthResponse>> => api.post('/auth/supabase-exchange', data),
   forgotPassword: (email: string): Promise<AxiosResponse<unknown>> =>
     api.post('/auth/forgot-password', { email }),
   resetPassword: (

@@ -103,12 +103,21 @@ const authService = {
       }
     }
 
-    if (!session?.user) return null
+    if (!session?.access_token) return null
 
-    const user = toAppUser(session.user)
-    saveSession(session.access_token, user, 'supabase')
+    const pendingInvite = localStorage.getItem('pending_invite_token')
+    const pendingRole = localStorage.getItem('pending_login_role') || 'atleta'
+
+    const response = await authApi.supabaseExchange({
+      access_token: session.access_token,
+      invite_token: pendingInvite || undefined,
+      role: pendingRole,
+    })
+
+    saveSession(response.data.access_token, response.data.user)
+    await supabase.auth.signOut().catch(() => undefined)
     window.history.replaceState({}, document.title, window.location.pathname)
-    return user
+    return response.data.user
   },
 
   async getCurrentUser(forceRefresh = false): Promise<User> {
