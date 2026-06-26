@@ -84,6 +84,7 @@ def _racha_response_from_mapping(row, *, total_atletas: int = 0, is_admin: bool 
         valor_cartao_amarelo=row.get("valor_cartao_amarelo") or 1000,
         valor_cartao_vermelho=row.get("valor_cartao_vermelho") or 2000,
         estatuto=row.get("estatuto"),
+        escalacao_size=row.get("escalacao_size"),
         ativo=True if row.get("ativo") is None else bool(row.get("ativo")),
         created_at=row.get("created_at") or datetime.utcnow(),
         updated_at=row.get("updated_at"),
@@ -152,16 +153,18 @@ def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user:
             """
             INSERT INTO rachas (
                 nome, tipo, descricao, max_atletas, valor_mensalidade,
-                valor_cartao_amarelo, valor_cartao_vermelho, estatuto, ativo
+                valor_cartao_amarelo, valor_cartao_vermelho, estatuto,
+                escalacao_size, ativo
             )
             VALUES (
                 :nome, :tipo, :descricao, :max_atletas, :valor_mensalidade,
-                :valor_cartao_amarelo, :valor_cartao_vermelho, :estatuto, TRUE
+                :valor_cartao_amarelo, :valor_cartao_vermelho, :estatuto,
+                :escalacao_size, TRUE
             )
             RETURNING
                 id, nome, tipo::text AS tipo, descricao, max_atletas,
                 valor_mensalidade, valor_cartao_amarelo, valor_cartao_vermelho,
-                estatuto, ativo, created_at, updated_at
+                estatuto, escalacao_size, ativo, created_at, updated_at
             """
         ),
         {
@@ -173,6 +176,7 @@ def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user:
             "valor_cartao_amarelo": racha.valor_cartao_amarelo,
             "valor_cartao_vermelho": racha.valor_cartao_vermelho,
             "estatuto": racha.estatuto,
+            "escalacao_size": racha.escalacao_size,
         },
     ).mappings().first()
     if not row:
@@ -263,6 +267,7 @@ def listar_rachas(
             _select_column(racha_columns, "r", "valor_cartao_amarelo", "1000"),
             _select_column(racha_columns, "r", "valor_cartao_vermelho", "2000"),
             _select_column(racha_columns, "r", "estatuto", "NULL"),
+            _select_column(racha_columns, "r", "escalacao_size", "NULL"),
             _select_column(racha_columns, "r", "ativo", "TRUE"),
             _select_column(racha_columns, "r", "created_at", "now()"),
             _select_column(racha_columns, "r", "updated_at", "NULL"),
@@ -333,7 +338,7 @@ def obter_racha(racha_id: int, db: Session = Depends(get_db), current_user: User
             SELECT
                 r.id, r.nome, r.tipo::text AS tipo, r.descricao, r.max_atletas,
                 r.valor_mensalidade, r.valor_cartao_amarelo, r.valor_cartao_vermelho,
-                r.estatuto, r.ativo, r.created_at, r.updated_at,
+                r.estatuto, r.escalacao_size, r.ativo, r.created_at, r.updated_at,
                 COALESCE(ac.total_atletas, 0) AS total_atletas,
                 EXISTS (
                     SELECT 1 FROM racha_admins ra

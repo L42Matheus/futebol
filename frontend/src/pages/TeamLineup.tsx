@@ -9,10 +9,10 @@ import {
   GameType,
   Formation,
   PositionSlot,
-  defaultFormation,
-  formationsByType,
+  getDefaultFormationId,
+  getFormations,
   getFormation,
-  playerCount
+  getPlayerCount,
 } from '../config/formations'
 
 interface Atleta {
@@ -74,6 +74,7 @@ export default function TeamLineup() {
   const [selectedTeamA, setSelectedTeamA] = useState<Team | null>(null)
   const [selectedTeamB, setSelectedTeamB] = useState<Team | null>(null)
   const [gameType, setGameType] = useState<GameType>('society')
+  const [escalacaoSize, setEscalacaoSize] = useState<number | null>(null)
   const [formationA, setFormationA] = useState<Formation | null>(null)
   const [formationB, setFormationB] = useState<Formation | null>(null)
   const [editingMember, setEditingMember] = useState<{ team: Team; member: TeamMember; slot?: PositionSlot } | null>(null)
@@ -96,13 +97,15 @@ export default function TeamLineup() {
       setAtletas(atletasRes.data)
 
       const tipo = rachaRes.data.tipo as GameType
+      const size = rachaRes.data.escalacao_size ?? null
       setGameType(tipo)
+      setEscalacaoSize(size)
 
-      const defaultFormationId = defaultFormation[tipo]
-      const defaultForm = getFormation(tipo, defaultFormationId)
+      const defaultFormationId = getDefaultFormationId(tipo, size)
+      const defaultForm = getFormation(tipo, defaultFormationId, size)
       if (defaultForm) {
-        if (!formationA || !getFormation(tipo, formationA.id)) setFormationA(defaultForm)
-        if (!formationB || !getFormation(tipo, formationB.id)) setFormationB(defaultForm)
+        if (!formationA || !getFormation(tipo, formationA.id, size)) setFormationA(defaultForm)
+        if (!formationB || !getFormation(tipo, formationB.id, size)) setFormationB(defaultForm)
       }
 
       const freshTeams = teamsRes.data
@@ -232,8 +235,8 @@ export default function TeamLineup() {
   const availableAtletas = getAvailableAtletas()
   const teamAOptions = teams.filter(team => team.id !== selectedTeamB?.id)
   const teamBOptions = teams.filter(team => team.id !== selectedTeamA?.id)
-  const formationOptions = formationsByType[gameType]
-  const playersPerSide = playerCount[gameType]
+  const formationOptions = getFormations(gameType, escalacaoSize)
+  const playersPerSide = getPlayerCount(gameType, escalacaoSize)
   const editingFormation = editingMember?.team.id === selectedTeamA?.id ? formationA : formationB
   const addingBenchMembers = getBenchMembers(addingToTeam?.team || null)
   const canPromoteBench = addingToTeam?.slot && addingToTeam.slot.id !== 'bench'
@@ -300,7 +303,7 @@ export default function TeamLineup() {
                   <select
                     value={formationA?.id || ''}
                     onChange={(e) => {
-                      const form = getFormation(gameType, e.target.value)
+                      const form = getFormation(gameType, e.target.value, escalacaoSize)
                       if (form) setFormationA(form)
                     }}
                     className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white/80 outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
@@ -358,7 +361,7 @@ export default function TeamLineup() {
                   <select
                     value={formationB?.id || ''}
                     onChange={(e) => {
-                      const form = getFormation(gameType, e.target.value)
+                      const form = getFormation(gameType, e.target.value, escalacaoSize)
                       if (form) setFormationB(form)
                     }}
                     className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white/80 outline-none transition-colors focus:border-sky-400/50 focus:ring-2 focus:ring-sky-400/20"

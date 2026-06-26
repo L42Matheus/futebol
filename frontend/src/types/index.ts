@@ -20,6 +20,7 @@ export interface Racha {
   tipo: TipoRacha
   total_atletas: number
   max_atletas: number
+  escalacao_size?: number | null
 }
 
 export interface Atleta {

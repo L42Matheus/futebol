@@ -23,6 +23,7 @@ class Racha(Base):
     valor_cartao_amarelo = Column(Integer, default=1000)
     valor_cartao_vermelho = Column(Integer, default=2000)
     estatuto = Column(Text, nullable=True)
+    escalacao_size = Column(Integer, nullable=True)
     ativo = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
