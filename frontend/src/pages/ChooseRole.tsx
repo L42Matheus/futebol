@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { ShieldCheck, UserCircle2, Trophy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -21,10 +21,12 @@ export default function ChooseRole() {
     <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
       {/* Header */}
       <div className="pt-12 pb-8 px-6 text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
-          <Trophy size={32} />
-        </div>
-        <h1 className="text-2xl font-bold text-white">QuemJogaFC</h1>
+        <Link to="/" aria-label="Ir para a página inicial" className="inline-block">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
+            <Trophy size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-white">QuemJogaFC</h1>
+        </Link>
         <p className="text-gray-400 mt-1">Organize seu racha sem estresse</p>
       </div>
 
