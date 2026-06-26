@@ -31,6 +31,23 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         """
         DO $$
         BEGIN
+            CREATE TYPE tiporacha AS ENUM ('CAMPO', 'SOCIETY', 'FUTSAL');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END
+        $$;
+        """,
+        """
+        ALTER TYPE tiporacha ADD VALUE IF NOT EXISTS 'campo'
+        """,
+        """
+        ALTER TYPE tiporacha ADD VALUE IF NOT EXISTS 'society'
+        """,
+        """
+        ALTER TYPE tiporacha ADD VALUE IF NOT EXISTS 'futsal'
+        """,
+        """
+        DO $$
+        BEGIN
             CREATE TYPE posicao AS ENUM (
                 'GOLEIRO', 'ZAGUEIRO', 'LATERAL', 'VOLANTE', 'MEIA', 'ATACANTE', 'PONTA'
             );

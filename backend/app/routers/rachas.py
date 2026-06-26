@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 from typing import List
+from datetime import datetime
 
 from app.database import get_db
 from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User, UserRole
@@ -17,25 +18,125 @@ def get_max_atletas(tipo: TipoRacha) -> int:
     return limites.get(tipo, 30)
 
 
+def _normalize_tipo(value) -> TipoRacha:
+    raw = getattr(value, "value", value)
+    tipo = str(raw or TipoRacha.SOCIETY.value).lower()
+    if tipo in {"campo", "society", "futsal"}:
+        return TipoRacha(tipo)
+    return TipoRacha.SOCIETY
+
+
+def _resolve_tipo_db_label(db: Session, tipo: TipoRacha) -> str:
+    """Return the enum label accepted by the current database.
+
+    Some test databases were created with SQLAlchemy's enum names
+    (``SOCIETY``), others with app values (``society``). This keeps writes
+    compatible with both.
+    """
+
+    row = db.execute(
+        text(
+            """
+            SELECT udt_name
+            FROM information_schema.columns
+            WHERE table_name = 'rachas' AND column_name = 'tipo'
+            LIMIT 1
+            """
+        )
+    ).mappings().first()
+    udt_name = row["udt_name"] if row else None
+    if not udt_name:
+        return tipo.value
+
+    labels = [
+        item[0]
+        for item in db.execute(
+            text(
+                """
+                SELECT e.enumlabel
+                FROM pg_type t
+                JOIN pg_enum e ON e.enumtypid = t.oid
+                WHERE t.typname = :type_name
+                """
+            ),
+            {"type_name": udt_name},
+        ).all()
+    ]
+    if tipo.name in labels:
+        return tipo.name
+    if tipo.value in labels:
+        return tipo.value
+    return tipo.value
+
+
+def _racha_response_from_mapping(row, *, total_atletas: int = 0, is_admin: bool = False) -> RachaResponse:
+    return RachaResponse(
+        id=row["id"],
+        nome=row["nome"],
+        tipo=_normalize_tipo(row.get("tipo")),
+        descricao=row.get("descricao"),
+        max_atletas=row.get("max_atletas") or get_max_atletas(_normalize_tipo(row.get("tipo"))),
+        valor_mensalidade=row.get("valor_mensalidade") or 0,
+        valor_cartao_amarelo=row.get("valor_cartao_amarelo") or 1000,
+        valor_cartao_vermelho=row.get("valor_cartao_vermelho") or 2000,
+        estatuto=row.get("estatuto"),
+        ativo=True if row.get("ativo") is None else bool(row.get("ativo")),
+        created_at=row.get("created_at") or datetime.utcnow(),
+        updated_at=row.get("updated_at"),
+        total_atletas=total_atletas,
+        is_admin=is_admin,
+    )
+
+
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Apenas administradores podem criar racha")
-    db_racha = Racha(**racha.model_dump(), max_atletas=get_max_atletas(racha.tipo))
-    db.add(db_racha)
-    db.commit()
-    db.refresh(db_racha)
+    tipo = _normalize_tipo(racha.tipo)
+    tipo_db = _resolve_tipo_db_label(db, tipo)
+    row = db.execute(
+        text(
+            """
+            INSERT INTO rachas (
+                nome, tipo, descricao, max_atletas, valor_mensalidade,
+                valor_cartao_amarelo, valor_cartao_vermelho, estatuto, ativo
+            )
+            VALUES (
+                :nome, :tipo, :descricao, :max_atletas, :valor_mensalidade,
+                :valor_cartao_amarelo, :valor_cartao_vermelho, :estatuto, TRUE
+            )
+            RETURNING
+                id, nome, tipo::text AS tipo, descricao, max_atletas,
+                valor_mensalidade, valor_cartao_amarelo, valor_cartao_vermelho,
+                estatuto, ativo, created_at, updated_at
+            """
+        ),
+        {
+            "nome": racha.nome,
+            "tipo": tipo_db,
+            "descricao": racha.descricao,
+            "max_atletas": get_max_atletas(tipo),
+            "valor_mensalidade": racha.valor_mensalidade,
+            "valor_cartao_amarelo": racha.valor_cartao_amarelo,
+            "valor_cartao_vermelho": racha.valor_cartao_vermelho,
+            "estatuto": racha.estatuto,
+        },
+    ).mappings().first()
+    if not row:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Não foi possível criar o racha")
 
-    # Cria o admin do racha (não cria atleta)
-    racha_admin = RachaAdmin(
-        user_id=current_user.id,
-        racha_id=db_racha.id,
-        is_owner=True,
-        ativo=True,
+    db.execute(
+        text(
+            """
+            INSERT INTO racha_admins (user_id, racha_id, is_owner, ativo)
+            VALUES (:user_id, :racha_id, TRUE, TRUE)
+            """
+        ),
+        {"user_id": current_user.id, "racha_id": row["id"]},
     )
-    db.add(racha_admin)
     db.commit()
-    return RachaResponse(**{c.name: getattr(db_racha, c.name) for c in db_racha.__table__.columns}, total_atletas=0, is_admin=True)
+    return _racha_response_from_mapping(row, total_atletas=0, is_admin=True)
 
 
 @router.get("/", response_model=List[RachaResponse])
@@ -46,73 +147,95 @@ def listar_rachas(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Busca rachas onde o usuário é admin
-    admin_racha_ids = [
-        row[0]
-        for row in db.query(RachaAdmin.racha_id).filter(
-        RachaAdmin.user_id == current_user.id,
-        RachaAdmin.ativo.is_(True)
-        ).all()
-    ]
-
-    # Busca rachas onde o usuário é atleta
-    atleta_racha_ids = [
-        row[0]
-        for row in db.query(Atleta.racha_id).filter(
-        Atleta.user_id == current_user.id,
-        Atleta.ativo.is_(True)
-        ).all()
-    ]
-
-    user_racha_ids = sorted(set(admin_racha_ids + atleta_racha_ids))
-    if not user_racha_ids:
-        return []
-
-    # Subquery: contagem de atletas ativos por racha
-    atletas_count = (
-        db.query(Atleta.racha_id, func.count(Atleta.id).label("total"))
-        .filter(Atleta.racha_id.in_(user_racha_ids))
-        .filter(Atleta.ativo.is_(True))
-        .group_by(Atleta.racha_id)
-        .subquery()
-    )
-
-    rows = (
-        db.query(
-            Racha,
-            func.coalesce(atletas_count.c.total, 0).label("total_atletas"),
-        )
-        .outerjoin(atletas_count, atletas_count.c.racha_id == Racha.id)
-        .filter(Racha.ativo == ativo, Racha.id.in_(user_racha_ids))
-        .order_by(Racha.created_at.desc(), Racha.id.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    rows = db.execute(
+        text(
+            """
+            WITH user_rachas AS (
+                SELECT racha_id, TRUE AS is_admin
+                FROM racha_admins
+                WHERE user_id = :user_id AND ativo IS TRUE
+                UNION
+                SELECT racha_id, FALSE AS is_admin
+                FROM atletas
+                WHERE user_id = :user_id AND ativo IS TRUE
+            ),
+            atletas_count AS (
+                SELECT racha_id, COUNT(*) AS total_atletas
+                FROM atletas
+                WHERE ativo IS TRUE
+                GROUP BY racha_id
+            )
+            SELECT
+                r.id, r.nome, r.tipo::text AS tipo, r.descricao, r.max_atletas,
+                r.valor_mensalidade, r.valor_cartao_amarelo, r.valor_cartao_vermelho,
+                r.estatuto, r.ativo, r.created_at, r.updated_at,
+                COALESCE(ac.total_atletas, 0) AS total_atletas,
+                BOOL_OR(ur.is_admin) AS is_admin
+            FROM rachas r
+            JOIN user_rachas ur ON ur.racha_id = r.id
+            LEFT JOIN atletas_count ac ON ac.racha_id = r.id
+            WHERE r.ativo = :ativo
+            GROUP BY
+                r.id, r.nome, r.tipo, r.descricao, r.max_atletas,
+                r.valor_mensalidade, r.valor_cartao_amarelo, r.valor_cartao_vermelho,
+                r.estatuto, r.ativo, r.created_at, r.updated_at, ac.total_atletas
+            ORDER BY r.created_at DESC NULLS LAST, r.id DESC
+            OFFSET :skip
+            LIMIT :limit
+            """
+        ),
+        {
+            "user_id": current_user.id,
+            "ativo": ativo,
+            "skip": skip,
+            "limit": limit,
+        },
+    ).mappings().all()
 
     return [
-        RachaResponse(
-            **{c.name: getattr(racha, c.name) for c in racha.__table__.columns},
-            total_atletas=total,
-            is_admin=racha.id in admin_racha_ids,
+        _racha_response_from_mapping(
+            row,
+            total_atletas=row.get("total_atletas") or 0,
+            is_admin=bool(row.get("is_admin")),
         )
-        for racha, total in rows
+        for row in rows
     ]
 
 
 @router.get("/{racha_id}", response_model=RachaResponse)
 def obter_racha(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_acesso_racha(db, current_user, racha_id)
-    racha = db.query(Racha).filter(Racha.id == racha_id).first()
-    if not racha:
+    row = db.execute(
+        text(
+            """
+            SELECT
+                r.id, r.nome, r.tipo::text AS tipo, r.descricao, r.max_atletas,
+                r.valor_mensalidade, r.valor_cartao_amarelo, r.valor_cartao_vermelho,
+                r.estatuto, r.ativo, r.created_at, r.updated_at,
+                COALESCE(ac.total_atletas, 0) AS total_atletas,
+                EXISTS (
+                    SELECT 1 FROM racha_admins ra
+                    WHERE ra.racha_id = r.id AND ra.user_id = :user_id AND ra.ativo IS TRUE
+                ) AS is_admin
+            FROM rachas r
+            LEFT JOIN (
+                SELECT racha_id, COUNT(*) AS total_atletas
+                FROM atletas
+                WHERE ativo IS TRUE
+                GROUP BY racha_id
+            ) ac ON ac.racha_id = r.id
+            WHERE r.id = :racha_id
+            """
+        ),
+        {"racha_id": racha_id, "user_id": current_user.id},
+    ).mappings().first()
+    if not row:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
-    total = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == racha.id, Atleta.ativo.is_(True)).scalar()
-    is_admin = db.query(RachaAdmin).filter(
-        RachaAdmin.user_id == current_user.id,
-        RachaAdmin.racha_id == racha.id,
-        RachaAdmin.ativo.is_(True)
-    ).first() is not None
-    return RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=is_admin)
+    return _racha_response_from_mapping(
+        row,
+        total_atletas=row.get("total_atletas") or 0,
+        is_admin=bool(row.get("is_admin")),
+    )
 
 
 @router.patch("/{racha_id}", response_model=RachaResponse)
@@ -146,8 +269,11 @@ def deletar_racha(racha_id: int, db: Session = Depends(get_db), current_user: Us
 def obter_saldo(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_acesso_racha(db, current_user, racha_id)
     from app.models import Pagamento, StatusPagamento
-    racha = db.query(Racha).filter(Racha.id == racha_id).first()
-    if not racha:
+    exists = db.execute(
+        text("SELECT 1 FROM rachas WHERE id = :racha_id"),
+        {"racha_id": racha_id},
+    ).first()
+    if not exists:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
     total_recebido = db.query(func.sum(Pagamento.valor)).join(Atleta).filter(
         Atleta.racha_id == racha_id, Pagamento.status == StatusPagamento.APROVADO).scalar() or 0

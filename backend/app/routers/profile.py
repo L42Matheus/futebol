@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 import os
 import uuid
 import shutil
+import logging
 
 from app.database import get_db
 from app.models import AthleteProfile, User, Atleta
@@ -13,6 +15,7 @@ from app.utils.file_upload import ALLOWED_IMAGE_EXTENSIONS, validate_image_mime
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS
 
@@ -42,8 +45,19 @@ def sync_atleta_foto(db: Session, user: User, foto_url: str | None):
 
 @router.get("/me", response_model=AthleteProfileResponse)
 def me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    profile = get_or_create_profile(db, current_user)
-    return AthleteProfileResponse.model_validate(profile)
+    try:
+        profile = get_or_create_profile(db, current_user)
+        return AthleteProfileResponse.model_validate(profile)
+    except SQLAlchemyError:
+        logger.exception("Falha ao carregar perfil do usuário %s", current_user.id)
+        db.rollback()
+        return {
+            "id": 0,
+            "user_id": current_user.id,
+            "nome": current_user.nome,
+            "telefone": current_user.telefone,
+            "created_at": current_user.created_at,
+        }
 
 
 @router.patch("/me", response_model=AthleteProfileResponse)

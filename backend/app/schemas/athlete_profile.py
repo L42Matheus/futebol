@@ -22,7 +22,7 @@ class AthleteProfileUpdate(AthleteProfileBase):
 class AthleteProfileResponse(AthleteProfileBase):
     id: int
     user_id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     class Config:
