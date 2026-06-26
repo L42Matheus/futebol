@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
+import { profileApi } from '../services/api'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
@@ -38,8 +40,25 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   const resolvedShowBack =
     typeof showBack === 'boolean' ? showBack : location.pathname !== '/app'
 
-  // Avatar uses user data directly from AuthContext — no extra API call needed.
   const avatarName = user?.nome ?? user?.email ?? 'Perfil'
+
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
+  useEffect(() => {
+    if (!user) {
+      setAvatarSrc(null)
+      return
+    }
+    let cancelled = false
+    profileApi
+      .me()
+      .then(({ data }) => {
+        if (!cancelled) setAvatarSrc(data.foto_url ?? null)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
 
   // Extrair rachaId da URL para nav contextual
   const rachaMatch = location.pathname.match(/\/racha\/(\d+)/)
@@ -132,7 +151,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
         <div className="pt-4 border-t border-gray-800">
           <div className="flex items-center gap-3 px-2 py-3">
             <Avatar
-              src={undefined}
+              src={avatarSrc}
               name={avatarName}
               size="md"
               className="border-2 border-gray-700"
@@ -173,7 +192,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
         </div>
         <Link to="/perfil-atleta">
           <Avatar
-            src={undefined}
+            src={avatarSrc}
             name={avatarName}
             size="sm"
             className="border border-gray-700"

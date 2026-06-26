@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown } from 'lucide-react'
+import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown, X } from 'lucide-react'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
 import { POSICAO_LABELS, PERNA_LABELS, TIPO_RACHA_LABELS } from '../constants'
@@ -19,6 +19,7 @@ export default function AthleteSelfProfile() {
   const [rachas, setRachas] = useState<Racha[]>([])
   const [selectedRachaId, setSelectedRachaId] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -117,7 +118,15 @@ export default function AthleteSelfProfile() {
           </div>
           <div className="px-6 pb-8 -mt-12 relative flex flex-col items-center text-center">
             <div className="relative">
-              <Avatar src={profile.foto_url} name={profile.apelido || profile.nome || 'Atleta'} size="xl" />
+              <button
+                type="button"
+                onClick={() => profile.foto_url && setPhotoPreviewOpen(true)}
+                disabled={!profile.foto_url}
+                aria-label={profile.foto_url ? 'Visualizar foto em tamanho grande' : 'Sem foto'}
+                className="rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-default"
+              >
+                <Avatar src={profile.foto_url} name={profile.apelido || profile.nome || 'Atleta'} size="xl" />
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -264,6 +273,34 @@ export default function AthleteSelfProfile() {
           </button>
         </div>
       </div>
+
+      {photoPreviewOpen && profile.foto_url && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPhotoPreviewOpen(false)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoPreviewOpen(false)}
+            aria-label="Fechar"
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={
+              profile.foto_url.startsWith('/uploads')
+                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${profile.foto_url}`
+                : profile.foto_url
+            }
+            alt={profile.nome || 'Foto do perfil'}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+          />
+        </div>
+      )}
     </Layout>
   )
 }
