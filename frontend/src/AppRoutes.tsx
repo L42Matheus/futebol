@@ -16,6 +16,7 @@ import TeamLineup from './pages/TeamLineup'
 import AtletaProfile from './pages/AtletaProfile'
 import Artilharia from './pages/Artilharia'
 import Login from './pages/Login'
+import LoginSms from './pages/LoginSms'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Register from './pages/Register'
@@ -33,6 +34,7 @@ export default function AppRoutes() {
         <Route path="/perfil-basico" element={<NoRacha />} />
         <Route path="/perfil-atleta" element={<AthleteSelfProfile />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/login-sms" element={<LoginSms />} />
         <Route path="/esqueci-senha" element={<ForgotPassword />} />
         <Route path="/reset-senha" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />

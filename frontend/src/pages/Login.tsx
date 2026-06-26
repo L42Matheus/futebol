@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Trophy, ArrowLeft } from 'lucide-react'
+import { Trophy, ArrowLeft, Smartphone } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
 import authService from '../services/auth'
@@ -315,6 +315,20 @@ export default function Login() {
             </svg>
             Entrar com Google
           </button>
+
+          {isSupabaseConfigured() && (
+            <Link
+              to={
+                inviteToken
+                  ? `/login-sms?invite=${inviteToken}&fromRole=${fromRole}`
+                  : `/login-sms?fromRole=${fromRole}`
+              }
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-700 rounded-xl bg-gray-800/30 text-gray-100 hover:bg-gray-800/60 transition-colors"
+            >
+              <Smartphone size={18} />
+              Entrar com SMS
+            </Link>
+          )}
 
           <p className="text-sm text-gray-500 text-center pt-2">
             Nao tem conta?{' '}

@@ -42,3 +42,31 @@ export async function signInWithGoogleViaSupabase(redirectTo: string): Promise<v
 
   if (error) throw error
 }
+
+/**
+ * Envia um código OTP por SMS para o telefone informado.
+ * O telefone deve estar em formato E.164 (ex: +5511999999999).
+ */
+export async function sendSmsOtp(phone: string): Promise<void> {
+  const { error } = await getSupabaseClient().auth.signInWithOtp({
+    phone,
+    options: { shouldCreateUser: true },
+  })
+  if (error) throw error
+}
+
+/**
+ * Valida o código OTP recebido por SMS e retorna o access_token Supabase.
+ */
+export async function verifySmsOtp(phone: string, code: string): Promise<string> {
+  const { data, error } = await getSupabaseClient().auth.verifyOtp({
+    phone,
+    token: code,
+    type: 'sms',
+  })
+  if (error) throw error
+  if (!data.session?.access_token) {
+    throw new Error('Sessão Supabase não retornou access_token')
+  }
+  return data.session.access_token
+}

@@ -100,6 +100,19 @@ const authService = {
     return response.data.url
   },
 
+  async loginWithSupabaseAccessToken(
+    accessToken: string,
+    options: { inviteToken?: string | null; role?: string } = {},
+  ): Promise<User> {
+    const response = await authApi.supabaseExchange({
+      access_token: accessToken,
+      invite_token: options.inviteToken || undefined,
+      role: options.role || 'atleta',
+    })
+    saveSession(response.data.access_token, response.data.user)
+    return response.data.user
+  },
+
   async completeSupabaseGoogleLogin(): Promise<User | null> {
     // Lê o access_token diretamente do hash da URL devolvido pelo Supabase no
     // fluxo implicit. Evita depender de supabase.auth.getSession() que chama

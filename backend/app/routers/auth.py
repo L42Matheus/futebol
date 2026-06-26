@@ -216,19 +216,30 @@ async def supabase_exchange(payload: SupabaseExchangeRequest, db: Session = Depe
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Token Supabase inválido: {str(e)}")
 
-    email = supabase_user.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="Email não disponível na conta Supabase")
+    email = (supabase_user.get("email") or "").strip() or None
+    telefone = (supabase_user.get("phone") or "").strip() or None
+    if not email and not telefone:
+        raise HTTPException(status_code=400, detail="Conta Supabase sem email ou telefone")
 
     metadata = supabase_user.get("user_metadata") or {}
-    nome = metadata.get("full_name") or metadata.get("name") or email.split("@")[0]
+    nome = (
+        metadata.get("full_name")
+        or metadata.get("name")
+        or (email.split("@")[0] if email else None)
+        or (f"Usuário {telefone[-4:]}" if telefone else "Usuário")
+    )
 
-    user = db.query(User).filter(User.email == email).first()
+    user = None
+    if email:
+        user = db.query(User).filter(User.email == email).first()
+    if not user and telefone:
+        user = db.query(User).filter(User.telefone == telefone).first()
 
     if not user:
         user = User(
             nome=nome,
             email=email,
+            telefone=telefone,
             senha_hash=hash_password(uuid.uuid4().hex),
             role=payload.role,
             ativo=True,
@@ -237,7 +248,7 @@ async def supabase_exchange(payload: SupabaseExchangeRequest, db: Session = Depe
         db.commit()
         db.refresh(user)
 
-        db.add(AthleteProfile(user_id=user.id, nome=user.nome, telefone=None))
+        db.add(AthleteProfile(user_id=user.id, nome=user.nome, telefone=telefone))
         db.commit()
 
     if payload.invite_token:
