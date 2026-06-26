@@ -35,7 +35,7 @@ export default function LoginSms() {
     return (
       <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-gray-900/40 rounded-2xl p-6 border border-gray-800 text-center text-gray-300">
-          Login por SMS indisponível: Supabase não configurado.
+          Login por telefone indisponível: Supabase não configurado.
         </div>
       </div>
     )
@@ -53,7 +53,7 @@ export default function LoginSms() {
       }
       await sendSmsOtp(normalized)
       setPhone(normalized)
-      setInfo('Código enviado por SMS.')
+      setInfo('Código enviado para o seu telefone.')
       setStep('code')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Não foi possível enviar o código.'
@@ -115,7 +115,7 @@ export default function LoginSms() {
         <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
           <Trophy size={28} />
         </div>
-        <h1 className="text-2xl font-bold text-white">Entrar com SMS</h1>
+        <h1 className="text-2xl font-bold text-white">Entrar com Telefone</h1>
         <p className="text-gray-400 mt-1">
           {step === 'phone'
             ? 'Vamos enviar um código pro seu celular'

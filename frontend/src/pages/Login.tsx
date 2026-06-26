@@ -326,7 +326,7 @@ export default function Login() {
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-700 rounded-xl bg-gray-800/30 text-gray-100 hover:bg-gray-800/60 transition-colors"
             >
               <Smartphone size={18} />
-              Entrar com SMS
+              Entrar com Telefone
             </Link>
           )}
 
