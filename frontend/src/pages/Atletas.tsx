@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Plus, User, Shield, Trash2 } from 'lucide-react'
-import { atletasApi } from '../services/api'
+import { Plus, User, Shield, Trash2, Link2, Copy, Check } from 'lucide-react'
+import { atletasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { POSICAO_LABELS } from '../constants'
@@ -27,6 +27,9 @@ export default function Atletas() {
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState<AtletaForm>(INITIAL_FORM)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteCopied, setInviteCopied] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
   const isAdmin = user?.role === 'admin'
@@ -66,6 +69,34 @@ export default function Atletas() {
     }
   }
 
+  async function handleGenerateInvite() {
+    if (!rachaId) return
+    setInviteLoading(true)
+    try {
+      const response = await authApi.createInvite({ racha_id: parseInt(rachaId), role: 'atleta' })
+      const link = `${window.location.origin}/register?invite=${response.data.token}`
+      setInviteLink(link)
+      setInviteCopied(false)
+    } catch (error) {
+      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast(detail ?? 'Erro ao gerar convite', 'error')
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  async function handleCopyInvite() {
+    if (!inviteLink) return
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      setInviteCopied(true)
+      toast('Link copiado!', 'success')
+      setTimeout(() => setInviteCopied(false), 2000)
+    } catch {
+      toast('Não foi possível copiar. Selecione e copie manualmente.', 'error')
+    }
+  }
+
   async function handleDeleteConfirm() {
     if (deleteId === null) return
     try {
@@ -91,12 +122,23 @@ export default function Atletas() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-white">Atletas</h1>
         {isAdmin && (
-          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-            <Plus size={20} /> Adicionar
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleGenerateInvite}
+              disabled={inviteLoading}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+              title="Convidar atleta por link"
+            >
+              <Link2 size={18} />
+              <span className="hidden sm:inline text-sm font-medium">Convidar</span>
+            </button>
+            <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+              <Plus size={20} /> Adicionar
+            </button>
+          </div>
         )}
       </div>
 
@@ -189,6 +231,53 @@ export default function Atletas() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de convite por link */}
+      {isAdmin && inviteLink && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                <Link2 size={20} />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-white">Convidar atleta</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  Compartilhe este link. O atleta cria a própria conta e entra direto no racha.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-800/60 border border-gray-700">
+              <input
+                readOnly
+                value={inviteLink}
+                onFocus={(e) => e.currentTarget.select()}
+                className="flex-1 bg-transparent text-sm text-gray-200 outline-none truncate"
+              />
+              <button
+                onClick={handleCopyInvite}
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium flex items-center gap-1.5"
+              >
+                {inviteCopied ? <Check size={14} /> : <Copy size={14} />}
+                {inviteCopied ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Cada clique em <span className="text-gray-400 font-medium">Convidar</span> gera um link novo.
+              Você pode compartilhar o mesmo link com vários atletas.
+            </p>
+
+            <button
+              onClick={() => setInviteLink(null)}
+              className="w-full btn-secondary"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
