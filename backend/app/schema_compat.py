@@ -56,12 +56,42 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         $$;
         """,
         """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'goleiro'
+        """,
+        """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'zagueiro'
+        """,
+        """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'lateral'
+        """,
+        """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'volante'
+        """,
+        """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'meia'
+        """,
+        """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'atacante'
+        """,
+        """
+        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'ponta'
+        """,
+        """
         DO $$
         BEGIN
             CREATE TYPE pernaboa AS ENUM ('DIREITA', 'ESQUERDA', 'AMBIDESTRA');
         EXCEPTION WHEN duplicate_object THEN NULL;
         END
         $$;
+        """,
+        """
+        ALTER TYPE pernaboa ADD VALUE IF NOT EXISTS 'direita'
+        """,
+        """
+        ALTER TYPE pernaboa ADD VALUE IF NOT EXISTS 'esquerda'
+        """,
+        """
+        ALTER TYPE pernaboa ADD VALUE IF NOT EXISTS 'ambidestra'
         """,
         """
         DO $$

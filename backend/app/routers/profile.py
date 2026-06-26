@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 import os
 import uuid
 import shutil
 import logging
+from datetime import datetime
 
 from app.database import get_db
 from app.models import AthleteProfile, User, Atleta
@@ -36,6 +38,71 @@ def get_or_create_profile(db: Session, user: User) -> AthleteProfile:
     return profile
 
 
+def _enum_text(value):
+    if value is None or value == "":
+        return None
+    return str(getattr(value, "value", value)).lower()
+
+
+def _resolve_enum_label(db: Session, table_name: str, column_name: str, value) -> str | None:
+    normalized = _enum_text(value)
+    if not normalized:
+        return None
+
+    row = db.execute(
+        text(
+            """
+            SELECT udt_name
+            FROM information_schema.columns
+            WHERE table_name = :table_name AND column_name = :column_name
+            LIMIT 1
+            """
+        ),
+        {"table_name": table_name, "column_name": column_name},
+    ).mappings().first()
+    udt_name = row["udt_name"] if row else None
+    if not udt_name:
+        return normalized
+
+    labels = [
+        item[0]
+        for item in db.execute(
+            text(
+                """
+                SELECT e.enumlabel
+                FROM pg_type t
+                JOIN pg_enum e ON e.enumtypid = t.oid
+                WHERE t.typname = :type_name
+                """
+            ),
+            {"type_name": udt_name},
+        ).all()
+    ]
+    if normalized in labels:
+        return normalized
+    upper = normalized.upper()
+    if upper in labels:
+        return upper
+    return normalized
+
+
+def _profile_response(row, user: User) -> AthleteProfileResponse:
+    data = dict(row or {})
+    return AthleteProfileResponse(
+        id=data.get("id") or 0,
+        user_id=data.get("user_id") or user.id,
+        nome=data.get("nome") or user.nome,
+        apelido=data.get("apelido"),
+        telefone=data.get("telefone") or user.telefone,
+        posicao=_enum_text(data.get("posicao")),
+        perna_boa=_enum_text(data.get("perna_boa")),
+        numero_camisa=data.get("numero_camisa"),
+        foto_url=data.get("foto_url"),
+        created_at=data.get("created_at") or user.created_at or datetime.utcnow(),
+        updated_at=data.get("updated_at"),
+    )
+
+
 def sync_atleta_foto(db: Session, user: User, foto_url: str | None):
     atletas = db.query(Atleta).filter(Atleta.user_id == user.id, Atleta.ativo.is_(True)).all()
     for atleta in atletas:
@@ -62,12 +129,83 @@ def me(db: Session = Depends(get_db), current_user: User = Depends(get_current_u
 
 @router.patch("/me", response_model=AthleteProfileResponse)
 def update_me(payload: AthleteProfileUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    profile = get_or_create_profile(db, current_user)
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(profile, field, value)
-    db.commit()
-    db.refresh(profile)
-    return AthleteProfileResponse.model_validate(profile)
+    data = payload.model_dump(exclude_unset=True)
+    values = {
+        "user_id": current_user.id,
+        "nome": data.get("nome"),
+        "apelido": data.get("apelido"),
+        "telefone": data.get("telefone"),
+        "posicao": _resolve_enum_label(db, "athlete_profiles", "posicao", data.get("posicao")),
+        "perna_boa": _resolve_enum_label(db, "athlete_profiles", "perna_boa", data.get("perna_boa")),
+        "numero_camisa": data.get("numero_camisa"),
+        "foto_url": data.get("foto_url"),
+    }
+    try:
+        existing = db.execute(
+            text("SELECT id FROM athlete_profiles WHERE user_id = :user_id LIMIT 1"),
+            {"user_id": current_user.id},
+        ).mappings().first()
+
+        if existing:
+            row = db.execute(
+                text(
+                    """
+                    UPDATE athlete_profiles
+                    SET nome = COALESCE(:nome, nome),
+                        apelido = :apelido,
+                        telefone = COALESCE(:telefone, telefone),
+                        posicao = :posicao,
+                        perna_boa = :perna_boa,
+                        numero_camisa = :numero_camisa,
+                        foto_url = COALESCE(:foto_url, foto_url),
+                        updated_at = now()
+                    WHERE id = :profile_id
+                    RETURNING
+                        id, user_id, nome, apelido, telefone, posicao::text AS posicao,
+                        perna_boa::text AS perna_boa, numero_camisa, foto_url,
+                        created_at, updated_at
+                    """
+                ),
+                {**values, "profile_id": existing["id"]},
+            ).mappings().first()
+        else:
+            row = db.execute(
+                text(
+                    """
+                    INSERT INTO athlete_profiles (
+                        user_id, nome, apelido, telefone, posicao, perna_boa,
+                        numero_camisa, foto_url, updated_at
+                    )
+                    VALUES (
+                        :user_id, :nome, :apelido, :telefone, :posicao, :perna_boa,
+                        :numero_camisa, :foto_url, now()
+                    )
+                    RETURNING
+                        id, user_id, nome, apelido, telefone, posicao::text AS posicao,
+                        perna_boa::text AS perna_boa, numero_camisa, foto_url,
+                        created_at, updated_at
+                    """
+                ),
+                values,
+            ).mappings().first()
+
+        db.execute(
+            text(
+                """
+                UPDATE users
+                SET nome = COALESCE(:nome, nome),
+                    telefone = COALESCE(:telefone, telefone)
+                WHERE id = :user_id
+                """
+            ),
+            values,
+        )
+        db.commit()
+        return _profile_response(row, current_user)
+    except SQLAlchemyError:
+        logger.exception("Falha ao salvar perfil do usuário %s", current_user.id)
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Erro ao salvar perfil")
 
 
 @router.post("/me/foto", response_model=AthleteProfileResponse)
