@@ -175,19 +175,26 @@ export default function AthleteSelfProfile() {
           <div className={`relative rounded-[2rem] border border-gray-800 bg-gray-900/40 p-4 transition-colors ${rachas.length > 1 ? 'cursor-pointer hover:border-emerald-500/40' : ''}`}>
             <div className="flex items-center gap-3">
               <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-inner shadow-emerald-950/30">
-                <span className="text-lg font-black text-emerald-300">7</span>
-                <span className="absolute -top-1.5 text-[8px] font-black uppercase tracking-wider text-emerald-200/60">
-                  QJ
-                </span>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 text-emerald-300"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 3v3.5l3 2.2 2 3.3-1 3.5-4 1.5-4-1.5-1-3.5 2-3.3 3-2.2Z" />
+                  <path d="M12 6.5 8.5 9 10 13l4 0 1.5-4Z" fill="currentColor" stroke="none" opacity="0.4" />
+                </svg>
               </div>
 
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Racha selecionado</p>
                 <p className="text-xl font-black text-white truncate">
-                  {selectedRacha.nome}{' '}
-                  <span className="text-gray-500">
-                    {TIPO_RACHA_LABELS[selectedRacha.tipo] || selectedRacha.tipo}
-                  </span>
+                  {selectedRacha.nome}
                 </p>
               </div>
 

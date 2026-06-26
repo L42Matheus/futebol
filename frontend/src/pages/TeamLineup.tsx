@@ -468,7 +468,7 @@ export default function TeamLineup() {
       )}
 
       {isAdmin && editingMember && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
           <div className="w-full max-w-xl rounded-t-[2rem] border border-white/10 bg-[#08111f] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
@@ -577,7 +577,7 @@ export default function TeamLineup() {
       )}
 
       {isAdmin && addingToTeam && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
           <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] border border-white/10 bg-[#08111f] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
