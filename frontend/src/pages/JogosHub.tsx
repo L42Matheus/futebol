@@ -26,7 +26,7 @@ export default function JogosHub() {
         }
       } catch (e) {
         console.error(e)
-        setError('Não foi possível carregar seus rachas agora.')
+        setError('Não foi possível carregar seus rachas agora. Se você ficou muito tempo logado, entre novamente.')
       }
     }
     go()

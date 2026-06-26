@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = _DEFAULT_SECRET_KEY
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 60 * 24 * 7
 
     # Google OAuth
     google_client_id: str = ""

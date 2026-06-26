@@ -22,6 +22,25 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && typeof localStorage !== 'undefined') {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('session_id')
+      localStorage.removeItem('cached_user')
+      localStorage.removeItem('auth_provider')
+      localStorage.removeItem('app_role')
+      delete api.defaults.headers.common['Authorization']
+
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/perfil')) {
+        window.location.assign('/perfil')
+      }
+    }
+    return Promise.reject(error)
+  },
+)
+
 export function setAuthToken(token: string | null): void {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`

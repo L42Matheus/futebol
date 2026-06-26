@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case
+from sqlalchemy import func
 from typing import List
 
 from app.database import get_db
@@ -47,32 +47,33 @@ def listar_rachas(
     current_user: User = Depends(get_current_user)
 ):
     # Busca rachas onde o usuário é admin
-    admin_racha_ids = db.query(RachaAdmin.racha_id).filter(
+    admin_racha_ids = [
+        row[0]
+        for row in db.query(RachaAdmin.racha_id).filter(
         RachaAdmin.user_id == current_user.id,
         RachaAdmin.ativo.is_(True)
-    )
+        ).all()
+    ]
 
     # Busca rachas onde o usuário é atleta
-    atleta_racha_ids = db.query(Atleta.racha_id).filter(
+    atleta_racha_ids = [
+        row[0]
+        for row in db.query(Atleta.racha_id).filter(
         Atleta.user_id == current_user.id,
         Atleta.ativo.is_(True)
-    )
+        ).all()
+    ]
 
-    # Une os dois
-    user_racha_ids = admin_racha_ids.union(atleta_racha_ids).subquery()
+    user_racha_ids = sorted(set(admin_racha_ids + atleta_racha_ids))
+    if not user_racha_ids:
+        return []
 
     # Subquery: contagem de atletas ativos por racha
     atletas_count = (
         db.query(Atleta.racha_id, func.count(Atleta.id).label("total"))
+        .filter(Atleta.racha_id.in_(user_racha_ids))
         .filter(Atleta.ativo.is_(True))
         .group_by(Atleta.racha_id)
-        .subquery()
-    )
-
-    # Subquery: rachas onde o usuário atual é admin
-    admin_racha_ids_set = (
-        db.query(RachaAdmin.racha_id)
-        .filter(RachaAdmin.user_id == current_user.id, RachaAdmin.ativo.is_(True))
         .subquery()
     )
 
@@ -80,18 +81,22 @@ def listar_rachas(
         db.query(
             Racha,
             func.coalesce(atletas_count.c.total, 0).label("total_atletas"),
-            case((Racha.id.in_(admin_racha_ids_set), True), else_=False).label("is_admin"),
         )
         .outerjoin(atletas_count, atletas_count.c.racha_id == Racha.id)
         .filter(Racha.ativo == ativo, Racha.id.in_(user_racha_ids))
+        .order_by(Racha.created_at.desc(), Racha.id.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
 
     return [
-        RachaResponse(**{c.name: getattr(racha, c.name) for c in racha.__table__.columns}, total_atletas=total, is_admin=bool(is_admin))
-        for racha, total, is_admin in rows
+        RachaResponse(
+            **{c.name: getattr(racha, c.name) for c in racha.__table__.columns},
+            total_atletas=total,
+            is_admin=racha.id in admin_racha_ids,
+        )
+        for racha, total in rows
     ]
 
 

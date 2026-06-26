@@ -13,6 +13,16 @@ function generateSessionId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
 }
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1] ?? '')) as { exp?: number }
+    if (!payload.exp) return false
+    return payload.exp * 1000 <= Date.now()
+  } catch {
+    return false
+  }
+}
+
 // Cache em memória
 let userCache: User | null = null
 let userCacheTime = 0
@@ -171,7 +181,14 @@ const authService = {
   },
 
   isSessionValid(): boolean {
-    return Boolean(localStorage.getItem(TOKEN_KEY) && localStorage.getItem(SESSION_KEY))
+    const token = localStorage.getItem(TOKEN_KEY)
+    const sessionId = localStorage.getItem(SESSION_KEY)
+    if (!token || !sessionId) return false
+    if (isJwtExpired(token)) {
+      this.logout()
+      return false
+    }
+    return true
   },
 
   clearCache(): void {

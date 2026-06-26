@@ -26,7 +26,7 @@ export default function FinanceiroHub() {
         }
       } catch (e) {
         console.error(e)
-        setError('Não foi possível carregar o financeiro agora.')
+        setError('Não foi possível carregar o financeiro agora. Se você ficou muito tempo logado, entre novamente.')
       }
     }
     go()
