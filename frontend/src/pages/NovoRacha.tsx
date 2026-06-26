@@ -144,9 +144,9 @@ export default function NovoRacha() {
           </FormField>
           <FormField label="Tipo de Racha">
             <Select name="tipo" value={form.tipo} onChange={handleChange}>
-              <option value="campo">Campo (11x11) — até 40 atletas</option>
-              <option value="society">Society (7x7) — até 30 atletas</option>
-              <option value="futsal">Futsal (5x5) — até 20 atletas</option>
+              <option value="campo">Campo (11x11)</option>
+              <option value="society">Society (7x7)</option>
+              <option value="futsal">Futsal (5x5)</option>
             </Select>
           </FormField>
           <FormField label="Mensalidade (R$)" hint="Deixe 0 se não cobra mensalidade fixa">
