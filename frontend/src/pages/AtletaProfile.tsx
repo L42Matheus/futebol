@@ -387,15 +387,15 @@ export default function AtletaProfile() {
                 <button
                   onClick={() => handleRemoveCartao('amarelo')}
                   disabled={!isAdminView || adminActionLoading || historico.cartoes.amarelos <= 0}
-                  className="w-6 h-6 rounded bg-gray-200 text-gray-800 disabled:opacity-50"
+                  className="w-7 h-7 rounded bg-gray-700 text-white font-bold border border-gray-600 hover:bg-gray-600 disabled:opacity-40 disabled:hover:bg-gray-700"
                 >
                   -
                 </button>
-                <p className="text-sm font-bold min-w-6">{historico.cartoes.amarelos}</p>
+                <p className="text-base font-bold min-w-6 text-white">{historico.cartoes.amarelos}</p>
                 <button
                   onClick={() => handleAddCartao('amarelo')}
                   disabled={!isAdminView || adminActionLoading}
-                  className="w-6 h-6 rounded bg-yellow-400 text-gray-900 disabled:opacity-50"
+                  className="w-7 h-7 rounded bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 disabled:opacity-40"
                 >
                   +
                 </button>
@@ -405,15 +405,15 @@ export default function AtletaProfile() {
                 <button
                   onClick={() => handleRemoveCartao('vermelho')}
                   disabled={!isAdminView || adminActionLoading || historico.cartoes.vermelhos <= 0}
-                  className="w-6 h-6 rounded bg-gray-200 text-gray-800 disabled:opacity-50"
+                  className="w-7 h-7 rounded bg-gray-700 text-white font-bold border border-gray-600 hover:bg-gray-600 disabled:opacity-40 disabled:hover:bg-gray-700"
                 >
                   -
                 </button>
-                <p className="text-sm font-bold min-w-6">{historico.cartoes.vermelhos}</p>
+                <p className="text-base font-bold min-w-6 text-white">{historico.cartoes.vermelhos}</p>
                 <button
                   onClick={() => handleAddCartao('vermelho')}
                   disabled={!isAdminView || adminActionLoading}
-                  className="w-6 h-6 rounded bg-red-500 text-white disabled:opacity-50"
+                  className="w-7 h-7 rounded bg-red-500 text-white font-bold hover:bg-red-400 disabled:opacity-40"
                 >
                   +
                 </button>
