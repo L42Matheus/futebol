@@ -1,4 +1,4 @@
-﻿import React from 'react'
+﻿import { useEffect, useState } from 'react'
 
 interface AvatarProps {
   src?: string | null
@@ -27,15 +27,25 @@ const getInitials = (name: string) => {
 
 export default function Avatar({ src, name, size = 'md', className = '' }: AvatarProps) {
   const sizeClass = sizeClasses[size]
+  const [loadFailed, setLoadFailed] = useState(false)
 
-  if (src) {
+  useEffect(() => {
+    setLoadFailed(false)
+  }, [src])
+
+  if (src && !loadFailed) {
     const resolvedSrc = src.startsWith('/uploads')
       ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${src}`
       : src
 
     return (
       <div className={`${sizeClass} rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm flex-shrink-0 ${className}`}>
-        <img src={resolvedSrc} alt={name} className="w-full h-full object-cover" />
+        <img
+          src={resolvedSrc}
+          alt={name}
+          onError={() => setLoadFailed(true)}
+          className="w-full h-full object-cover"
+        />
       </div>
     )
   }
