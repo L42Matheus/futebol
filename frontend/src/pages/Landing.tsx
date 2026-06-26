@@ -131,7 +131,7 @@ export default function Landing() {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400">
-                    Racha ativo
+                    Racha selecionado
                   </p>
                   <p className="text-xl font-black">LombaFC 7x7</p>
                 </div>

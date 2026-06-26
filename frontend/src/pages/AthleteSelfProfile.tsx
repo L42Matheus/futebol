@@ -173,7 +173,7 @@ export default function AthleteSelfProfile() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Racha ativo</p>
+                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Racha selecionado</p>
                 <p className="text-xl font-black text-white truncate">
                   {selectedRacha.nome}{' '}
                   <span className="text-gray-500">
