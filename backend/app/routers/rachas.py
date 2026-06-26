@@ -1,7 +1,10 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
-from typing import List
+from sqlalchemy.exc import SQLAlchemyError
+from typing import List, Optional
 from datetime import datetime
 
 from app.database import get_db
@@ -11,6 +14,7 @@ from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
 
 router = APIRouter(prefix="/rachas", tags=["Rachas"])
+logger = logging.getLogger(__name__)
 
 
 def get_max_atletas(tipo: TipoRacha) -> int:
@@ -88,6 +92,55 @@ def _racha_response_from_mapping(row, *, total_atletas: int = 0, is_admin: bool 
     )
 
 
+def _table_exists(db: Session, table_name: str) -> bool:
+    return bool(
+        db.execute(
+            text(
+                """
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = :table_name
+                LIMIT 1
+                """
+            ),
+            {"table_name": table_name},
+        ).first()
+    )
+
+
+def _table_columns(db: Session, table_name: str) -> set[str]:
+    return {
+        row[0]
+        for row in db.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = :table_name
+                """
+            ),
+            {"table_name": table_name},
+        ).all()
+    }
+
+
+def _select_column(
+    columns: set[str],
+    alias: str,
+    column_name: str,
+    default_sql: str,
+    *,
+    cast_text: bool = False,
+) -> str:
+    if column_name not in columns:
+        return f"{default_sql} AS {column_name}"
+
+    expression = f"{alias}.{column_name}"
+    if cast_text:
+        expression = f"{expression}::text"
+    return f"{expression} AS {column_name}"
+
+
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
@@ -143,63 +196,132 @@ def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user:
 def listar_rachas(
     skip: int = 0,
     limit: int = 100,
-    ativo: bool = True,
+    ativo: Optional[bool] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    rows = db.execute(
-        text(
-            """
-            WITH user_rachas AS (
-                SELECT racha_id, TRUE AS is_admin
-                FROM racha_admins
-                WHERE user_id = :user_id AND ativo IS TRUE
-                UNION
+    try:
+        if not _table_exists(db, "rachas"):
+            return []
+
+        racha_columns = _table_columns(db, "rachas")
+        if not {"id", "nome"}.issubset(racha_columns):
+            logger.warning("Tabela rachas sem colunas mínimas: %s", sorted(racha_columns))
+            return []
+
+        access_parts = []
+
+        if _table_exists(db, "racha_admins"):
+            admin_columns = _table_columns(db, "racha_admins")
+            if {"racha_id", "user_id"}.issubset(admin_columns):
+                admin_active_filter = "AND ativo IS TRUE" if "ativo" in admin_columns else ""
+                access_parts.append(
+                    f"""
+                    SELECT racha_id, TRUE AS is_admin
+                    FROM racha_admins
+                    WHERE user_id = :user_id {admin_active_filter}
+                    """
+                )
+
+        has_atletas = _table_exists(db, "atletas")
+        atleta_columns = _table_columns(db, "atletas") if has_atletas else set()
+        if {"racha_id", "user_id"}.issubset(atleta_columns):
+            atleta_active_filter = "AND ativo IS TRUE" if "ativo" in atleta_columns else ""
+            access_parts.append(
+                f"""
                 SELECT racha_id, FALSE AS is_admin
                 FROM atletas
-                WHERE user_id = :user_id AND ativo IS TRUE
-            ),
-            atletas_count AS (
+                WHERE user_id = :user_id {atleta_active_filter}
+                """
+            )
+
+        if not access_parts:
+            logger.warning("Nenhuma relação de acesso a rachas disponível para user_id=%s", current_user.id)
+            return []
+
+        if "racha_id" in atleta_columns:
+            count_active_filter = "WHERE ativo IS TRUE" if "ativo" in atleta_columns else ""
+            atletas_count_sql = f"""
                 SELECT racha_id, COUNT(*) AS total_atletas
                 FROM atletas
-                WHERE ativo IS TRUE
+                {count_active_filter}
                 GROUP BY racha_id
-            )
-            SELECT
-                r.id, r.nome, r.tipo::text AS tipo, r.descricao, r.max_atletas,
-                r.valor_mensalidade, r.valor_cartao_amarelo, r.valor_cartao_vermelho,
-                r.estatuto, r.ativo, r.created_at, r.updated_at,
-                COALESCE(ac.total_atletas, 0) AS total_atletas,
-                BOOL_OR(ur.is_admin) AS is_admin
-            FROM rachas r
-            JOIN user_rachas ur ON ur.racha_id = r.id
-            LEFT JOIN atletas_count ac ON ac.racha_id = r.id
-            WHERE r.ativo = :ativo
-            GROUP BY
-                r.id, r.nome, r.tipo, r.descricao, r.max_atletas,
-                r.valor_mensalidade, r.valor_cartao_amarelo, r.valor_cartao_vermelho,
-                r.estatuto, r.ativo, r.created_at, r.updated_at, ac.total_atletas
-            ORDER BY r.created_at DESC NULLS LAST, r.id DESC
-            OFFSET :skip
-            LIMIT :limit
             """
-        ),
-        {
-            "user_id": current_user.id,
-            "ativo": ativo,
-            "skip": skip,
-            "limit": limit,
-        },
-    ).mappings().all()
+        else:
+            atletas_count_sql = """
+                SELECT NULL::integer AS racha_id, 0::bigint AS total_atletas
+                WHERE FALSE
+            """
 
-    return [
-        _racha_response_from_mapping(
-            row,
-            total_atletas=row.get("total_atletas") or 0,
-            is_admin=bool(row.get("is_admin")),
+        select_columns = [
+            "r.id AS id",
+            "r.nome AS nome",
+            _select_column(racha_columns, "r", "tipo", "'society'", cast_text=True),
+            _select_column(racha_columns, "r", "descricao", "NULL"),
+            _select_column(racha_columns, "r", "max_atletas", "30"),
+            _select_column(racha_columns, "r", "valor_mensalidade", "0"),
+            _select_column(racha_columns, "r", "valor_cartao_amarelo", "1000"),
+            _select_column(racha_columns, "r", "valor_cartao_vermelho", "2000"),
+            _select_column(racha_columns, "r", "estatuto", "NULL"),
+            _select_column(racha_columns, "r", "ativo", "TRUE"),
+            _select_column(racha_columns, "r", "created_at", "now()"),
+            _select_column(racha_columns, "r", "updated_at", "NULL"),
+            "COALESCE(ac.total_atletas, 0) AS total_atletas",
+            "COALESCE(ur.is_admin, FALSE) AS is_admin",
+        ]
+
+        active_filter = "WHERE r.ativo = :ativo" if ativo is not None and "ativo" in racha_columns else ""
+        order_sql = (
+            "ORDER BY r.created_at DESC NULLS LAST, r.id DESC"
+            if "created_at" in racha_columns
+            else "ORDER BY r.id DESC"
         )
-        for row in rows
-    ]
+
+        rows = db.execute(
+            text(
+                f"""
+                WITH access_rows AS (
+                    {" UNION ALL ".join(access_parts)}
+                ),
+                user_rachas AS (
+                    SELECT racha_id, BOOL_OR(is_admin) AS is_admin
+                    FROM access_rows
+                    GROUP BY racha_id
+                ),
+                atletas_count AS (
+                    {atletas_count_sql}
+                )
+                SELECT
+                    {", ".join(select_columns)}
+                FROM rachas r
+                JOIN user_rachas ur ON ur.racha_id = r.id
+                LEFT JOIN atletas_count ac ON ac.racha_id = r.id
+                {active_filter}
+                {order_sql}
+                OFFSET :skip
+                LIMIT :limit
+                """
+            ),
+            {
+                "user_id": current_user.id,
+                "ativo": ativo,
+                "skip": skip,
+                "limit": limit,
+            },
+        ).mappings().all()
+
+        return [
+            _racha_response_from_mapping(
+                row,
+                total_atletas=row.get("total_atletas") or 0,
+                is_admin=bool(row.get("is_admin")),
+            )
+            for row in rows
+        ]
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Erro ao listar rachas para user_id=%s", current_user.id)
+        return []
 
 
 @router.get("/{racha_id}", response_model=RachaResponse)

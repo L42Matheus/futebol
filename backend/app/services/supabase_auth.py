@@ -11,16 +11,26 @@ _jwks_cache: dict = {"keys": None, "fetched_at": 0.0}
 _JWKS_TTL = 60 * 60  # 1h
 
 
-async def _get_jwks() -> dict:
+def _get_supabase_base_url() -> str:
     settings = get_settings()
-    if not settings.supabase_url:
+    supabase_url = (settings.supabase_url or "").strip().rstrip("/")
+    if not supabase_url:
         raise RuntimeError("SUPABASE_URL não configurada no backend")
 
+    # No painel do Supabase é comum copiar a REST URL (.../rest/v1).
+    # A autenticação, porém, precisa da raiz do projeto.
+    if supabase_url.endswith("/rest/v1"):
+        supabase_url = supabase_url[: -len("/rest/v1")]
+
+    return supabase_url
+
+
+async def _get_jwks() -> dict:
     now = time.time()
     if _jwks_cache["keys"] and now - _jwks_cache["fetched_at"] < _JWKS_TTL:
         return _jwks_cache["keys"]
 
-    url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
+    url = f"{_get_supabase_base_url()}/auth/v1/.well-known/jwks.json"
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(url)
         response.raise_for_status()
@@ -31,19 +41,38 @@ async def _get_jwks() -> dict:
     return jwks
 
 
+async def _get_user_via_supabase_api(access_token: str) -> dict:
+    settings = get_settings()
+    if not settings.supabase_anon_key:
+        raise RuntimeError("SUPABASE_ANON_KEY não configurada no backend")
+
+    url = f"{_get_supabase_base_url()}/auth/v1/user"
+    async with httpx.AsyncClient(timeout=10) as client:
+        response = await client.get(
+            url,
+            headers={
+                "apikey": settings.supabase_anon_key,
+                "Authorization": f"Bearer {access_token}",
+            },
+        )
+        response.raise_for_status()
+        return response.json()
+
+
 async def get_supabase_user(access_token: str) -> dict:
     """Valida um JWT do Supabase via JWKS e retorna o payload."""
-    jwks = await _get_jwks()
-
     try:
+        jwks = await _get_jwks()
         header = jwt.get_unverified_header(access_token)
-    except JWTError as e:
-        raise ValueError(f"Token Supabase malformado: {e}") from e
+    except Exception as e:
+        logger.warning("JWKS indisponível, tentando validar token pela API Supabase: %s", e)
+        return await _get_user_via_supabase_api(access_token)
 
     kid = header.get("kid")
     key = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
     if not key:
-        raise ValueError("Chave de assinatura do Supabase não encontrada para esse token")
+        logger.warning("Chave JWKS não encontrada para kid=%s, tentando API Supabase", kid)
+        return await _get_user_via_supabase_api(access_token)
 
     try:
         payload = jwt.decode(
@@ -54,7 +83,7 @@ async def get_supabase_user(access_token: str) -> dict:
             options={"verify_aud": True},
         )
     except JWTError as e:
-        logger.error("Falha ao validar JWT Supabase: %s", e)
-        raise ValueError(f"Token Supabase inválido: {e}") from e
+        logger.warning("Falha ao validar JWT Supabase via JWKS, tentando API Supabase: %s", e)
+        return await _get_user_via_supabase_api(access_token)
 
     return payload

@@ -246,6 +246,44 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         # Profile table exists in recent models; add missing nullable columns if
         # it came from an older deploy.
         """
+        DO $$
+        DECLARE
+            user_id_type TEXT;
+        BEGIN
+            SELECT data_type
+            INTO user_id_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'athlete_profiles'
+              AND column_name = 'user_id'
+            LIMIT 1;
+
+            IF user_id_type = 'uuid' THEN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'athlete_profiles'
+                      AND column_name = 'supabase_user_id'
+                ) THEN
+                    ALTER TABLE athlete_profiles RENAME COLUMN user_id TO supabase_user_id;
+                ELSE
+                    ALTER TABLE athlete_profiles RENAME COLUMN user_id TO user_id_legacy_uuid;
+                END IF;
+            END IF;
+        END
+        $$;
+        """,
+        """
+        ALTER TABLE athlete_profiles
+        ADD COLUMN IF NOT EXISTS user_id INTEGER
+        """,
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_athlete_profiles_user_id
+        ON athlete_profiles (user_id)
+        WHERE user_id IS NOT NULL
+        """,
+        """
         ALTER TABLE athlete_profiles
         ADD COLUMN IF NOT EXISTS apelido VARCHAR(50)
         """,
