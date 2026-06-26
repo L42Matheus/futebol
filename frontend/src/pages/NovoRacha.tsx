@@ -13,6 +13,7 @@ const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
 interface RachaForm {
   nome: string
   tipo: TipoRacha
+  escalacao_size: number
   valor_mensalidade: number
   valor_cartao_amarelo: number
   valor_cartao_vermelho: number
@@ -20,6 +21,13 @@ interface RachaForm {
   temporada_nome: string
   temporada_mes: number
   temporada_ano: number
+}
+
+const SOCIETY_SIZE_OPTIONS = [5, 6, 7, 8] as const
+const DEFAULT_SIZE_BY_TIPO: Record<TipoRacha, number> = {
+  campo: 11,
+  society: 7,
+  futsal: 5,
 }
 
 interface InviteLinks {
@@ -36,6 +44,7 @@ export default function NovoRacha() {
   const [form, setForm] = useState<RachaForm>({
     nome: '',
     tipo: 'society',
+    escalacao_size: DEFAULT_SIZE_BY_TIPO.society,
     valor_mensalidade: 0,
     valor_cartao_amarelo: 1000,
     valor_cartao_vermelho: 2000,
@@ -105,16 +114,25 @@ export default function NovoRacha() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value, type } = e.target
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox'
-        ? checked
-        : name.includes('valor')
-          ? parseInt(value) * 100
-          : name.includes('temporada_mes') || name.includes('temporada_ano')
-            ? parseInt(value)
-            : value,
-    }))
+    setForm((prev) => {
+      if (name === 'tipo') {
+        const nextTipo = value as TipoRacha
+        return { ...prev, tipo: nextTipo, escalacao_size: DEFAULT_SIZE_BY_TIPO[nextTipo] }
+      }
+      if (name === 'escalacao_size') {
+        return { ...prev, escalacao_size: parseInt(value, 10) }
+      }
+      return {
+        ...prev,
+        [name]: type === 'checkbox'
+          ? checked
+          : name.includes('valor')
+            ? parseInt(value) * 100
+            : name.includes('temporada_mes') || name.includes('temporada_ano')
+              ? parseInt(value)
+              : value,
+      }
+    })
   }
 
   if (user && !isAdmin) {
@@ -145,10 +163,25 @@ export default function NovoRacha() {
           <FormField label="Tipo de Racha">
             <Select name="tipo" value={form.tipo} onChange={handleChange}>
               <option value="campo">Campo (11x11)</option>
-              <option value="society">Society (7x7)</option>
+              <option value="society">Society</option>
               <option value="futsal">Futsal (5x5)</option>
             </Select>
           </FormField>
+          {form.tipo === 'society' && (
+            <FormField label="Atletas por time" hint="Quantos jogadores entram em campo por time">
+              <Select
+                name="escalacao_size"
+                value={form.escalacao_size}
+                onChange={handleChange}
+              >
+                {SOCIETY_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}v{n}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          )}
           <FormField label="Mensalidade (R$)" hint="Deixe 0 se não cobra mensalidade fixa">
             <Input
               type="number"

@@ -139,6 +139,10 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         ALTER TABLE rachas
         ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ
         """,
+        """
+        ALTER TABLE rachas
+        ADD COLUMN IF NOT EXISTS escalacao_size INTEGER
+        """,
         # A separate admin relation lets a user manage a racha without also
         # being created as an athlete.
         """

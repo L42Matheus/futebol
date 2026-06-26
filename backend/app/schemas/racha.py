@@ -12,6 +12,7 @@ class RachaBase(BaseModel):
     valor_cartao_amarelo: int = Field(default=1000, ge=0)
     valor_cartao_vermelho: int = Field(default=2000, ge=0)
     estatuto: Optional[str] = None
+    escalacao_size: Optional[int] = Field(default=None, ge=3, le=11)
 
 
 class RachaCreate(RachaBase):
@@ -26,6 +27,7 @@ class RachaUpdate(BaseModel):
     valor_cartao_amarelo: Optional[int] = Field(None, ge=0)
     valor_cartao_vermelho: Optional[int] = Field(None, ge=0)
     estatuto: Optional[str] = None
+    escalacao_size: Optional[int] = Field(None, ge=3, le=11)
     ativo: Optional[bool] = None
 
 
