@@ -28,16 +28,21 @@ export default function Artilharia() {
     async function load() {
       try {
         const rachasRes = await rachasApi.list()
-        const first = rachasRes.data?.[0]
-        if (first) {
-          setRachaId(first.id)
-          const res = await artilhariaApi.list(first.id)
-          const list = (res.data as Artilheiro[]) ?? []
-          list.sort((a, b) => b.gols - a.gols)
-          setArtilheiros(list)
-        } else {
+        const rachas = rachasRes.data ?? []
+        if (rachas.length === 0) {
           setArtilheiros([])
+          return
         }
+
+        const storedId = localStorage.getItem('quemjogafc:selected_racha_id')
+        const stored = storedId ? rachas.find((r) => String(r.id) === storedId) : undefined
+        const target = stored ?? rachas[0]
+
+        setRachaId(target.id)
+        const res = await artilhariaApi.list(target.id)
+        const list = (res.data as Artilheiro[]) ?? []
+        list.sort((a, b) => b.gols - a.gols)
+        setArtilheiros(list)
       } catch (e) {
         console.error(e)
         setArtilheiros([])
