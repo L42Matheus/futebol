@@ -50,10 +50,12 @@ def listar_pagamentos(racha_id: int, atleta_id: Optional[int] = None, status_fil
 def listar_pendentes(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_admin_racha(db, current_user, racha_id)
     results = db.query(Pagamento, Atleta).join(Atleta).filter(
-        Atleta.racha_id == racha_id, Pagamento.status == StatusPagamento.AGUARDANDO_APROVACAO
+        Atleta.racha_id == racha_id,
+        Pagamento.status.in_([StatusPagamento.PENDENTE, StatusPagamento.AGUARDANDO_APROVACAO]),
     ).order_by(Pagamento.created_at).all()
     return [{"id": pag.id, "atleta_id": atleta.id, "atleta_nome": atleta.nome, "tipo": pag.tipo.value,
              "valor": pag.valor, "valor_formatado": f"R$ {pag.valor / 100:.2f}",
+             "status": pag.status.value,
              "comprovante_url": pag.comprovante_url, "referencia": pag.referencia, "created_at": pag.created_at}
             for pag, atleta in results]
 

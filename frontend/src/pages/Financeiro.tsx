@@ -147,7 +147,7 @@ export default function Financeiro() {
           <p className="text-3xl font-bold text-white">{saldo.saldo_formatado}</p>
           {saldo.pendente > 0 && (
             <p className="text-amber-400 text-sm mt-2">
-              {saldo.pendente_formatado} aguardando aprovação
+              {saldo.pendente_formatado} a receber
             </p>
           )}
         </div>
