@@ -16,6 +16,14 @@ interface Artilheiro {
   assistencias: number
 }
 
+function shortName(atleta: Pick<Artilheiro, 'nome' | 'apelido'>): string {
+  if (atleta.apelido && atleta.apelido.trim()) return atleta.apelido.trim()
+  const parts = (atleta.nome ?? '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return 'Atleta'
+  if (parts.length <= 2) return parts.join(' ')
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`
+}
+
 export default function Artilharia() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -129,9 +137,12 @@ export default function Artilharia() {
           >
             <div className="w-6 text-center text-sm font-bold text-gray-500">{index + 1}</div>
             <Avatar name={atleta.apelido ?? atleta.nome} size="md" src={atleta.foto_url} />
-            <div className="flex-1">
-              <h3 className="font-bold text-white leading-tight">
-                {atleta.apelido ?? atleta.nome}
+            <div className="flex-1 min-w-0">
+              <h3
+                className="font-bold text-white leading-tight truncate"
+                title={atleta.nome}
+              >
+                {shortName(atleta)}
               </h3>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
                 {atleta.posicao ?? '—'}
