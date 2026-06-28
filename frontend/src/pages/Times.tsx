@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Users, Plus, Trash2, CalendarDays, Trophy, Copy, UserPlus } from 'lucide-react'
 import { teamsApi, atletasApi, authApi, temporadasApi } from '../services/api'
@@ -36,6 +36,8 @@ export default function Times() {
   const [inviteLink, setInviteLink] = useState('')
   const [selectedAthleteByTeam, setSelectedAthleteByTeam] = useState<Record<number, string>>({})
   const [deleteTeam, setDeleteTeam] = useState<TeamWithMembers | null>(null)
+  const teamsListRef = useRef<HTMLDivElement | null>(null)
+  const [scrollAfterReload, setScrollAfterReload] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
   const isAdmin = user?.role === 'admin'
@@ -84,6 +86,14 @@ export default function Times() {
     loadData()
   }, [loadData])
 
+  useEffect(() => {
+    if (!scrollAfterReload) return
+    if (loading) return
+    if (teams.length === 0) return
+    teamsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setScrollAfterReload(false)
+  }, [scrollAfterReload, loading, teams.length])
+
   async function handleCreateTeam(e: React.FormEvent) {
     e.preventDefault()
     if (!newTeamName.trim() || !rachaId) return
@@ -94,6 +104,7 @@ export default function Times() {
         nome: newTeamName.trim(),
       })
       setNewTeamName('')
+      setScrollAfterReload(true)
       loadData()
     } catch {
       toast('Erro ao criar time.', 'error')
@@ -331,7 +342,7 @@ export default function Times() {
           <p className="text-sm text-gray-500 mt-1">Crie o primeiro time acima para começar a distribuir os atletas.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div ref={teamsListRef} className="space-y-4 scroll-mt-20">
           {teams.map((team) => (
             <div key={team.id} className="card space-y-4">
               <div className="flex items-center justify-between">
