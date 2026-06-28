@@ -205,14 +205,29 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           )}
           <h1 className="text-lg font-bold text-white truncate">{resolvedTitle}</h1>
         </div>
-        <Link to="/perfil-atleta">
-          <Avatar
-            src={avatarSrc}
-            name={avatarName}
-            size="sm"
-            className="border border-gray-700"
-          />
-        </Link>
+        <div className="flex items-center gap-2">
+          {user?.role === 'admin' && (
+            <Link
+              to="/assinatura"
+              aria-label="Assinatura"
+              className={`p-2 -mr-1 rounded-full transition-colors ${
+                location.pathname === '/assinatura'
+                  ? 'text-emerald-400 bg-emerald-500/10'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <CreditCard size={20} />
+            </Link>
+          )}
+          <Link to="/perfil-atleta">
+            <Avatar
+              src={avatarSrc}
+              name={avatarName}
+              size="sm"
+              className="border border-gray-700"
+            />
+          </Link>
+        </div>
       </header>
 
       {/* Main Content */}
