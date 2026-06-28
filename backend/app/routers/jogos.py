@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 
 from app.database import get_db
-from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User
+from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User, Team
 from app.schemas.jogo import JogoCreate, JogoUpdate, JogoResponse
 from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha
@@ -13,6 +13,15 @@ from app.deps import verificar_acesso_racha
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
 
 BRT = timezone(timedelta(hours=-3)) 
+
+
+def _resolve_team(db: Session, racha_id: int, team_id: Optional[int]):
+    if not team_id:
+        return None
+    team = db.query(Team).filter(Team.id == team_id).first()
+    if not team or team.racha_id != racha_id:
+        raise HTTPException(status_code=400, detail="Time selecionado não pertence a este racha")
+    return team
 
 
 @router.post("/", response_model=JogoResponse, status_code=status.HTTP_201_CREATED)
@@ -24,6 +33,14 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: Us
     data = jogo.model_dump()
     if data.get("valor_campo") is None:
         data["valor_campo"] = 0
+
+    team_a = _resolve_team(db, jogo.racha_id, data.get("time_a_id"))
+    team_b = _resolve_team(db, jogo.racha_id, data.get("time_b_id"))
+    if team_a and not data.get("time_a_nome"):
+        data["time_a_nome"] = team_a.nome
+    if team_b and not data.get("time_b_nome"):
+        data["time_b_nome"] = team_b.nome
+
     db_jogo = Jogo(**data)
     db.add(db_jogo)
     db.commit()
@@ -83,6 +100,16 @@ def atualizar_jogo(jogo_id: int, jogo_update: JogoUpdate, db: Session = Depends(
     update_data = jogo_update.model_dump(exclude_unset=True)
     if "placar_time_a" in update_data and "placar_time_b" in update_data:
         update_data["finalizado"] = True
+
+    if "time_a_id" in update_data:
+        team_a = _resolve_team(db, jogo.racha_id, update_data["time_a_id"])
+        if team_a and "time_a_nome" not in update_data:
+            update_data["time_a_nome"] = team_a.nome
+    if "time_b_id" in update_data:
+        team_b = _resolve_team(db, jogo.racha_id, update_data["time_b_id"])
+        if team_b and "time_b_nome" not in update_data:
+            update_data["time_b_nome"] = team_b.nome
+
     for field, value in update_data.items():
         setattr(jogo, field, value)
     db.commit()

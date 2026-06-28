@@ -64,6 +64,8 @@ interface JogoPayload {
 }
 
 interface JogoPlacarPayload {
+  time_a_id?: number | null
+  time_b_id?: number | null
   time_a_nome?: string
   time_b_nome?: string
   placar_time_a: number

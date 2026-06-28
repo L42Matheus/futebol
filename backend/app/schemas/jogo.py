@@ -33,6 +33,10 @@ class JogoBase(BaseModel):
     endereco: Optional[str] = Field(None, max_length=300)
     valor_campo: Optional[int] = Field(default=None, ge=0)
     observacoes: Optional[str] = None
+    time_a_id: Optional[int] = None
+    time_b_id: Optional[int] = None
+    time_a_nome: Optional[str] = Field(None, max_length=80)
+    time_b_nome: Optional[str] = Field(None, max_length=80)
 
     @field_validator("data_hora", mode="before")
     @classmethod
@@ -52,6 +56,8 @@ class JogoUpdate(BaseModel):
     observacoes: Optional[str] = None
     finalizado: Optional[bool] = None
     cancelado: Optional[bool] = None
+    time_a_id: Optional[int] = None
+    time_b_id: Optional[int] = None
     time_a_nome: Optional[str] = Field(None, max_length=80)
     time_b_nome: Optional[str] = Field(None, max_length=80)
     placar_time_a: Optional[int] = Field(None, ge=0)
@@ -70,6 +76,8 @@ class JogoResponse(JogoBase):
     racha_id: int
     finalizado: bool
     cancelado: bool
+    time_a_id: Optional[int] = None
+    time_b_id: Optional[int] = None
     time_a_nome: Optional[str] = None
     time_b_nome: Optional[str] = None
     placar_time_a: Optional[int] = None
