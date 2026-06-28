@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CreditCard, QrCode, Copy, CheckCircle, ExternalLink, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -25,6 +25,9 @@ export default function Assinatura() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [resultado, setResultado] = useState<AssinarResponse | null>(null)
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false)
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [metodo, setMetodo] = useState<Metodo>('PIX')
   const [cpfCnpj, setCpfCnpj] = useState('')
@@ -52,6 +55,41 @@ export default function Assinatura() {
     if (user?.role === 'admin') carregarStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
+
+  // Polling após gerar uma cobrança: a cada 4s busca o status até virar 'active'.
+  // Para imediatamente quando confirma ou quando o usuário sai da tela.
+  useEffect(() => {
+    if (!resultado || paymentConfirmed) return
+    if (status?.subscription_status === 'active') return
+
+    const tick = async () => {
+      try {
+        const { data } = await assinaturaApi.status()
+        setStatus(data)
+        if (data.subscription_status === 'active') {
+          setPaymentConfirmed(true)
+        }
+      } catch {
+        // ignora erros transitórios — o próximo tick tenta de novo
+      }
+    }
+    pollTimerRef.current = setInterval(tick, 4000)
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [resultado, paymentConfirmed, status?.subscription_status])
+
+  // Quando confirma, dá 4s pro usuário ler a mensagem e redireciona.
+  useEffect(() => {
+    if (!paymentConfirmed) return
+    toast('Pagamento confirmado! Bem-vindo.', 'success')
+    redirectTimerRef.current = setTimeout(() => {
+      navigate('/app', { replace: true })
+    }, 4000)
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
+    }
+  }, [paymentConfirmed, navigate, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,6 +141,32 @@ export default function Assinatura() {
     return <p className="text-gray-400">Carregando assinatura…</p>
   }
 
+  if (paymentConfirmed) {
+    return (
+      <div className="max-w-md mx-auto py-12 px-6 text-center space-y-6">
+        <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+          <CheckCircle size={48} />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Pagamento confirmado!</h1>
+          <p className="text-gray-400 mt-2">
+            Sua assinatura está <span className="text-emerald-400 font-semibold">ativa</span>.
+            {status?.current_period_end && (
+              <> Próxima cobrança em <strong className="text-white">{formatDateBR(status.current_period_end)}</strong>.</>
+            )}
+          </p>
+        </div>
+        <p className="text-xs text-gray-500">Redirecionando para o app…</p>
+        <button
+          onClick={() => navigate('/app', { replace: true })}
+          className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
+        >
+          Ir agora
+        </button>
+      </div>
+    )
+  }
+
   const statusKey = status?.subscription_status ?? ''
   const badge = STATUS_LABEL[statusKey]
   const valor = status ? formatCurrency(status.valor) : 'R$ 29,90'
@@ -152,9 +216,15 @@ export default function Assinatura() {
       {/* Resultado do Pix gerado */}
       {resultado?.billing_type === 'PIX' && (
         <div className="bg-gray-900/60 border border-emerald-500/30 rounded-2xl p-5 space-y-4">
-          <p className="text-white font-semibold flex items-center gap-2">
-            <QrCode size={18} className="text-emerald-400" /> Pague com Pix
-          </p>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-white font-semibold flex items-center gap-2">
+              <QrCode size={18} className="text-emerald-400" /> Pague com Pix
+            </p>
+            <span className="inline-flex items-center gap-2 text-xs text-amber-300">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              Aguardando confirmação automática…
+            </span>
+          </div>
           {resultado.pix?.encoded_image && (
             <img
               src={`data:image/png;base64,${resultado.pix.encoded_image}`}
