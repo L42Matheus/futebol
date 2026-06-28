@@ -196,7 +196,7 @@ export const pagamentosApi = {
     api.post(`/pagamentos/gerar-mensalidade/${rachaId}?referencia=${referencia}`),
 }
 
-interface Temporada {
+export interface Temporada {
   id: number
   racha_id: number
   nome: string
@@ -204,26 +204,33 @@ interface Temporada {
   ano: number
   status: 'ativa' | 'encerrada'
   campeao_team_id?: number | null
+  created_at?: string
+  updated_at?: string | null
 }
 
 export const temporadasApi = {
-  list: (_rachaId: number | string): Promise<AxiosResponse<Temporada[]>> =>
-    Promise.resolve({ data: [], status: 200, statusText: 'OK', headers: {}, config: {} } as AxiosResponse<Temporada[]>),
-  getActive: (_rachaId: number | string): Promise<AxiosResponse<Temporada | null>> =>
-    Promise.resolve({ data: null, status: 200, statusText: 'OK', headers: {}, config: {} } as AxiosResponse<Temporada | null>),
-  create: (data: Omit<Temporada, 'id'>): Promise<AxiosResponse<Temporada>> =>
-    Promise.resolve({ data: { ...data, id: Date.now() }, status: 200, statusText: 'OK', headers: {}, config: {} } as AxiosResponse<Temporada>),
+  list: (rachaId: number | string): Promise<AxiosResponse<Temporada[]>> =>
+    api.get(`/temporadas/?racha_id=${rachaId}`),
+  getActive: (rachaId: number | string): Promise<AxiosResponse<Temporada | null>> =>
+    api.get(`/temporadas/active?racha_id=${rachaId}`),
+  create: (data: {
+    racha_id: number
+    nome: string
+    mes: number
+    ano: number
+    status?: 'ativa' | 'encerrada'
+  }): Promise<AxiosResponse<Temporada>> => api.post('/temporadas/', data),
+  update: (
+    temporadaId: number | string,
+    data: Partial<Pick<Temporada, 'nome' | 'mes' | 'ano' | 'status' | 'campeao_team_id'>>,
+  ): Promise<AxiosResponse<Temporada>> => api.patch(`/temporadas/${temporadaId}`, data),
+  remove: (temporadaId: number | string): Promise<AxiosResponse<void>> =>
+    api.delete(`/temporadas/${temporadaId}`),
   setCampeao: (
-    _temporadaId: number | string,
-    _teamId: number | string,
-  ): Promise<AxiosResponse<Temporada | null>> =>
-    Promise.resolve({
-      data: null,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {},
-    } as AxiosResponse<Temporada | null>),
+    temporadaId: number | string,
+    teamId: number | string,
+  ): Promise<AxiosResponse<Temporada>> =>
+    api.patch(`/temporadas/${temporadaId}`, { campeao_team_id: Number(teamId) }),
 }
 
 export const teamsApi = {
