@@ -13,6 +13,7 @@ from app.models.invite import InviteRole
 from app.models.racha_admin import RachaAdmin
 from app.models.athlete_profile import AthleteProfile, PernaBoa
 from app.models.atleta_stat import AtletaStat
+from app.models.temporada import Temporada, StatusTemporada
 
 __all__ = [
     "Racha",
@@ -39,4 +40,6 @@ __all__ = [
     "AthleteProfile",
     "PernaBoa",
     "AtletaStat",
+    "Temporada",
+    "StatusTemporada",
 ]

@@ -338,6 +338,47 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         ALTER TABLE invites
         ADD COLUMN IF NOT EXISTS nome VARCHAR(100)
         """,
+        # Temporadas (monthly seasons grouping teams + future ranking).
+        """
+        DO $$
+        BEGIN
+            CREATE TYPE statustemporada AS ENUM ('ATIVA', 'ENCERRADA');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END
+        $$;
+        """,
+        """
+        ALTER TYPE statustemporada ADD VALUE IF NOT EXISTS 'ativa'
+        """,
+        """
+        ALTER TYPE statustemporada ADD VALUE IF NOT EXISTS 'encerrada'
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS temporadas (
+            id SERIAL PRIMARY KEY,
+            racha_id INTEGER NOT NULL REFERENCES rachas(id),
+            nome VARCHAR(100) NOT NULL,
+            mes INTEGER NOT NULL,
+            ano INTEGER NOT NULL,
+            status statustemporada NOT NULL DEFAULT 'ATIVA',
+            campeao_team_id INTEGER REFERENCES teams(id),
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ
+        )
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_temporadas_id ON temporadas (id)
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_temporadas_racha_id ON temporadas (racha_id)
+        """,
+        """
+        ALTER TABLE teams
+        ADD COLUMN IF NOT EXISTS temporada_id INTEGER REFERENCES temporadas(id)
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_teams_temporada_id ON teams (temporada_id)
+        """,
     ]
 
     try:

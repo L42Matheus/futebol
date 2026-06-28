@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Users, Plus, Trash2, CalendarDays, Trophy, Copy, UserPlus } from 'lucide-react'
+import { Users, Plus, Trash2, CalendarDays, Copy, UserPlus } from 'lucide-react'
 import { teamsApi, atletasApi, authApi, temporadasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -175,24 +175,6 @@ export default function Times() {
     }
   }
 
-  async function handleCreateCurrentSeason() {
-    if (!rachaId) return
-    const now = new Date()
-    try {
-      await temporadasApi.create({
-        racha_id: Number(rachaId),
-        nome: `Temporada ${now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`,
-        mes: now.getMonth() + 1,
-        ano: now.getFullYear(),
-        status: 'ativa',
-      })
-      toast('Temporada criada!', 'success')
-      loadData()
-    } catch {
-      toast('Erro ao criar temporada.', 'error')
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -217,40 +199,23 @@ export default function Times() {
         <p className="text-gray-400">Convide atletas e monte os times da temporada</p>
       </div>
 
-      <div className="card flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-emerald-500/20 bg-emerald-500/5">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <CalendarDays size={22} />
+      <Link
+        to={`/racha/${rachaId}/temporadas`}
+        className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+            <CalendarDays size={18} />
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-wider text-emerald-400 font-bold">Temporada ativa</p>
-            {temporada ? (
-              <>
-                <h2 className="text-lg font-bold text-white">{temporada.nome}</h2>
-                <p className="text-sm text-gray-400">
-                  Times criados aqui disputam o ranking e o campeão do mês.
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-lg font-bold text-white">Nenhuma temporada criada</h2>
-                <p className="text-sm text-gray-400">
-                  Crie uma temporada para vincular os times do mês.
-                </p>
-              </>
-            )}
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">Temporada</p>
+            <p className="text-sm font-bold text-white truncate">
+              {temporada ? temporada.nome : 'Nenhuma temporada ativa'}
+            </p>
           </div>
         </div>
-        {!temporada && (
-          <button
-            type="button"
-            onClick={handleCreateCurrentSeason}
-            className="btn-primary flex items-center justify-center gap-2"
-          >
-            <Trophy size={16} /> Criar temporada
-          </button>
-        )}
-      </div>
+        <span className="text-xs text-emerald-300 font-medium shrink-0">Gerenciar →</span>
+      </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card space-y-4">
