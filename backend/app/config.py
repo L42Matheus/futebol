@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_use_tls: bool = True
 
+    # Asaas (gateway de pagamento — assinatura SaaS do admin)
+    asaas_api_key: str = ""
+    asaas_base_url: str = "https://api-sandbox.asaas.com/v3"
+    asaas_webhook_token: str = ""
+    assinatura_valor: int = 2990  # centavos (R$ 29,90/mês)
+    assinatura_trial_dias: int = 14
+
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
 

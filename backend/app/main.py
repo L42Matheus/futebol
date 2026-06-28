@@ -6,7 +6,7 @@ import os
 
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams, profile, artilharia
+from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams, profile, artilharia, assinaturas
 from app.schema_compat import ensure_schema_compatibility
 
 logging.basicConfig(
@@ -51,6 +51,7 @@ app.include_router(jogos.router, prefix="/api/v1")
 app.include_router(presencas.router, prefix="/api/v1")
 app.include_router(pagamentos.router, prefix="/api/v1")
 app.include_router(artilharia.router, prefix="/api/v1")
+app.include_router(assinaturas.router, prefix="/api/v1")
 
 # Servir arquivos de upload (fotos de atletas)
 app.mount("/uploads", StaticFiles(directory=upload_path), name="uploads")

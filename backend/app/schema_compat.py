@@ -338,6 +338,27 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         ALTER TABLE invites
         ADD COLUMN IF NOT EXISTS nome VARCHAR(100)
         """,
+        # Admin SaaS subscription (Asaas gateway). Trial is derived from created_at.
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS cpf_cnpj VARCHAR(20)
+        """,
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS asaas_customer_id VARCHAR(255)
+        """,
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS asaas_subscription_id VARCHAR(255)
+        """,
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50)
+        """,
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS subscription_current_period_end TIMESTAMPTZ
+        """,
     ]
 
     try:

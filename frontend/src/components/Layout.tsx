@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid } from 'lucide-react'
+import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid, CreditCard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
@@ -143,6 +143,21 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
             >
               {NAV_ITEMS.find(item => item.isFab)?.icon}
               Criar Racha
+            </Link>
+          )}
+
+          {/* Assinatura - apenas para admins */}
+          {user?.role === 'admin' && (
+            <Link
+              to="/assinatura"
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors mt-2 ${
+                location.pathname === '/assinatura'
+                  ? 'bg-emerald-500/10 text-emerald-500 font-semibold'
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`}
+            >
+              <CreditCard size={18} />
+              Assinatura
             </Link>
           )}
         </nav>
