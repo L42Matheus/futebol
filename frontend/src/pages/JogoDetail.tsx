@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Check, X, Clock, Trash2, Save, Trophy } from 'lucide-react'
-import { jogosApi, presencasApi } from '../services/api'
+import { jogosApi, presencasApi, teamsApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -28,11 +28,14 @@ export default function JogoDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [savingScore, setSavingScore] = useState(false)
   const [scoreForm, setScoreForm] = useState({
+    time_a_id: '' as number | '',
+    time_b_id: '' as number | '',
     time_a_nome: 'Time A',
     time_b_nome: 'Time B',
     placar_time_a: '',
     placar_time_b: '',
   })
+  const [teams, setTeams] = useState<{ id: number; nome: string }[]>([])
   const { user } = useAuth()
   const { toast } = useToast()
   const isAdmin = user?.role === 'admin'
@@ -46,6 +49,8 @@ export default function JogoDetail() {
       ])
       setJogo(jogoRes.data)
       setScoreForm({
+        time_a_id: jogoRes.data.time_a_id ?? '',
+        time_b_id: jogoRes.data.time_b_id ?? '',
         time_a_nome: jogoRes.data.time_a_nome || 'Time A',
         time_b_nome: jogoRes.data.time_b_nome || 'Time B',
         placar_time_a:
@@ -58,6 +63,14 @@ export default function JogoDetail() {
             : String(jogoRes.data.placar_time_b),
       })
       setLista(listaRes.data as typeof lista)
+
+      // Carrega times do racha (best-effort — se falhar, mantém só os inputs livres)
+      try {
+        const teamsRes = await teamsApi.list(jogoRes.data.racha_id)
+        setTeams((teamsRes.data ?? []).map((t: { id: number; nome: string }) => ({ id: t.id, nome: t.nome })))
+      } catch (e) {
+        console.warn('Não foi possível carregar os times do racha:', e)
+      }
     } catch (error) {
       console.error('Erro ao carregar jogo:', error)
     } finally {
@@ -113,6 +126,8 @@ export default function JogoDetail() {
     try {
       setSavingScore(true)
       const response = await jogosApi.updatePlacar(jogoId, {
+        time_a_id: scoreForm.time_a_id === '' ? null : Number(scoreForm.time_a_id),
+        time_b_id: scoreForm.time_b_id === '' ? null : Number(scoreForm.time_b_id),
         time_a_nome: scoreForm.time_a_nome,
         time_b_nome: scoreForm.time_b_nome,
         placar_time_a: placarTimeA,
@@ -191,22 +206,70 @@ export default function JogoDetail() {
             <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
               <label className="space-y-2">
                 <span className="text-xs font-semibold text-gray-400">Time A</span>
-                <input
-                  value={scoreForm.time_a_nome}
-                  onChange={(e) => setScoreForm((current) => ({ ...current, time_a_nome: e.target.value }))}
-                  className="input"
-                  placeholder="Ex: Verde"
-                />
+                {teams.length > 0 ? (
+                  <select
+                    value={scoreForm.time_a_id}
+                    onChange={(e) => {
+                      const id = e.target.value
+                      const team = teams.find((t) => String(t.id) === id)
+                      setScoreForm((current) => ({
+                        ...current,
+                        time_a_id: id === '' ? '' : Number(id),
+                        time_a_nome: team ? team.nome : current.time_a_nome,
+                      }))
+                    }}
+                    className="input"
+                  >
+                    <option value="">— Digitar manualmente —</option>
+                    {teams.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nome}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {scoreForm.time_a_id === '' && (
+                  <input
+                    value={scoreForm.time_a_nome}
+                    onChange={(e) => setScoreForm((current) => ({ ...current, time_a_nome: e.target.value }))}
+                    className="input"
+                    placeholder="Ex: Verde"
+                  />
+                )}
               </label>
               <span className="pb-3 text-lg font-bold text-gray-500">x</span>
               <label className="space-y-2">
                 <span className="text-xs font-semibold text-gray-400">Time B</span>
-                <input
-                  value={scoreForm.time_b_nome}
-                  onChange={(e) => setScoreForm((current) => ({ ...current, time_b_nome: e.target.value }))}
-                  className="input"
-                  placeholder="Ex: Azul"
-                />
+                {teams.length > 0 ? (
+                  <select
+                    value={scoreForm.time_b_id}
+                    onChange={(e) => {
+                      const id = e.target.value
+                      const team = teams.find((t) => String(t.id) === id)
+                      setScoreForm((current) => ({
+                        ...current,
+                        time_b_id: id === '' ? '' : Number(id),
+                        time_b_nome: team ? team.nome : current.time_b_nome,
+                      }))
+                    }}
+                    className="input"
+                  >
+                    <option value="">— Digitar manualmente —</option>
+                    {teams.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nome}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {scoreForm.time_b_id === '' && (
+                  <input
+                    value={scoreForm.time_b_nome}
+                    onChange={(e) => setScoreForm((current) => ({ ...current, time_b_nome: e.target.value }))}
+                    className="input"
+                    placeholder="Ex: Azul"
+                  />
+                )}
               </label>
             </div>
 

@@ -241,6 +241,20 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         """,
         """
         ALTER TABLE jogos
+        ADD COLUMN IF NOT EXISTS time_a_id INTEGER REFERENCES teams(id)
+        """,
+        """
+        ALTER TABLE jogos
+        ADD COLUMN IF NOT EXISTS time_b_id INTEGER REFERENCES teams(id)
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_jogos_time_a_id ON jogos (time_a_id)
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_jogos_time_b_id ON jogos (time_b_id)
+        """,
+        """
+        ALTER TABLE jogos
         ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()
         """,
         """

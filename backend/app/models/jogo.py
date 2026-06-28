@@ -16,6 +16,8 @@ class Jogo(Base):
     observacoes = Column(Text, nullable=True)
     finalizado = Column(Boolean, default=False)
     cancelado = Column(Boolean, default=False)
+    time_a_id = Column(Integer, ForeignKey("teams.id"), nullable=True, index=True)
+    time_b_id = Column(Integer, ForeignKey("teams.id"), nullable=True, index=True)
     time_a_nome = Column(String(80), nullable=True)
     time_b_nome = Column(String(80), nullable=True)
     placar_time_a = Column(Integer, nullable=True)
