@@ -13,6 +13,8 @@ import type {
   AuthResponse,
   InviteToken,
   AtletaHistorico,
+  AssinaturaStatus,
+  AssinarResponse,
 } from '../types'
 
 const API_URL = import.meta.env?.VITE_API_URL || ''
@@ -298,6 +300,16 @@ export const authApi = {
     newPassword: string,
   ): Promise<AxiosResponse<unknown>> =>
     api.post('/auth/reset-password', { token, new_password: newPassword }),
+}
+
+export const assinaturaApi = {
+  status: (): Promise<AxiosResponse<AssinaturaStatus>> => api.get('/assinaturas/status'),
+  assinar: (data: {
+    cpf_cnpj: string
+    billing_type: 'PIX' | 'CREDIT_CARD'
+    card?: Record<string, string>
+    holder_info?: Record<string, string>
+  }): Promise<AxiosResponse<AssinarResponse>> => api.post('/assinaturas/assinar', data),
 }
 
 export const artilhariaApi = {

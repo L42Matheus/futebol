@@ -101,6 +101,30 @@ export interface Team {
   cor?: string
 }
 
+// ─── Assinatura (plano SaaS do admin) ──────────────────────────────────────────
+
+export interface AssinaturaStatus {
+  subscription_status: string | null
+  subscription_id: string | null
+  in_trial: boolean
+  trial_ends_at: string | null
+  current_period_end: string | null
+  access_granted: boolean
+  valor: number
+}
+
+export interface AssinarResponse {
+  subscription_id: string
+  billing_type: 'PIX' | 'CREDIT_CARD'
+  payment_status: string | null
+  invoice_url: string | null
+  pix: {
+    payload: string | null
+    encoded_image: string | null
+    expiration_date: string | null
+  } | null
+}
+
 // ─── Auth Types ───────────────────────────────────────────────────────────────
 
 export interface AuthResponse {

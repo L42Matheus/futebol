@@ -24,6 +24,7 @@ import ChooseRole from './pages/ChooseRole'
 import PrivateRoute from './components/PrivateRoute'
 import NoRacha from './pages/NoRacha'
 import AthleteSelfProfile from './pages/AthleteSelfProfile'
+import Assinatura from './pages/Assinatura'
 
 export default function AppRoutes() {
   return (
@@ -41,6 +42,7 @@ export default function AppRoutes() {
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
             <Route path="app" element={<Home />} />
+            <Route path="assinatura" element={<Assinatura />} />
             <Route path="jogos" element={<JogosHub />} />
             <Route path="financeiro" element={<FinanceiroHub />} />
             <Route path="novo" element={<NovoRacha />} />
