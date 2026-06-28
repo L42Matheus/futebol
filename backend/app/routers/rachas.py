@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User, UserRole
 from app.schemas.racha import RachaCreate, RachaUpdate, RachaResponse
 from app.services.auth import get_current_user
-from app.deps import verificar_acesso_racha, verificar_admin_racha
+from app.deps import verificar_acesso_racha, verificar_admin_racha, exigir_assinatura
 
 router = APIRouter(prefix="/rachas", tags=["Rachas"])
 logger = logging.getLogger(__name__)
@@ -146,6 +146,7 @@ def _select_column(
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Apenas administradores podem criar racha")
+    exigir_assinatura(current_user)
     tipo = _normalize_tipo(racha.tipo)
     tipo_db = _resolve_tipo_db_label(db, tipo)
     row = db.execute(

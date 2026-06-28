@@ -20,6 +20,12 @@ class User(Base):
     senha_hash = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), default=UserRole.ATLETA)
     ativo = Column(Boolean, default=True)
+    # Assinatura SaaS do admin (gateway Asaas). O trial é derivado de created_at.
+    cpf_cnpj = Column(String(20), nullable=True)
+    asaas_customer_id = Column(String(255), nullable=True)
+    asaas_subscription_id = Column(String(255), nullable=True)
+    subscription_status = Column(String(50), nullable=True)
+    subscription_current_period_end = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

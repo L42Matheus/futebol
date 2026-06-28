@@ -1,7 +1,32 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models import User, Atleta, RachaAdmin
+
+
+def assinatura_ativa(user: User) -> bool:
+    """Retorna True se o admin pode gerenciar: assinatura ativa OU dentro do trial."""
+    if user.subscription_status == "active":
+        return True
+    created = user.created_at
+    if created is not None:
+        trial_dias = get_settings().assinatura_trial_dias
+        agora = datetime.now(created.tzinfo or timezone.utc)
+        if agora < created + timedelta(days=trial_dias):
+            return True
+    return False
+
+
+def exigir_assinatura(user: User) -> None:
+    """Bloqueia ações de gestão quando o admin não tem assinatura ativa nem trial válido."""
+    if not assinatura_ativa(user):
+        raise HTTPException(
+            status_code=402,
+            detail="Assinatura necessária para gerenciar o racha",
+        )
 
 
 def verificar_acesso_racha(db: Session, user: User, racha_id: int):
@@ -34,4 +59,5 @@ def verificar_admin_racha(db: Session, user: User, racha_id: int):
     ).first()
     if not admin:
         raise HTTPException(status_code=403, detail="Apenas administradores podem realizar esta ação")
+    exigir_assinatura(user)
     return admin

@@ -6,6 +6,9 @@ venv/
 node_modules/
 .env
 .env.local
+.env.*
+*.env
+dev.env
 .idea/
 .vscode/
 *.log

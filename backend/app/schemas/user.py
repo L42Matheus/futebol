@@ -34,6 +34,8 @@ class UserResponse(UserBase):
     ativo: bool
     role: UserRole
     created_at: datetime
+    cpf_cnpj: Optional[str] = None
+    subscription_status: Optional[str] = None
 
     class Config:
         from_attributes = True
