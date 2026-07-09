@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid, CreditCard } from 'lucide-react'
+import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid, CreditCard, Clock3 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
 import { profileApi } from '../services/api'
+import { useLocalTimer } from '../hooks/useLocalTimer'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
+  { test: /^\/tempo$/, title: 'Tempo' },
   { test: /^\/novo$/, title: 'Novo Racha' },
   { test: /\/racha\/\d+$/, title: 'Racha' },
   { test: /\/atletas/, title: 'Atletas' },
@@ -29,10 +31,15 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { timer } = useLocalTimer()
 
   const handleLogout = () => {
     logout()
     navigate('/perfil')
+  }
+
+  const handleTimerClick = () => {
+    navigate('/tempo')
   }
 
   const resolvedTitle =
@@ -65,6 +72,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   const rachaId = rachaMatch ? rachaMatch[1] : null
   const isFinanceiroRoute = location.pathname === '/financeiro' || /\/racha\/\d+\/financeiro$/.test(location.pathname)
   const isJogosRoute = location.pathname === '/jogos' || /\/racha\/\d+\/(jogos|novo-jogo|jogo\/\d+)/.test(location.pathname)
+  const isTempoRoute = location.pathname === '/tempo'
   const showRachaNav = Boolean(rachaId) && !isFinanceiroRoute
 
   const RACHA_NAV_ITEMS = rachaId ? [
@@ -76,7 +84,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   ] : []
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0f1a] pb-24 md:pb-0 md:pl-64">
+    <div className={`min-h-screen flex flex-col bg-[#0b0f1a] md:pb-0 md:pl-64 ${isTempoRoute ? 'pb-0' : 'pb-24'}`}>
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-[#0b0f1a] border-r border-gray-800 flex-col p-5 z-40">
         <div className="flex items-center gap-3 mb-10">
@@ -206,6 +214,18 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           <h1 className="text-lg font-bold text-white truncate">{resolvedTitle}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Cronometro"
+            onClick={handleTimerClick}
+            className={`p-2 -mr-1 rounded-full transition-colors ${
+              location.pathname === '/tempo' || timer.status === 'running'
+                ? 'bg-emerald-500/10 text-emerald-400'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+            }`}
+          >
+            <Clock3 size={20} />
+          </button>
           {user?.role === 'admin' && (
             <Link
               to="/assinatura"
@@ -236,7 +256,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
       </main>
 
       {/* Bottom Navigation Mobile */}
-      {(() => {
+      {!isTempoRoute && (() => {
         const isAdmin = user?.role === 'admin'
         const filteredItems = NAV_ITEMS.filter(item => {
           if (item.adminOnly && !isAdmin) return false
