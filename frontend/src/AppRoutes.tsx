@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Landing from './pages/Landing'
 import Home from './pages/Home'
+import Tempo from './pages/Tempo'
 import RachaDetail from './pages/RachaDetail'
 import JogoDetail from './pages/JogoDetail'
 import Atletas from './pages/Atletas'
@@ -42,6 +43,7 @@ export default function AppRoutes() {
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
             <Route path="app" element={<Home />} />
+            <Route path="tempo" element={<Tempo />} />
             <Route path="assinatura" element={<Assinatura />} />
             <Route path="jogos" element={<JogosHub />} />
             <Route path="financeiro" element={<FinanceiroHub />} />
