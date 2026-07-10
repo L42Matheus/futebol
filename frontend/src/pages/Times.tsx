@@ -33,6 +33,7 @@ export default function Times() {
   const [temporada, setTemporada] = useState<Temporada | null>(null)
   const [loading, setLoading] = useState(true)
   const [newTeamName, setNewTeamName] = useState('')
+  const [newTeamError, setNewTeamError] = useState('')
   const [inviteLink, setInviteLink] = useState('')
   const [selectedAthleteByTeam, setSelectedAthleteByTeam] = useState<Record<number, string>>({})
   const [deleteTeam, setDeleteTeam] = useState<TeamWithMembers | null>(null)
@@ -94,20 +95,45 @@ export default function Times() {
     setScrollAfterReload(false)
   }, [scrollAfterReload, loading, teams.length])
 
+  function getTeamCreateErrorMessage(error: unknown) {
+    const detail = (error as any)?.response?.data?.detail
+    const firstDetail = Array.isArray(detail) ? detail[0] : null
+
+    if (firstDetail?.loc?.includes?.('nome') && firstDetail?.type === 'string_too_short') {
+      return 'O nome do time precisa ter pelo menos 2 caracteres.'
+    }
+
+    if (typeof detail === 'string') return detail
+    if (firstDetail?.msg) return firstDetail.msg
+
+    return 'Erro ao criar time.'
+  }
+
   async function handleCreateTeam(e: React.FormEvent) {
     e.preventDefault()
-    if (!newTeamName.trim() || !rachaId) return
+    const teamName = newTeamName.trim()
+    if (!rachaId) return
+    if (teamName.length < 2) {
+      const message = 'O nome do time precisa ter pelo menos 2 caracteres.'
+      setNewTeamError(message)
+      toast(message, 'error')
+      return
+    }
+
     try {
+      setNewTeamError('')
       await teamsApi.create({
         racha_id: Number(rachaId),
         temporada_id: temporada?.id,
-        nome: newTeamName.trim(),
+        nome: teamName,
       })
       setNewTeamName('')
       setScrollAfterReload(true)
       loadData()
-    } catch {
-      toast('Erro ao criar time.', 'error')
+    } catch (error) {
+      const message = getTeamCreateErrorMessage(error)
+      setNewTeamError(message)
+      toast(message, 'error')
     }
   }
 
@@ -275,14 +301,21 @@ export default function Times() {
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
+              onChange={(e) => {
+                setNewTeamName(e.target.value)
+                if (newTeamError) setNewTeamError('')
+              }}
               className="input"
               placeholder="Nome do time"
+              aria-invalid={Boolean(newTeamError)}
             />
             <button className="btn-primary flex items-center justify-center gap-1" type="submit">
               <Plus size={16} /> Criar
             </button>
           </div>
+          {newTeamError && (
+            <p className="text-sm font-medium text-red-400">{newTeamError}</p>
+          )}
         </form>
       </div>
 
