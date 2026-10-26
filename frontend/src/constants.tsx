@@ -1,25 +1,9 @@
 ﻿import { Calendar, Home, User, PlusCircle, DollarSign } from 'lucide-react'
 
-export const POSICAO_LABELS: Record<string, string> = {
-  goleiro: 'Goleiro',
-  zagueiro: 'Zagueiro',
-  lateral: 'Lateral',
-  volante: 'Volante',
-  meia: 'Meia',
-  atacante: 'Atacante',
-  ponta: 'Ponta',
-}
-
 export const PERNA_LABELS: Record<string, string> = {
   direita: 'Direita',
   esquerda: 'Esquerda',
   ambidestra: 'Ambidestra',
-}
-
-export const TIPO_RACHA_LABELS: Record<string, string> = {
-  campo: 'Campo (11x11)',
-  society: 'Society (7x7)',
-  futsal: 'Futsal (5x5)',
 }
 
 export const PAGAMENTO_TIPO_LABELS: Record<string, string> = {

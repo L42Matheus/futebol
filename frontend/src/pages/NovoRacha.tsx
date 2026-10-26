@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, Dribbble, CalendarDays } from 'lucide-react'
+import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, CalendarDays } from 'lucide-react'
 import { rachasApi, authApi, temporadasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import FormField from '../components/FormField'
 import { Input, Select } from '../components/Input'
+import { ESPORTES, getEsporte, getModalidade, type EsporteId } from '../esportes'
 import type { TipoRacha } from '../types'
 
 const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
@@ -23,13 +24,6 @@ interface RachaForm {
   temporada_ano: number
 }
 
-const SOCIETY_SIZE_OPTIONS = [5, 6, 7, 8] as const
-const DEFAULT_SIZE_BY_TIPO: Record<TipoRacha, number> = {
-  campo: 11,
-  society: 7,
-  futsal: 5,
-}
-
 interface InviteLinks {
   atleta: string
   admin: string
@@ -41,10 +35,12 @@ export default function NovoRacha() {
   const [loading, setLoading] = useState(false)
   const [inviteLinks, setInviteLinks] = useState<InviteLinks | null>(null)
   const [createdRachaId, setCreatedRachaId] = useState<number | null>(null)
+  const [esporteId, setEsporteId] = useState<EsporteId>('futebol')
+  const esporte = getEsporte(esporteId)
   const [form, setForm] = useState<RachaForm>({
     nome: '',
-    tipo: 'society',
-    escalacao_size: DEFAULT_SIZE_BY_TIPO.society,
+    tipo: esporte.modalidades[0].id,
+    escalacao_size: esporte.modalidades[0].jogadoresPorTime,
     valor_mensalidade: 0,
     valor_cartao_amarelo: 1000,
     valor_cartao_vermelho: 2000,
@@ -117,7 +113,7 @@ export default function NovoRacha() {
     setForm((prev) => {
       if (name === 'tipo') {
         const nextTipo = value as TipoRacha
-        return { ...prev, tipo: nextTipo, escalacao_size: DEFAULT_SIZE_BY_TIPO[nextTipo] }
+        return { ...prev, tipo: nextTipo, escalacao_size: getModalidade(nextTipo).jogadoresPorTime }
       }
       if (name === 'escalacao_size') {
         return { ...prev, escalacao_size: parseInt(value, 10) }
@@ -134,6 +130,14 @@ export default function NovoRacha() {
       }
     })
   }
+
+  function escolherEsporte(id: EsporteId) {
+    const primeira = getEsporte(id).modalidades[0]
+    setEsporteId(id)
+    setForm((prev) => ({ ...prev, tipo: primeira.id, escalacao_size: primeira.jogadoresPorTime }))
+  }
+
+  const modalidadeAtual = getModalidade(form.tipo)
 
   if (user && !isAdmin) {
     return (
@@ -160,21 +164,44 @@ export default function NovoRacha() {
               required
             />
           </FormField>
-          <FormField label="Tipo de Racha">
+          <FormField label="Esporte">
+            <div className="grid grid-cols-3 gap-3">
+              {ESPORTES.map(({ id, nome, Icone }) => {
+                const ativo = id === esporteId
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => escolherEsporte(id)}
+                    aria-pressed={ativo}
+                    className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-sm font-semibold transition-colors ${
+                      ativo
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+                        : 'border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-600 hover:text-white'
+                    }`}
+                  >
+                    <Icone size={32} />
+                    {nome}
+                  </button>
+                )
+              })}
+            </div>
+          </FormField>
+          <FormField label="Modalidade" hint={modalidadeAtual.descricao}>
             <Select name="tipo" value={form.tipo} onChange={handleChange}>
-              <option value="campo">Campo (11x11)</option>
-              <option value="society">Society</option>
-              <option value="futsal">Futsal (5x5)</option>
+              {esporte.modalidades.map((m) => (
+                <option key={m.id} value={m.id}>{m.nome}</option>
+              ))}
             </Select>
           </FormField>
-          {form.tipo === 'society' && (
+          {modalidadeAtual.tamanhos && (
             <FormField label="Atletas por time" hint="Quantos jogadores entram em campo por time">
               <Select
                 name="escalacao_size"
                 value={form.escalacao_size}
                 onChange={handleChange}
               >
-                {SOCIETY_SIZE_OPTIONS.map((n) => (
+                {modalidadeAtual.tamanhos.map((n) => (
                   <option key={n} value={n}>
                     {n}v{n}
                   </option>
@@ -192,6 +219,7 @@ export default function NovoRacha() {
               min="0"
             />
           </FormField>
+          {esporte.recursos.includes('cartoes') && (
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Multa Amarelo (R$)">
               <Input
@@ -212,6 +240,7 @@ export default function NovoRacha() {
               />
             </FormField>
           </div>
+          )}
 
           <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
             <label className="flex items-start gap-3 cursor-pointer">
@@ -301,7 +330,7 @@ export default function NovoRacha() {
               {/* Imagem/Gradiente de fundo */}
               <div className="h-36 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center relative">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-                <Dribbble className="w-20 h-20 text-white/90" strokeWidth={1.5} />
+                <esporte.Icone className="w-20 h-20 text-white/90" />
               </div>
 
               {/* Conteúdo */}

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { Users, Calendar, DollarSign, ChevronRight, Layers, Link2, LayoutGrid } from 'lucide-react'
 import { rachasApi, jogosApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Racha, Jogo, Saldo } from '../types'
@@ -67,8 +68,8 @@ export default function RachaDetail() {
       {/* Info principal */}
       <div className="card">
         <h1 className="text-2xl font-bold text-white">{racha.nome}</h1>
-        <p className="text-gray-400 capitalize mt-1">
-          {racha.tipo} — {racha.total_atletas}/{racha.max_atletas} atletas
+        <p className="text-gray-400 mt-1">
+          {esporteDaModalidade(racha.tipo).nome} · {getModalidade(racha.tipo).nome} — {racha.total_atletas}/{racha.max_atletas} atletas
         </p>
         {saldo && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mt-4">
@@ -108,13 +109,15 @@ export default function RachaDetail() {
             <span className="text-sm font-medium text-white">Times</span>
           </Link>
         )}
-        <Link
-          to={`/racha/${rachaId}/escalacao`}
-          className="card flex flex-col items-center py-4 hover:border-emerald-500/50 transition-colors"
-        >
-          <LayoutGrid className="text-emerald-400 mb-2" size={24} />
-          <span className="text-sm font-medium text-white">Escalação</span>
-        </Link>
+        {temRecurso(racha.tipo, 'escalacao') && (
+          <Link
+            to={`/racha/${rachaId}/escalacao`}
+            className="card flex flex-col items-center py-4 hover:border-emerald-500/50 transition-colors"
+          >
+            <LayoutGrid className="text-emerald-400 mb-2" size={24} />
+            <span className="text-sm font-medium text-white">Escalação</span>
+          </Link>
+        )}
         {isAdmin && (
           <Link
             to={`/racha/${rachaId}/financeiro`}

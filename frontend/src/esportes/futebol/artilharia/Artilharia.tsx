@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Trophy, Plus, Minus, Medal, Users } from 'lucide-react'
-import Avatar from '../components/Avatar'
-import { useAuth } from '../context/AuthContext'
-import { artilhariaApi, rachasApi } from '../services/api'
+import Avatar from '../../../components/Avatar'
+import { useAuth } from '../../../context/AuthContext'
+import { artilhariaApi, rachasApi } from '../../../services/api'
+import { temRecurso } from '../..'
 
 type Tab = 'gols' | 'assistencias'
 
@@ -36,7 +37,7 @@ export default function Artilharia() {
     async function load() {
       try {
         const rachasRes = await rachasApi.list()
-        const rachas = rachasRes.data ?? []
+        const rachas = (rachasRes.data ?? []).filter((r) => temRecurso(r.tipo, 'artilharia'))
         if (rachas.length === 0) {
           setArtilheiros([])
           return
@@ -136,7 +137,7 @@ export default function Artilharia() {
             className="p-4 flex items-center gap-4 hover:bg-gray-800/50 transition-colors"
           >
             <div className="w-6 text-center text-sm font-bold text-gray-500">{index + 1}</div>
-            <Avatar name={atleta.apelido ?? atleta.nome} size="md" src={atleta.foto_url} />
+            <Avatar name={atleta.apelido || atleta.nome} size="md" src={atleta.foto_url} />
             <div className="flex-1 min-w-0">
               <h3
                 className="font-bold text-white leading-tight truncate"

@@ -4,7 +4,8 @@ import { Plus, User, Shield, Trash2, Link2, Copy, Check } from 'lucide-react'
 import { atletasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { POSICAO_LABELS } from '../constants'
+import { labelPosicao } from '../esportes'
+import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
 import ConfirmDialog from '../components/ConfirmDialog'
 import FormField from '../components/FormField'
 import { Input, Select } from '../components/Input'
@@ -15,13 +16,15 @@ interface AtletaForm {
   nome: string
   apelido: string
   telefone: string
+  // Vazio = o backend usa a posição padrão do esporte.
   posicao: Posicao
 }
 
-const INITIAL_FORM: AtletaForm = { nome: '', apelido: '', telefone: '', posicao: 'meia' }
+const INITIAL_FORM: AtletaForm = { nome: '', apelido: '', telefone: '', posicao: '' }
 
 export default function Atletas() {
   const { rachaId } = useParams<{ rachaId: string }>()
+  const esporte = useEsporteDoRacha(rachaId)
   const [atletas, setAtletas] = useState<Atleta[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -53,7 +56,7 @@ export default function Atletas() {
     e.preventDefault()
     if (!rachaId) return
     try {
-      await atletasApi.create({ ...form, racha_id: parseInt(rachaId) })
+      await atletasApi.create({ ...form, posicao: form.posicao || undefined, racha_id: parseInt(rachaId) })
       setShowModal(false)
       setForm(INITIAL_FORM)
       loadAtletas()
@@ -152,14 +155,14 @@ export default function Atletas() {
           atletas.map((a) => (
             <div key={a.id} className="relative group py-4 px-4 hover:bg-gray-800/50 transition-colors">
               <Link to={`/racha/${rachaId}/atleta/${a.id}`} className="flex items-center gap-4">
-                <Avatar src={a.foto_url} name={a.apelido ?? a.nome} size="lg" />
+                <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-white">{a.apelido ?? a.nome}</p>
+                    <p className="font-medium text-white">{a.apelido || a.nome}</p>
                     {a.is_admin && <Shield className="text-emerald-400" size={16} />}
                   </div>
                   <p className="text-sm text-gray-400">
-                    {POSICAO_LABELS[a.posicao]}
+                    {labelPosicao(a.posicao)}
                     {a.numero_camisa != null && ` — #${a.numero_camisa}`}
                   </p>
                 </div>
@@ -210,10 +213,10 @@ export default function Atletas() {
               </FormField>
               <FormField label="Posição">
                 <Select
-                  value={form.posicao}
-                  onChange={(e) => setForm({ ...form, posicao: e.target.value as Posicao })}
+                  value={form.posicao || esporte?.posicaoPadrao || ''}
+                  onChange={(e) => setForm({ ...form, posicao: e.target.value })}
                 >
-                  {(Object.entries(POSICAO_LABELS) as [Posicao, string][]).map(([v, l]) => (
+                  {Object.entries(esporte?.posicoes ?? {}).map(([v, l]) => (
                     <option key={v} value={v}>{l}</option>
                   ))}
                 </Select>

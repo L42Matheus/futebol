@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Check, ChevronDown, UserMinus, UserPlus, Users, X } from 'lucide-react'
-import { teamsApi, atletasApi, rachasApi } from '../services/api'
-import { useAuth } from '../context/AuthContext'
-import SoccerField from '../components/SoccerField'
-import Avatar from '../components/Avatar'
+import { teamsApi, atletasApi, rachasApi } from '../../../services/api'
+import { useAuth } from '../../../context/AuthContext'
+import SoccerField from './SoccerField'
+import Avatar from '../../../components/Avatar'
+import { esporteDaModalidade, temRecurso } from '../..'
+import futebol from '..'
 import {
   GameType,
   Formation,
@@ -13,7 +15,7 @@ import {
   getFormations,
   getFormation,
   getPlayerCount,
-} from '../config/formations'
+} from './formations'
 
 interface Atleta {
   id: number
@@ -41,15 +43,7 @@ interface Team {
   membros: TeamMember[]
 }
 
-const posicaoLabels: Record<string, string> = {
-  goleiro: 'Goleiro',
-  zagueiro: 'Zagueiro',
-  lateral: 'Lateral',
-  volante: 'Volante',
-  meia: 'Meia',
-  atacante: 'Atacante',
-  ponta: 'Ponta',
-}
+const posicaoLabels = futebol.posicoes
 
 const gameTypeLabels: Record<GameType, string> = {
   campo: 'Campo',
@@ -80,6 +74,7 @@ export default function TeamLineup() {
   const [editingMember, setEditingMember] = useState<{ team: Team; member: TeamMember; slot?: PositionSlot } | null>(null)
   const [memberForm, setMemberForm] = useState({ is_titular: true, posicao_escalacao: '' })
   const [addingToTeam, setAddingToTeam] = useState<{ team: Team; slot?: PositionSlot } | null>(null)
+  const [esporteSemEscalacao, setEsporteSemEscalacao] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -95,6 +90,11 @@ export default function TeamLineup() {
 
       setTeams(teamsRes.data)
       setAtletas(atletasRes.data)
+
+      if (!temRecurso(rachaRes.data.tipo, 'escalacao')) {
+        setEsporteSemEscalacao(esporteDaModalidade(rachaRes.data.tipo).nome)
+        return
+      }
 
       const tipo = rachaRes.data.tipo as GameType
       const size = rachaRes.data.escalacao_size ?? null
@@ -245,6 +245,15 @@ export default function TeamLineup() {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-500"></div>
+      </div>
+    )
+  }
+
+  if (esporteSemEscalacao) {
+    return (
+      <div className="card text-center py-10">
+        <h1 className="text-xl font-semibold text-white mb-2">Escalação indisponível</h1>
+        <p className="text-gray-400">A escalação em campo ainda não existe para {esporteSemEscalacao}.</p>
       </div>
     )
   }

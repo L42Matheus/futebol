@@ -1,6 +1,6 @@
 import { Plus, Shield, Users } from 'lucide-react'
-import Avatar from './Avatar'
-import { Formation, PositionSlot } from '../config/formations'
+import Avatar from '../../../components/Avatar'
+import { Formation, PositionSlot } from './formations'
 
 interface Atleta {
   id: number

@@ -1,5 +1,7 @@
 // ─── Domain Types ────────────────────────────────────────────────────────────
 
+import type { EsporteId } from '../esportes/types'
+
 export type UserRole = 'admin' | 'atleta'
 
 export interface User {
@@ -10,14 +12,16 @@ export interface User {
   role: UserRole
 }
 
-export type Posicao = 'goleiro' | 'zagueiro' | 'lateral' | 'volante' | 'meia' | 'atacante' | 'ponta'
+// Valores válidos de posição e modalidade vêm do registro em src/esportes.
+export type Posicao = string
 export type Perna = 'direita' | 'esquerda' | 'ambidestra'
-export type TipoRacha = 'campo' | 'society' | 'futsal'
+export type TipoRacha = string
 
 export interface Racha {
   id: number
   nome: string
   tipo: TipoRacha
+  esporte: EsporteId
   total_atletas: number
   max_atletas: number
   escalacao_size?: number | null
