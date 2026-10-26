@@ -4,6 +4,8 @@ import { Camera, Edit2, Save, X, Trophy, CreditCard, AlertTriangle } from 'lucid
 import { atletasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/Avatar'
+import { labelPosicao } from '../esportes'
+import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
 
 interface Atleta {
   id: number
@@ -35,18 +37,9 @@ interface Historico {
   }
 }
 
-const posicaoLabels: Record<string, string> = {
-  goleiro: 'Goleiro',
-  zagueiro: 'Zagueiro',
-  lateral: 'Lateral',
-  volante: 'Volante',
-  meia: 'Meia',
-  atacante: 'Atacante',
-  ponta: 'Ponta'
-}
-
 export default function AtletaProfile() {
   const { rachaId, atletaId } = useParams()
+  const esporte = useEsporteDoRacha(rachaId)
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -56,9 +49,10 @@ export default function AtletaProfile() {
   const [editing, setEditing] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [adminActionLoading, setAdminActionLoading] = useState(false)
-  const [form, setForm] = useState({ nome: '', apelido: '', telefone: '', posicao: 'meia', numero_camisa: '' })
+  const [form, setForm] = useState({ nome: '', apelido: '', telefone: '', posicao: '', numero_camisa: '' })
 
   const isAdminView = user?.role === 'admin'
+  const temCartoes = esporte?.recursos.includes('cartoes') ?? false
   const canEdit = atleta?.user_id === user?.id || isAdminView
 
   useEffect(() => {
@@ -77,7 +71,7 @@ export default function AtletaProfile() {
         nome: atletaRes.data.nome || '',
         apelido: atletaRes.data.apelido || '',
         telefone: atletaRes.data.telefone || '',
-        posicao: atletaRes.data.posicao || 'meia',
+        posicao: atletaRes.data.posicao || '',
         numero_camisa: atletaRes.data.numero_camisa?.toString() || ''
       })
     } catch (e) {
@@ -288,7 +282,7 @@ export default function AtletaProfile() {
                   onChange={(e) => setForm({ ...form, posicao: e.target.value })}
                   className="input"
                 >
-                  {Object.entries(posicaoLabels).map(([value, label]) => (
+                  {Object.entries(esporte?.posicoes ?? {}).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
@@ -333,7 +327,7 @@ export default function AtletaProfile() {
               )}
               <div className="mt-2 flex items-center gap-3">
                 <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
-                  {posicaoLabels[atleta.posicao]}
+                  {labelPosicao(atleta.posicao)}
                 </span>
                 {atleta.numero_camisa && (
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
@@ -348,7 +342,7 @@ export default function AtletaProfile() {
 
       {/* Estatisticas */}
       {historico && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className={`grid gap-4 ${temCartoes ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {/* Presencas */}
           <div className="card p-4 text-center">
             <Trophy className="mx-auto text-primary-600 mb-2" size={24} />
@@ -378,7 +372,7 @@ export default function AtletaProfile() {
             )}
           </div>
 
-          {/* Cartoes */}
+          {temCartoes && (
           <div className="card p-4 text-center">
             <AlertTriangle className="mx-auto text-amber-500 mb-2" size={24} />
             <div className="space-y-3">
@@ -421,6 +415,7 @@ export default function AtletaProfile() {
             </div>
             <p className="text-xs text-gray-500 mt-2">Cartoes</p>
           </div>
+          )}
         </div>
       )}
     </div>

@@ -14,7 +14,18 @@ import logging
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
+from app.esportes import TODAS_MODALIDADES, TODAS_POSICOES
+
 logger = logging.getLogger(__name__)
+
+
+def _enum_labels(type_name: str, values: tuple[str, ...]) -> list[str]:
+    # O ORM grava o nome do membro (SOCIETY) e o SQL cru às vezes o valor (society): o enum precisa dos dois.
+    return [
+        f"ALTER TYPE {type_name} ADD VALUE IF NOT EXISTS '{label}'"
+        for value in values
+        for label in (value.upper(), value)
+    ]
 
 
 def ensure_schema_compatibility(engine: Engine) -> None:
@@ -36,15 +47,7 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         END
         $$;
         """,
-        """
-        ALTER TYPE tiporacha ADD VALUE IF NOT EXISTS 'campo'
-        """,
-        """
-        ALTER TYPE tiporacha ADD VALUE IF NOT EXISTS 'society'
-        """,
-        """
-        ALTER TYPE tiporacha ADD VALUE IF NOT EXISTS 'futsal'
-        """,
+        *_enum_labels("tiporacha", TODAS_MODALIDADES),
         """
         DO $$
         BEGIN
@@ -55,27 +58,7 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         END
         $$;
         """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'goleiro'
-        """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'zagueiro'
-        """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'lateral'
-        """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'volante'
-        """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'meia'
-        """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'atacante'
-        """,
-        """
-        ALTER TYPE posicao ADD VALUE IF NOT EXISTS 'ponta'
-        """,
+        *_enum_labels("posicao", TODAS_POSICOES),
         """
         DO $$
         BEGIN

@@ -24,7 +24,14 @@ from app.models import (
 )
 from app.schemas.atleta import AtletaCreate, AtletaUpdate, AtletaResponse
 from app.services.auth import get_current_user
-from app.deps import verificar_acesso_racha, verificar_admin_racha
+from app.deps import (
+    esporte_do_racha,
+    exigir_recurso,
+    posicao_do_esporte,
+    verificar_acesso_racha,
+    verificar_admin_racha,
+)
+from app.esportes import CARTOES, esporte_da_modalidade
 from app.config import get_settings
 
 router = APIRouter(prefix="/atletas", tags=["Atletas"])
@@ -70,7 +77,9 @@ def criar_atleta(atleta: AtletaCreate, db: Session = Depends(get_db), current_us
             Atleta.racha_id == atleta.racha_id, Atleta.is_admin.is_(True), Atleta.ativo.is_(True)).scalar()
         if total_admins >= 5:
             raise HTTPException(status_code=400, detail="Limite de 5 administradores atingido")
-    db_atleta = Atleta(**atleta.model_dump())
+    dados = atleta.model_dump()
+    dados["posicao"] = posicao_do_esporte(esporte_da_modalidade(racha.tipo), atleta.posicao)
+    db_atleta = Atleta(**dados)
     db.add(db_atleta)
     db.commit()
     db.refresh(db_atleta)
@@ -117,6 +126,8 @@ def atualizar_atleta(atleta_id: int, atleta_update: AtletaUpdate, db: Session = 
             Atleta.racha_id == atleta.racha_id, Atleta.is_admin.is_(True), Atleta.ativo.is_(True)).scalar()
         if total_admins >= 5:
             raise HTTPException(status_code=400, detail="Limite de 5 administradores atingido")
+    if update_data.get("posicao") is not None:
+        update_data["posicao"] = posicao_do_esporte(esporte_do_racha(db, atleta.racha_id), update_data["posicao"])
     for field, value in update_data.items():
         setattr(atleta, field, value)
     db.commit()
@@ -182,6 +193,7 @@ def adicionar_cartao(
         raise HTTPException(status_code=404, detail="Atleta nao encontrado")
 
     admin = verificar_admin_racha(db, current_user, atleta.racha_id)
+    exigir_recurso(db, atleta.racha_id, CARTOES)
 
     if payload.jogo_id:
         jogo = db.query(Jogo).filter(Jogo.id == payload.jogo_id, Jogo.racha_id == atleta.racha_id).first()
@@ -229,6 +241,7 @@ def remover_cartao(
         raise HTTPException(status_code=404, detail="Atleta nao encontrado")
 
     verificar_admin_racha(db, current_user, atleta.racha_id)
+    exigir_recurso(db, atleta.racha_id, CARTOES)
 
     cartao = db.query(Cartao).filter(
         Cartao.atleta_id == atleta.id,

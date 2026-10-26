@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown, X } from 'lucide-react'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
-import { POSICAO_LABELS, PERNA_LABELS, TIPO_RACHA_LABELS } from '../constants'
+import { PERNA_LABELS } from '../constants'
+import { esporteDaModalidade, labelPosicao } from '../esportes'
 import { useAuth } from '../context/AuthContext'
 import { profileApi, rachasApi } from '../services/api'
 import type { Racha } from '../types'
@@ -152,7 +153,7 @@ export default function AthleteSelfProfile() {
 
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
-                {POSICAO_LABELS[profile.posicao] || '-'}
+                {labelPosicao(profile.posicao) || '-'}
               </span>
               <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                 <Footprints size={12} /> {PERNA_LABELS[profile.perna_boa || 'direita']}
@@ -255,7 +256,9 @@ export default function AthleteSelfProfile() {
             </div>
             <div className="text-center">
               <p className="text-3xl font-black text-white tracking-tighter">0</p>
-              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Gols</p>
+              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">
+                {esporteDaModalidade(selectedRacha?.tipo).pontuacao}
+              </p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-black text-white tracking-tighter">0%</p>

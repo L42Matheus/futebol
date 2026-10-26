@@ -2,17 +2,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Bool
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+from app.esportes import TODAS_POSICOES
 import enum
 
 
-class Posicao(str, enum.Enum):
-    GOLEIRO = "goleiro"
-    ZAGUEIRO = "zagueiro"
-    LATERAL = "lateral"
-    VOLANTE = "volante"
-    MEIA = "meia"
-    ATACANTE = "atacante"
-    PONTA = "ponta"
+# Posições de todos os esportes; cada racha só aceita as do seu esporte (ver app/deps.py).
+Posicao = enum.Enum("Posicao", {p.upper(): p for p in TODAS_POSICOES}, type=str)
 
 
 class Atleta(Base):

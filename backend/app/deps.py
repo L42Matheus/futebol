@@ -4,7 +4,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.models import User, Atleta, RachaAdmin
+from app.esportes import Esporte, esporte_da_modalidade
+from app.models import User, Atleta, Posicao, Racha, RachaAdmin
 
 
 def assinatura_ativa(user: User) -> bool:
@@ -34,6 +35,28 @@ def exigir_assinatura(user: User) -> None:
             status_code=402,
             detail="Assinatura necessária para gerenciar o racha",
         )
+
+
+def esporte_do_racha(db: Session, racha_id: int) -> Esporte:
+    racha = db.query(Racha).filter(Racha.id == racha_id).first()
+    if not racha:
+        raise HTTPException(status_code=404, detail="Racha não encontrado")
+    return esporte_da_modalidade(racha.tipo)
+
+
+def exigir_recurso(db: Session, racha_id: int, recurso: str) -> None:
+    esporte = esporte_do_racha(db, racha_id)
+    if not esporte.tem(recurso):
+        raise HTTPException(status_code=400, detail=f"Recurso indisponível para {esporte.nome}")
+
+
+def posicao_do_esporte(esporte: Esporte, posicao) -> Posicao:
+    """Valida a posição contra o esporte; sem posição, usa a padrão do esporte."""
+    if posicao is None:
+        return Posicao(esporte.posicao_padrao)
+    if Posicao(posicao).value not in esporte.posicoes:
+        raise HTTPException(status_code=422, detail=f"Posição inválida para {esporte.nome}")
+    return Posicao(posicao)
 
 
 def verificar_acesso_racha(db: Session, user: User, racha_id: int):

@@ -8,6 +8,7 @@ import Avatar from './Avatar'
 import { profileApi } from '../services/api'
 import { useLocalTimer } from '../hooks/useLocalTimer'
 import { PAYMENTS_ENABLED } from '../config/features'
+import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
@@ -71,6 +72,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   // Extrair rachaId da URL para nav contextual
   const rachaMatch = location.pathname.match(/\/racha\/(\d+)/)
   const rachaId = rachaMatch ? rachaMatch[1] : null
+  const esporteDoRacha = useEsporteDoRacha(rachaId)
   const isFinanceiroRoute = location.pathname === '/financeiro' || /\/racha\/\d+\/financeiro$/.test(location.pathname)
   const isJogosRoute = location.pathname === '/jogos' || /\/racha\/\d+\/(jogos|novo-jogo|jogo\/\d+)/.test(location.pathname)
   const isTempoRoute = location.pathname === '/tempo'
@@ -80,9 +82,9 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
     { path: `/racha/${rachaId}/jogos`, label: 'Jogos', icon: <Calendar size={18} /> },
     { path: `/racha/${rachaId}/atletas`, label: 'Atletas', icon: <Users size={18} /> },
     { path: `/racha/${rachaId}/times`, label: 'Times', icon: <Layers size={18} /> },
-    { path: `/racha/${rachaId}/escalacao`, label: 'Escalação', icon: <LayoutGrid size={18} /> },
+    { path: `/racha/${rachaId}/escalacao`, label: 'Escalação', icon: <LayoutGrid size={18} />, recurso: 'escalacao' as const },
     { path: `/racha/${rachaId}/financeiro`, label: 'Financeiro', icon: <DollarSign size={18} /> },
-  ] : []
+  ].filter((item) => !item.recurso || esporteDoRacha?.recursos.includes(item.recurso)) : []
 
   return (
     <div className={`min-h-screen flex flex-col bg-[#0b0f1a] md:pb-0 md:pl-64 ${isTempoRoute ? 'pb-0' : 'pb-24'}`}>

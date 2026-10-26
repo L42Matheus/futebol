@@ -5,12 +5,13 @@ import {
   CheckCircle2,
   ClipboardList,
   DollarSign,
-  ShieldCheck,
   Sparkles,
   Trophy,
   Users,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { ESPORTES } from '../esportes'
+import { AnimacaoAtiva } from '../esportes/cena'
 
 const features = [
   {
@@ -45,6 +46,7 @@ const steps = [
 export default function Landing() {
   const { isAuthenticated } = useAuth()
   const appPath = isAuthenticated ? '/app' : '/perfil'
+  const prefereMenosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return (
     <div className="min-h-screen overflow-hidden bg-[#0b0f1a] text-white">
@@ -83,9 +85,14 @@ export default function Landing() {
       <main className="relative mx-auto max-w-6xl px-5 pb-16">
         <section className="grid items-center gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
           <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
+            <div className="mb-5 inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
               <Sparkles size={14} />
-              Para campo, society e futsal
+              {ESPORTES.map(({ id, nome, Icone }) => (
+                <span key={id} className="inline-flex items-center gap-1.5">
+                  <Icone size={15} />
+                  {nome}
+                </span>
+              ))}
             </div>
 
             <h1 className="max-w-3xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">
@@ -170,6 +177,30 @@ export default function Landing() {
           </div>
         </section>
 
+        <section className="py-6">
+          <div className="rounded-[2.5rem] border border-gray-800 bg-gray-900/40 p-3 sm:p-6">
+            <div className="mb-4 flex flex-col gap-1 px-2 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-2xl font-black sm:text-3xl">Uma arena, três quadras.</h2>
+              <p className="text-sm font-medium text-gray-400">Racha de futebol, basquete ou vôlei no mesmo app.</p>
+            </div>
+            <AnimacaoAtiva.Provider value={!prefereMenosMovimento}>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                {ESPORTES.map(({ id, nome, Icone, Cena }) => (
+                  <figure key={id} className="overflow-hidden rounded-[1.5rem] border border-gray-800 bg-[#0b0f1a] sm:rounded-[2rem]">
+                    <div className="aspect-square">
+                      <Cena />
+                    </div>
+                    <figcaption className="flex items-center justify-center gap-1.5 border-t border-gray-800/80 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] text-gray-300 sm:py-3 sm:text-xs sm:tracking-[0.18em]">
+                      <Icone size={15} />
+                      {nome}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </AnimacaoAtiva.Provider>
+          </div>
+        </section>
+
         <section className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (
             <div key={feature.title} className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-5">
@@ -203,22 +234,6 @@ export default function Landing() {
               ))}
             </div>
           </div>
-        </section>
-
-        <section className="rounded-[2.5rem] border border-emerald-500/20 bg-emerald-500/10 p-6 text-center sm:p-10">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white">
-            <ShieldCheck size={28} />
-          </div>
-          <h2 className="text-3xl font-black">Pronto para testar com sua galera?</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-gray-300">
-            Crie o racha, convide os atletas e valide o fluxo completo antes de ir para produção.
-          </p>
-          <Link
-            to={appPath}
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-base font-black text-gray-950 transition-transform active:scale-[0.98]"
-          >
-            Começar agora <ArrowRight size={19} />
-          </Link>
         </section>
       </main>
     </div>
