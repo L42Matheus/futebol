@@ -19,7 +19,7 @@ from app.models import (
 def processar_invite(db: Session, user: User, invite: Invite) -> None:
     """
     Processa um convite pendente associando o usuário ao racha como admin ou atleta.
-    Marca o convite como aceito e faz flush/commit dos objetos necessários.
+    Convites pessoais são marcados como aceitos; links de grupo continuam valendo.
     Deve ser chamado dentro de uma transação ativa — o commit final fica por conta do chamador.
     """
     if invite.status != InviteStatus.PENDENTE:
@@ -58,5 +58,8 @@ def processar_invite(db: Session, user: User, invite: Invite) -> None:
             if invite.team_id:
                 db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
 
-    invite.status = InviteStatus.ACEITO
-    invite.aceito_em = datetime.now(timezone.utc).replace(tzinfo=None)
+    # Link sem destinatário é compartilhado no grupo e precisa servir para todos;
+    # só o convite de uma pessoa específica é consumido no primeiro uso.
+    if invite.email or invite.telefone or invite.nome:
+        invite.status = InviteStatus.ACEITO
+        invite.aceito_em = datetime.now(timezone.utc).replace(tzinfo=None)
