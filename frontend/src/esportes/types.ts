@@ -24,6 +24,8 @@ export interface Esporte {
   id: EsporteId
   nome: string
   Icone: ComponentType<IconeProps>
+  // Ilustração animada usada na landing.
+  Cena: ComponentType
   modalidades: Modalidade[]
   posicoes: Record<string, string>
   posicaoPadrao: string

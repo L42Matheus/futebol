@@ -1,10 +1,12 @@
 import type { Esporte } from '../types'
+import Cena from './Cena'
 import Icone from './Icone'
 
 const futebol: Esporte = {
   id: 'futebol',
   nome: 'Futebol',
   Icone,
+  Cena,
   // A primeira modalidade é a sugerida ao criar um racha.
   modalidades: [
     { id: 'society', nome: 'Society', descricao: 'De 5 a 8 por time', jogadoresPorTime: 7, tamanhos: [5, 6, 7, 8] },

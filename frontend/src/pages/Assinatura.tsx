@@ -22,7 +22,7 @@ export default function Assinatura() {
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  // Modo grátis: cobrança desativada, mostra só um aviso.
+  // Cobrança desativada: mostra só um aviso.
   useEffect(() => {
     if (!PAYMENTS_ENABLED) {
       const t = setTimeout(() => navigate('/app', { replace: true }), 2500)
@@ -36,10 +36,9 @@ export default function Assinatura() {
           <CheckCircle size={48} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">Teste grátis liberado</h1>
+          <h1 className="text-2xl font-bold text-white">Tudo liberado</h1>
           <p className="text-gray-400 mt-2">
-            O QuemJogaFC está em fase de testes — todas as funcionalidades estão liberadas
-            sem cobrança. Aproveite!
+            Todas as funcionalidades do QuemJogaFC estão disponíveis sem cobrança. Aproveite!
           </p>
         </div>
         <button
