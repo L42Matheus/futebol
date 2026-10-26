@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from_email: str = ""
     smtp_use_tls: bool = True
+    brevo_api_key: str = ""
 
     # Asaas (gateway de pagamento — assinatura SaaS do admin)
     payments_enabled: bool = False
