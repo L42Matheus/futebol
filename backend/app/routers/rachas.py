@@ -8,6 +8,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.database import get_db
+from app.esportes import MODALIDADE_PADRAO, esporte_da_modalidade, modalidade, modalidade_existe
 from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User, UserRole
 from app.schemas.racha import RachaCreate, RachaUpdate, RachaResponse
 from app.services.auth import get_current_user
@@ -18,16 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_max_atletas(tipo: TipoRacha) -> int:
-    limites = {TipoRacha.CAMPO: 40, TipoRacha.SOCIETY: 30, TipoRacha.FUTSAL: 20}
-    return limites.get(tipo, 30)
+    return modalidade(tipo).max_atletas
 
 
 def _normalize_tipo(value) -> TipoRacha:
     raw = getattr(value, "value", value)
-    tipo = str(raw or TipoRacha.SOCIETY.value).lower()
-    if tipo in {"campo", "society", "futsal"}:
-        return TipoRacha(tipo)
-    return TipoRacha.SOCIETY
+    tipo = str(raw or MODALIDADE_PADRAO).lower()
+    return TipoRacha(tipo) if modalidade_existe(tipo) else TipoRacha(MODALIDADE_PADRAO)
 
 
 def _resolve_tipo_db_label(db: Session, tipo: TipoRacha) -> str:
@@ -374,6 +372,9 @@ def atualizar_racha(racha_id: int, racha_update: RachaUpdate, db: Session = Depe
         raise HTTPException(status_code=404, detail="Racha não encontrado")
     update_data = racha_update.model_dump(exclude_unset=True)
     if "tipo" in update_data:
+        # Trocar de esporte deixaria posições e estatísticas dos atletas sem sentido.
+        if esporte_da_modalidade(update_data["tipo"]).id != esporte_da_modalidade(racha.tipo).id:
+            raise HTTPException(status_code=400, detail="Não é possível trocar o esporte de um racha")
         update_data["max_atletas"] = get_max_atletas(update_data["tipo"])
     for field, value in update_data.items():
         setattr(racha, field, value)

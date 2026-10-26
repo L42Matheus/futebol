@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from typing import Optional
 from datetime import datetime
+from app.esportes import esporte_da_modalidade
 from app.models.racha import TipoRacha
 
 
@@ -12,7 +13,7 @@ class RachaBase(BaseModel):
     valor_cartao_amarelo: int = Field(default=1000, ge=0)
     valor_cartao_vermelho: int = Field(default=2000, ge=0)
     estatuto: Optional[str] = None
-    escalacao_size: Optional[int] = Field(default=None, ge=3, le=11)
+    escalacao_size: Optional[int] = Field(default=None, ge=2, le=11)
 
 
 class RachaCreate(RachaBase):
@@ -27,7 +28,7 @@ class RachaUpdate(BaseModel):
     valor_cartao_amarelo: Optional[int] = Field(None, ge=0)
     valor_cartao_vermelho: Optional[int] = Field(None, ge=0)
     estatuto: Optional[str] = None
-    escalacao_size: Optional[int] = Field(None, ge=3, le=11)
+    escalacao_size: Optional[int] = Field(None, ge=2, le=11)
     ativo: Optional[bool] = None
 
 
@@ -39,6 +40,11 @@ class RachaResponse(RachaBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     total_atletas: int = 0
+
+    @computed_field
+    @property
+    def esporte(self) -> str:
+        return esporte_da_modalidade(self.tipo).id
 
     class Config:
         from_attributes = True

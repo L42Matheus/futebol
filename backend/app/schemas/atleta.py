@@ -13,6 +13,7 @@ class AtletaBase(BaseModel):
 
 
 class AtletaCreate(AtletaBase):
+    posicao: Optional[Posicao] = None
     racha_id: int
     is_admin: bool = False
 

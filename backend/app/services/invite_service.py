@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
+from app.deps import esporte_do_racha, posicao_do_esporte
 from app.models import (
     Atleta,
     AthleteProfile,
@@ -48,6 +49,7 @@ def processar_invite(db: Session, user: User, invite: Invite) -> None:
                 racha_id=invite.racha_id,
                 nome=invite.nome or user.nome or "Atleta",
                 telefone=invite.telefone or user.telefone,
+                posicao=posicao_do_esporte(esporte_do_racha(db, invite.racha_id), None),
                 ativo=True,
                 foto_url=profile.foto_url if profile else None,
             )

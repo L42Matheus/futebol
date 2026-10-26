@@ -2,13 +2,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Enum, Text, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+from app.esportes import TODAS_MODALIDADES
 import enum
 
 
-class TipoRacha(str, enum.Enum):
-    CAMPO = "campo"
-    SOCIETY = "society"
-    FUTSAL = "futsal"
+# Uma modalidade por esporte (campo, basquete_5x5, volei_areia...); ver app/esportes.
+TipoRacha = enum.Enum("TipoRacha", {m.upper(): m for m in TODAS_MODALIDADES}, type=str)
 
 
 class Racha(Base):
