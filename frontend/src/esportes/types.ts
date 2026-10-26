@@ -20,6 +20,17 @@ export interface IconeProps {
   size?: number
 }
 
+// Como a partida é controlada na tela de tempo: por cronômetro ou por pontos.
+export type Placar =
+  | {
+      tipo: 'tempo'
+      titulo: string
+      minutos: number[]
+      // Esportes jogados em partes (ex.: 4 quartos no basquete).
+      periodo?: { nome: string; total: number }
+    }
+  | { tipo: 'pontos'; titulo: string; pontosPorSet: number[]; padrao: number }
+
 export interface Esporte {
   id: EsporteId
   nome: string
@@ -31,5 +42,6 @@ export interface Esporte {
   posicaoPadrao: string
   // Como se chama o que o atleta marca: gols, cestas, pontos.
   pontuacao: string
+  placar: Placar
   recursos: Recurso[]
 }

@@ -20,6 +20,7 @@ const volei: Esporte = {
   },
   posicaoPadrao: 'ponteiro',
   pontuacao: 'Pontos',
+  placar: { tipo: 'pontos', titulo: 'Placar do set', pontosPorSet: [15, 21, 25], padrao: 25 },
   recursos: [],
 }
 
