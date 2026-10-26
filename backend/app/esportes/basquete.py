@@ -1,4 +1,4 @@
-from app.esportes.base import Esporte, Modalidade
+from app.esportes.base import ESCALACAO, Esporte, Modalidade
 
 BASQUETE = Esporte(
     id="basquete",
@@ -9,5 +9,5 @@ BASQUETE = Esporte(
     ),
     posicoes=("armador", "ala_armador", "ala", "ala_pivo", "pivo"),
     posicao_padrao="ala",
-    recursos=frozenset(),
+    recursos=frozenset({ESCALACAO}),
 )

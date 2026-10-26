@@ -1,4 +1,4 @@
-from app.esportes.base import Esporte, Modalidade
+from app.esportes.base import ESCALACAO, Esporte, Modalidade
 
 VOLEI = Esporte(
     id="volei",
@@ -9,5 +9,5 @@ VOLEI = Esporte(
     ),
     posicoes=("levantador", "oposto", "ponteiro", "central", "libero"),
     posicao_padrao="ponteiro",
-    recursos=frozenset(),
+    recursos=frozenset({ESCALACAO}),
 )
