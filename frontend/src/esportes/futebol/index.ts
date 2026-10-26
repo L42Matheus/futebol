@@ -1,5 +1,6 @@
 import type { Esporte } from '../types'
 import Cena from './Cena'
+import { escalacaoFutebol } from './escalacao'
 import Icone from './Icone'
 
 const futebol: Esporte = {
@@ -25,6 +26,7 @@ const futebol: Esporte = {
   posicaoPadrao: 'meia',
   pontuacao: 'Gols',
   placar: { tipo: 'tempo', titulo: 'Tempo de jogo', minutos: [5, 10, 15, 20, 30, 45] },
+  escalacao: escalacaoFutebol,
   recursos: ['escalacao', 'artilharia', 'cartoes'],
 }
 
