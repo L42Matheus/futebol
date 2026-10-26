@@ -25,6 +25,7 @@ export interface Racha {
   total_atletas: number
   max_atletas: number
   escalacao_size?: number | null
+  valor_mensalidade?: number
 }
 
 export interface Atleta {
@@ -62,6 +63,7 @@ export type PagamentoTipo = 'mensalidade' | 'rateio' | 'multa_amarelo' | 'multa_
 
 export interface Pagamento {
   id: number
+  atleta_id: number
   atleta_nome: string
   tipo: PagamentoTipo
   referencia: string

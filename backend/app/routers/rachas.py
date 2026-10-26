@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
 from datetime import datetime
 
+from app.utils.dinheiro import formatar_reais
 from app.database import get_db
 from app.esportes import MODALIDADE_PADRAO, esporte_da_modalidade, modalidade, modalidade_existe
 from app.models import Racha, TipoRacha, Atleta, RachaAdmin, User, UserRole
@@ -411,5 +412,5 @@ def obter_saldo(racha_id: int, db: Session = Depends(get_db), current_user: User
         Pagamento.status.in_([StatusPagamento.PENDENTE, StatusPagamento.AGUARDANDO_APROVACAO])).scalar() or 0
     return {
         "racha_id": racha_id, "saldo": total_recebido, "pendente": total_pendente,
-        "saldo_formatado": f"R$ {total_recebido / 100:.2f}", "pendente_formatado": f"R$ {total_pendente / 100:.2f}"
+        "saldo_formatado": formatar_reais(total_recebido), "pendente_formatado": formatar_reais(total_pendente)
     }

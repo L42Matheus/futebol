@@ -8,6 +8,7 @@ import uuid
 import shutil
 from pydantic import BaseModel
 
+from app.utils.dinheiro import formatar_reais
 from app.database import get_db
 from app.utils.file_upload import ALLOWED_IMAGE_EXTENSIONS, validate_image_mime
 from app.models import (
@@ -174,7 +175,7 @@ def obter_historico(atleta_id: int, db: Session = Depends(get_db), current_user:
         "presencas": {"total_jogos": total_jogos, "confirmados": confirmados,
                       "taxa_presenca": f"{(confirmados / total_jogos * 100):.1f}%" if total_jogos > 0 else "0%"},
         "financeiro": {"total_pago": total_pago, "total_pendente": total_pendente,
-                       "pago_formatado": f"R$ {total_pago / 100:.2f}", "pendente_formatado": f"R$ {total_pendente / 100:.2f}",
+                       "pago_formatado": formatar_reais(total_pago), "pendente_formatado": formatar_reais(total_pendente),
                        "referencia_mes_atual": referencia_mes_atual,
                        "pagamento_confirmado_mes_atual": bool(pagamento_mes_atual)},
         "cartoes": {"amarelos": amarelos, "vermelhos": vermelhos}

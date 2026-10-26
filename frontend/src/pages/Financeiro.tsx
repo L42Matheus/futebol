@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { PAGAMENTO_TIPO_LABELS } from '../constants'
 import InputDialog from '../components/InputDialog'
+import { formatCurrency } from '../utils/formatters'
 import type { Atleta, Pagamento, Saldo, PagamentoStatus } from '../types'
 
 interface AtletaFinanceiro {
@@ -32,9 +33,11 @@ function referenciaMesAtual() {
   return `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
 }
 
-function formatCurrencyFromCents(value?: number | null) {
-  const safeValue = Number(value || 0)
-  return `R$ ${(safeValue / 100).toFixed(2)}`
+function reaisParaCentavos(texto: string): number | null {
+  const limpo = texto.trim().replace(/\s|R\$/g, '')
+  const normalizado = limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo
+  const reais = Number(normalizado)
+  return Number.isFinite(reais) && reais > 0 ? Math.round(reais * 100) : null
 }
 
 function buildWhatsAppUrl(atleta: Atleta, referencia: string) {
@@ -58,6 +61,9 @@ export default function Financeiro() {
   const [tab, setTab] = useState<'pendentes' | 'historico' | 'confirmados'>('pendentes')
   const [pagandoId, setPagandoId] = useState<number | null>(null)
   const [rejeitarId, setRejeitarId] = useState<number | null>(null)
+  // Racha sem mensalidade definida: pergunta quanto o atleta pagou.
+  const [pedindoValorDe, setPedindoValorDe] = useState<number | null>(null)
+  const [valorMensalidade, setValorMensalidade] = useState(0)
   const { user } = useAuth()
   const { toast } = useToast()
   const isAdmin = user?.role === 'admin'
@@ -66,11 +72,13 @@ export default function Financeiro() {
   const loadData = useCallback(async () => {
     if (!rachaId) return
     try {
-      const [saldoRes, atletasRes, pagamentosRes] = await Promise.all([
+      const [saldoRes, atletasRes, pagamentosRes, rachaRes] = await Promise.all([
         rachasApi.getSaldo(rachaId),
         atletasApi.list(rachaId),
         pagamentosApi.list(rachaId),
+        rachasApi.get(rachaId),
       ])
+      setValorMensalidade(rachaRes.data.valor_mensalidade ?? 0)
 
       const mensalidadesMes = pagamentosRes.data.filter(
         (pagamento) => pagamento.tipo === 'mensalidade' && pagamento.referencia === referenciaAtual,
@@ -115,6 +123,18 @@ export default function Financeiro() {
     }
   }
 
+  function handleValorInformado(texto: string) {
+    const atletaId = pedindoValorDe
+    const valor = reaisParaCentavos(texto)
+    if (atletaId === null) return
+    if (!valor) {
+      toast('Informe um valor válido, por exemplo 35,00.', 'error')
+      return
+    }
+    setPedindoValorDe(null)
+    handleConfirmarPagamento(atletaId, true, valor)
+  }
+
   async function handleRejeitarConfirm(motivo: string) {
     if (rejeitarId === null || !user) return
     try {
@@ -128,12 +148,17 @@ export default function Financeiro() {
     }
   }
 
-  async function handleConfirmarPagamento(atletaId: number, confirmado: boolean) {
+  async function handleConfirmarPagamento(atletaId: number, confirmado: boolean, valor?: number) {
+    if (confirmado && !valor && valorMensalidade <= 0) {
+      setPedindoValorDe(atletaId)
+      return
+    }
     setPagandoId(atletaId)
     try {
+      // Sem valor, o backend usa a mensalidade do racha.
       await atletasApi.confirmarPagamento(atletaId, confirmado, {
         referencia: referenciaAtual,
-        valor: 1,
+        ...(valor ? { valor } : {}),
       })
       await loadData()
       toast(confirmado ? 'Pagamento confirmado.' : 'Pagamento voltou para pendente.', 'success')
@@ -230,7 +255,7 @@ export default function Financeiro() {
                     )}
                   </div>
                   <p className="text-lg font-bold text-white">
-                    {pagamento?.valor_formatado || formatCurrencyFromCents(0)}
+                    {formatCurrency(pagamento?.valor ?? valorMensalidade)}
                   </p>
                 </div>
                 {pagamento?.comprovante_url && (
@@ -297,7 +322,7 @@ export default function Financeiro() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-white">{p.valor_formatado}</p>
+                  <p className="font-medium text-white">{formatCurrency(p.valor)}</p>
                   <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[p.status]}`}>
                     {p.status.replace('_', ' ')}
                   </span>
@@ -321,7 +346,7 @@ export default function Financeiro() {
                 <div>
                   <p className="font-bold text-white">{atleta.apelido || atleta.nome}</p>
                   <p className="text-sm text-gray-400">
-                    Mensalidade {referenciaAtual} {pagamento?.valor_formatado ? `• ${pagamento.valor_formatado}` : ''}
+                    Mensalidade {referenciaAtual} {pagamento ? `• ${formatCurrency(pagamento.valor)}` : ''}
                   </p>
                 </div>
                 <button
@@ -336,6 +361,19 @@ export default function Financeiro() {
           )}
         </div>
       )}
+
+      <InputDialog
+        open={pedindoValorDe !== null}
+        title="Valor pago"
+        description="Este racha não tem mensalidade definida. Quanto o atleta pagou?"
+        label="Valor (R$)"
+        placeholder="Ex: 35,00"
+        confirmLabel="Confirmar pagamento"
+        cancelLabel="Cancelar"
+        required
+        onConfirm={handleValorInformado}
+        onCancel={() => setPedindoValorDe(null)}
+      />
 
       {/* InputDialog substitui window.prompt */}
       <InputDialog
