@@ -6,9 +6,10 @@ Sistema para gestão de rachas/peladas de futebol. Controle de atletas, presenç
 
 - **Backend:** Python 3.11 + FastAPI + SQLAlchemy + PostgreSQL
 - **Frontend:** React 18 + Vite + Tailwind CSS
-- **Infra:** Docker + Docker Compose
+- **Auth:** próprio no FastAPI (JWT + bcrypt + Google OAuth)
+- **Infra:** Railway (Postgres + API + frontend)
 
-## Início Rápido
+## Início Rápido (local)
 
 ```bash
 # Clone o repositório
@@ -30,7 +31,6 @@ docker-compose up -d
 cd backend
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 cp .env.example .env
 uvicorn app.main:app --reload
@@ -40,17 +40,50 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-## Deploy de teste na Railway
+## Deploy no Railway
 
-Para validar o app fora do localhost, o caminho mais simples é criar primeiro um serviço
-para o frontend e usar o Supabase como backend principal do MVP.
+Três serviços no mesmo projeto do Railway: **Postgres**, **backend** e **frontend**.
 
-### Frontend
+### 1. Postgres
 
-No serviço da Railway:
+Adicione o plugin **PostgreSQL** no projeto. O Railway expõe a connection string em
+`DATABASE_URL` dentro do mesmo projeto — basta referenciar no backend.
+
+### 2. Backend FastAPI
+
+- Root directory: `backend`
+- Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+Variáveis:
+
+```env
+DEBUG=false
+SECRET_KEY=<gere-uma-chave-forte>
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+
+PAYMENTS_ENABLED=false
+
+FRONTEND_URL=https://seu-front.up.railway.app
+CORS_ORIGINS=https://seu-front.up.railway.app
+
+# Google OAuth (console.cloud.google.com → OAuth client ID "Web application")
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Gmail SMTP (gere um App Password em myaccount.google.com/apppasswords)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=seu-email@gmail.com
+SMTP_PASSWORD=<app-password-de-16-chars>
+SMTP_FROM_EMAIL=seu-email@gmail.com
+SMTP_USE_TLS=true
+```
+
+### 3. Frontend
 
 - Root directory: `frontend`
 - Build: Dockerfile ou `npm ci && npm run build`
@@ -60,58 +93,36 @@ No serviço da Railway:
 Variáveis:
 
 ```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica-anon
-VITE_API_URL=
-```
-
-Se também subir o FastAPI em outro serviço, preencha:
-
-```env
 VITE_API_URL=https://sua-api.up.railway.app
+VITE_PAYMENTS_ENABLED=false
 ```
 
-### Backend FastAPI, opcional para teste completo
+### Google OAuth — URIs autorizadas
 
-No serviço da Railway:
+No Google Cloud Console → OAuth client ID → **Authorized redirect URIs**, adicione:
 
-- Root directory: `backend`
-- Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-
-Variáveis importantes:
-
-```env
-DEBUG=false
-SECRET_KEY=troque-por-uma-chave-forte
-DATABASE_URL=postgresql://...
-FRONTEND_URL=https://seu-front.up.railway.app
-CORS_ORIGINS=https://seu-front.up.railway.app
 ```
-
-### Google/Supabase Auth
-
-Depois que a Railway gerar a URL do frontend, cadastre no Supabase:
-
-```txt
+http://localhost:3000/login
 https://seu-front.up.railway.app/login
-https://seu-front.up.railway.app/**
 ```
 
-No Google Cloud, mantenha o callback do Supabase:
+E em **Authorized JavaScript origins**:
 
-```txt
-https://seu-projeto.supabase.co/auth/v1/callback
+```
+http://localhost:3000
+https://seu-front.up.railway.app
 ```
 
 ## API Endpoints
 
 | Recurso | Endpoints |
 |---------|-----------|
+| Auth | login/register, Google OAuth, reset de senha |
 | Rachas | CRUD + saldo financeiro |
 | Atletas | CRUD + histórico |
 | Jogos | CRUD + lista de presença |
 | Presenças | Confirmar/Recusar |
-| Pagamentos | CRUD + aprovar/rejeitar |
+| Pagamentos | CRUD + aprovar/rejeitar (desligado em modo teste) |
 
 ## Modelo de Dados
 
