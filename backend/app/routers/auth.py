@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from datetime import datetime
+import logging
 import uuid
 
 from app.database import get_db
@@ -31,6 +32,7 @@ from app.deps import verificar_admin_racha
 from app.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -214,7 +216,11 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
         token = create_password_reset_token(user.id, user.senha_hash)
         settings = get_settings()
         reset_link = f"{settings.frontend_url}/reset-senha?token={token}"
-        send_password_reset_email(user.email, reset_link)
+        # Falha de envio não pode virar erro: um 500 só para e-mails cadastrados revelaria quais existem.
+        try:
+            send_password_reset_email(user.email, reset_link)
+        except Exception:
+            logger.exception("Falha ao enviar e-mail de redefinição de senha")
     return {"message": "Se o e-mail existir, enviamos as instrucoes de redefinicao."}
 
 
