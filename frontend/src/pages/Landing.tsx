@@ -247,6 +247,12 @@ export default function Landing() {
               ))}
             </div>
           </div>
+          <Link
+            to={appPath}
+            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-2xl shadow-emerald-950/40 transition-transform active:scale-[0.98] sm:ml-auto sm:w-fit"
+          >
+            Criar meu racha <ArrowRight size={19} />
+          </Link>
         </section>
       </main>
     </div>
