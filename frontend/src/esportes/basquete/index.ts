@@ -1,5 +1,6 @@
 import type { Esporte } from '../types'
 import Cena from './Cena'
+import { escalacaoBasquete } from './escalacao'
 import Icone from './Icone'
 
 const basquete: Esporte = {
@@ -21,7 +22,8 @@ const basquete: Esporte = {
   posicaoPadrao: 'ala',
   pontuacao: 'Cestas',
   placar: { tipo: 'tempo', titulo: 'Tempo do quarto', minutos: [5, 8, 10, 12], periodo: { nome: 'quarto', total: 4 } },
-  recursos: [],
+  escalacao: escalacaoBasquete,
+  recursos: ['escalacao'],
 }
 
 export default basquete

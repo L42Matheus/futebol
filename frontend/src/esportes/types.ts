@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import type { EscalacaoEsporte } from './escalacao/tipos'
 
 export type EsporteId = 'futebol' | 'basquete' | 'volei'
 
@@ -43,5 +44,7 @@ export interface Esporte {
   // Como se chama o que o atleta marca: gols, cestas, pontos.
   pontuacao: string
   placar: Placar
+  // Presente nos esportes com o recurso 'escalacao'.
+  escalacao?: EscalacaoEsporte
   recursos: Recurso[]
 }

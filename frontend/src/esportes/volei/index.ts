@@ -1,5 +1,6 @@
 import type { Esporte } from '../types'
 import Cena from './Cena'
+import { escalacaoVolei } from './escalacao'
 import Icone from './Icone'
 
 const volei: Esporte = {
@@ -21,7 +22,8 @@ const volei: Esporte = {
   posicaoPadrao: 'ponteiro',
   pontuacao: 'Pontos',
   placar: { tipo: 'pontos', titulo: 'Placar do set', pontosPorSet: [15, 21, 25], padrao: 25 },
-  recursos: [],
+  escalacao: escalacaoVolei,
+  recursos: ['escalacao'],
 }
 
 export default volei

@@ -1,19 +1,7 @@
 // Configurações de formações por tipo de jogo
+import type { Formation } from '../../escalacao/tipos'
 
 export type GameType = 'campo' | 'society' | 'futsal'
-
-export interface PositionSlot {
-  id: string
-  label: string
-  top: string
-  left: string
-}
-
-export interface Formation {
-  id: string
-  name: string
-  positions: PositionSlot[]
-}
 
 // ========== CAMPO (11 jogadores) ==========
 const campo_4_3_3: Formation = {

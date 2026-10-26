@@ -1,6 +1,7 @@
+import type { ComponentType } from 'react'
 import { Plus, Shield, Users } from 'lucide-react'
-import Avatar from '../../../components/Avatar'
-import { Formation, PositionSlot } from './formations'
+import Avatar from '../../components/Avatar'
+import type { Formation, PositionSlot } from './tipos'
 
 interface Atleta {
   id: number
@@ -19,10 +20,14 @@ interface TeamMember {
   atleta: Atleta
 }
 
-interface SoccerFieldProps {
+interface PainelTimeProps {
   teamName: string
   members: TeamMember[]
   formation: Formation
+  // Desenho do campo/quadra do esporte e a modalidade (ex.: vôlei de quadra ou de areia).
+  Fundo: ComponentType<{ tipo: string }>
+  tipo: string
+  local: string
   color?: 'green' | 'blue' | 'red'
   side?: 'left' | 'right'
   onSlotClick?: (slot: PositionSlot, currentPlayer?: TeamMember) => void
@@ -63,16 +68,19 @@ function getShortName(name: string) {
   return name.split(' ')[0]
 }
 
-export default function SoccerField({
+export default function PainelTime({
   teamName,
   members,
   formation,
+  Fundo,
+  tipo,
+  local,
   color = 'green',
   side = 'left',
   onSlotClick,
   showBench = true,
   showMeta = true
-}: SoccerFieldProps) {
+}: PainelTimeProps) {
   const titulares = members.filter(m => m.is_titular)
   const reservas = members.filter(m => !m.is_titular)
   const playersBySlot: Record<string, TeamMember> = {}
@@ -126,7 +134,7 @@ export default function SoccerField({
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] ${theme.chip}`}>
-                {formation.positions.length} em campo
+                {formation.positions.length} em {local}
               </span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white/70">
                 {reservas.length} no banco
@@ -136,36 +144,9 @@ export default function SoccerField({
         </div>
       )}
 
-      <div
-        className={`relative aspect-[3/4] overflow-hidden ${showBench ? 'border-b border-white/10' : ''}`}
-        style={{
-          backgroundImage: `
-            linear-gradient(180deg, rgba(8, 37, 18, 0.12) 0%, rgba(3, 16, 8, 0.34) 100%),
-            repeating-linear-gradient(
-              180deg,
-              rgba(40, 149, 78, 0.92) 0%,
-              rgba(40, 149, 78, 0.92) 12.5%,
-              rgba(33, 127, 66, 0.92) 12.5%,
-              rgba(33, 127, 66, 0.92) 25%
-            )
-          `
-        }}
-      >
+      <div className={`relative aspect-[3/4] overflow-hidden ${showBench ? 'border-b border-white/10' : ''}`}>
+        <Fundo tipo={tipo} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.10),_transparent_58%)]" />
-        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 130" preserveAspectRatio="none">
-          <rect x="2" y="2" width="96" height="126" rx="3" fill="none" stroke="rgba(255,255,255,0.72)" strokeWidth="0.6" />
-          <line x1="2" y1="65" x2="98" y2="65" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5" />
-          <circle cx="50" cy="65" r="12" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5" />
-          <circle cx="50" cy="65" r="0.8" fill="rgba(255,255,255,0.75)" />
-          <rect x="22" y="7" width="56" height="20" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
-          <rect x="34" y="7" width="32" height="9" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
-          <rect x="22" y="103" width="56" height="20" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
-          <rect x="34" y="114" width="32" height="9" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
-          <circle cx="50" cy="18" r="0.8" fill="rgba(255,255,255,0.75)" />
-          <circle cx="50" cy="112" r="0.8" fill="rgba(255,255,255,0.75)" />
-          <path d="M40,7 A10,10 0 0,0 60,7" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.45" />
-          <path d="M40,123 A10,10 0 0,1 60,123" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.45" />
-        </svg>
 
         <div className={`absolute left-4 top-4 h-16 w-16 rounded-full blur-2xl ${theme.accent}`} />
         <div className="absolute bottom-5 right-5 h-20 w-20 rounded-full bg-black/20 blur-3xl" />

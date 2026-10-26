@@ -1,21 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Check, ChevronDown, UserMinus, UserPlus, Users, X } from 'lucide-react'
-import { teamsApi, atletasApi, rachasApi } from '../../../services/api'
-import { useAuth } from '../../../context/AuthContext'
-import SoccerField from './SoccerField'
-import Avatar from '../../../components/Avatar'
-import { esporteDaModalidade, temRecurso } from '../..'
-import futebol from '..'
-import {
-  GameType,
-  Formation,
-  PositionSlot,
-  getDefaultFormationId,
-  getFormations,
-  getFormation,
-  getPlayerCount,
-} from './formations'
+import { teamsApi, atletasApi, rachasApi } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
+import PainelTime from './PainelTime'
+import Avatar from '../../components/Avatar'
+import { esporteDaModalidade, getModalidade, labelPosicao, temRecurso } from '..'
+import type { EscalacaoEsporte, Formation, PositionSlot } from './tipos'
 
 interface Atleta {
   id: number
@@ -43,20 +34,6 @@ interface Team {
   membros: TeamMember[]
 }
 
-const posicaoLabels = futebol.posicoes
-
-const gameTypeLabels: Record<GameType, string> = {
-  campo: 'Campo',
-  society: 'Society',
-  futsal: 'Futsal',
-}
-
-const gameTypeDescriptions: Record<GameType, string> = {
-  campo: 'Escalação completa com 11 jogadores e banco amplo.',
-  society: 'Campo reduzido com 7 vagas titulares por formação.',
-  futsal: 'Quadra curta, cinco peças e rotações rápidas.'
-}
-
 export default function TeamLineup() {
   const { rachaId } = useParams()
   const { user } = useAuth()
@@ -67,7 +44,8 @@ export default function TeamLineup() {
   const [loading, setLoading] = useState(true)
   const [selectedTeamA, setSelectedTeamA] = useState<Team | null>(null)
   const [selectedTeamB, setSelectedTeamB] = useState<Team | null>(null)
-  const [gameType, setGameType] = useState<GameType>('society')
+  const [tipo, setTipo] = useState('')
+  const [escalacao, setEscalacao] = useState<EscalacaoEsporte | null>(null)
   const [escalacaoSize, setEscalacaoSize] = useState<number | null>(null)
   const [formationA, setFormationA] = useState<Formation | null>(null)
   const [formationB, setFormationB] = useState<Formation | null>(null)
@@ -91,21 +69,24 @@ export default function TeamLineup() {
       setTeams(teamsRes.data)
       setAtletas(atletasRes.data)
 
-      if (!temRecurso(rachaRes.data.tipo, 'escalacao')) {
-        setEsporteSemEscalacao(esporteDaModalidade(rachaRes.data.tipo).nome)
+      const tipoDoRacha = rachaRes.data.tipo
+      const config = esporteDaModalidade(tipoDoRacha).escalacao
+      if (!temRecurso(tipoDoRacha, 'escalacao') || !config) {
+        setEsporteSemEscalacao(esporteDaModalidade(tipoDoRacha).nome)
         return
       }
 
-      const tipo = rachaRes.data.tipo as GameType
       const size = rachaRes.data.escalacao_size ?? null
-      setGameType(tipo)
+      setTipo(tipoDoRacha)
+      setEscalacao(config)
       setEscalacaoSize(size)
 
-      const defaultFormationId = getDefaultFormationId(tipo, size)
-      const defaultForm = getFormation(tipo, defaultFormationId, size)
+      const formacoes = config.formacoes(tipoDoRacha, size)
+      const existe = (f: Formation | null) => Boolean(f && formacoes.some((opcao) => opcao.id === f.id))
+      const defaultForm = formacoes[0]
       if (defaultForm) {
-        if (!formationA || !getFormation(tipo, formationA.id, size)) setFormationA(defaultForm)
-        if (!formationB || !getFormation(tipo, formationB.id, size)) setFormationB(defaultForm)
+        if (!existe(formationA)) setFormationA(defaultForm)
+        if (!existe(formationB)) setFormationB(defaultForm)
       }
 
       const freshTeams = teamsRes.data
@@ -235,8 +216,9 @@ export default function TeamLineup() {
   const availableAtletas = getAvailableAtletas()
   const teamAOptions = teams.filter(team => team.id !== selectedTeamB?.id)
   const teamBOptions = teams.filter(team => team.id !== selectedTeamA?.id)
-  const formationOptions = getFormations(gameType, escalacaoSize)
-  const playersPerSide = getPlayerCount(gameType, escalacaoSize)
+  const formationOptions = escalacao?.formacoes(tipo, escalacaoSize) ?? []
+  const playersPerSide = escalacao?.jogadoresPorTime(tipo, escalacaoSize) ?? 0
+  const getFormation = (id: string) => formationOptions.find((form) => form.id === id)
   const editingFormation = editingMember?.team.id === selectedTeamA?.id ? formationA : formationB
   const addingBenchMembers = getBenchMembers(addingToTeam?.team || null)
   const canPromoteBench = addingToTeam?.slot && addingToTeam.slot.id !== 'bench'
@@ -253,7 +235,7 @@ export default function TeamLineup() {
     return (
       <div className="card text-center py-10">
         <h1 className="text-xl font-semibold text-white mb-2">Escalação indisponível</h1>
-        <p className="text-gray-400">A escalação em campo ainda não existe para {esporteSemEscalacao}.</p>
+        <p className="text-gray-400">A escalação ainda não existe para {esporteSemEscalacao}.</p>
       </div>
     )
   }
@@ -270,13 +252,13 @@ export default function TeamLineup() {
             <div>
               <h1 className="text-3xl font-black tracking-tight text-white">Escalação</h1>
               <p className="mt-1 max-w-2xl text-sm text-white/60">
-                {gameTypeDescriptions[gameType]}
+                {escalacao?.descricao(tipo)}
               </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-white/70">
-              {gameTypeLabels[gameType]}
+              {getModalidade(tipo).nome}
             </span>
             <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-emerald-100">
               {playersPerSide} por time
@@ -312,7 +294,7 @@ export default function TeamLineup() {
                   <select
                     value={formationA?.id || ''}
                     onChange={(e) => {
-                      const form = getFormation(gameType, e.target.value, escalacaoSize)
+                      const form = getFormation(e.target.value)
                       if (form) setFormationA(form)
                     }}
                     className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white/80 outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
@@ -341,7 +323,7 @@ export default function TeamLineup() {
               <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full border border-emerald-300/20 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.22),_rgba(13,20,32,0.95))] shadow-[0_12px_30px_rgba(16,185,129,0.18)]">
                 <span className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/75">VS</span>
                 <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">
-                  {gameTypeLabels[gameType]}
+                  {getModalidade(tipo).nome}
                 </span>
               </div>
             </div>
@@ -370,7 +352,7 @@ export default function TeamLineup() {
                   <select
                     value={formationB?.id || ''}
                     onChange={(e) => {
-                      const form = getFormation(gameType, e.target.value, escalacaoSize)
+                      const form = getFormation(e.target.value)
                       if (form) setFormationB(form)
                     }}
                     className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white/80 outline-none transition-colors focus:border-sky-400/50 focus:ring-2 focus:ring-sky-400/20"
@@ -400,8 +382,11 @@ export default function TeamLineup() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <div>
-          {selectedTeamA && formationA ? (
-            <SoccerField
+          {selectedTeamA && formationA && escalacao ? (
+            <PainelTime
+              Fundo={escalacao.Fundo}
+              tipo={tipo}
+              local={escalacao.local}
               teamName={selectedTeamA.nome}
               members={selectedTeamA.membros}
               formation={formationA}
@@ -422,8 +407,11 @@ export default function TeamLineup() {
         </div>
 
         <div>
-          {selectedTeamB && formationB ? (
-            <SoccerField
+          {selectedTeamB && formationB && escalacao ? (
+            <PainelTime
+              Fundo={escalacao.Fundo}
+              tipo={tipo}
+              local={escalacao.local}
               teamName={selectedTeamB.nome}
               members={selectedTeamB.membros}
               formation={formationB}
@@ -470,7 +458,7 @@ export default function TeamLineup() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-white">{atleta.apelido || atleta.nome}</p>
                   <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-                    {posicaoLabels[atleta.posicao] || atleta.posicao}
+                    {labelPosicao(atleta.posicao)}
                   </p>
                 </div>
               </div>
@@ -508,7 +496,7 @@ export default function TeamLineup() {
                   {editingMember.member.atleta.apelido || editingMember.member.atleta.nome}
                 </p>
                 <p className="mt-1 text-xs uppercase tracking-[0.22em] text-white/45">
-                  {posicaoLabels[editingMember.member.atleta.posicao] || editingMember.member.atleta.posicao}
+                  {labelPosicao(editingMember.member.atleta.posicao)}
                 </p>
               </div>
             </div>
@@ -636,7 +624,7 @@ export default function TeamLineup() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold text-white">{member.atleta.apelido || member.atleta.nome}</p>
                           <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-                            {posicaoLabels[member.atleta.posicao] || member.atleta.posicao}
+                            {labelPosicao(member.atleta.posicao)}
                           </p>
                         </div>
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-100">
@@ -672,7 +660,7 @@ export default function TeamLineup() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold text-white">{atleta.apelido || atleta.nome}</p>
                           <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-                            {posicaoLabels[atleta.posicao] || atleta.posicao}
+                            {labelPosicao(atleta.posicao)}
                           </p>
                         </div>
                         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-100">
