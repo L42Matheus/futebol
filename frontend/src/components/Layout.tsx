@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid, CreditCard, Clock3 } from 'lucide-react'
+import { LogOut, ChevronLeft, Settings, Calendar, Users, Layers, DollarSign, LayoutGrid, CreditCard, Clock3, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
@@ -9,6 +9,7 @@ import { profileApi } from '../services/api'
 import { useLocalTimer } from '../hooks/useLocalTimer'
 import { PAYMENTS_ENABLED } from '../config/features'
 import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
+import { useTema } from '../hooks/useTema'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
@@ -34,6 +35,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { timer } = useLocalTimer()
+  const { claro, alternar: alternarTema } = useTema()
 
   const handleLogout = () => {
     logout()
@@ -87,11 +89,11 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   ].filter((item) => !item.recurso || esporteDoRacha?.recursos.includes(item.recurso)) : []
 
   return (
-    <div className={`min-h-screen flex flex-col bg-[#0b0f1a] md:pb-0 md:pl-64 ${isTempoRoute ? 'pb-0' : 'pb-24'}`}>
+    <div className={`min-h-screen flex flex-col bg-fundo md:pb-0 md:pl-64 ${isTempoRoute ? 'pb-0' : 'pb-24'}`}>
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-[#0b0f1a] border-r border-gray-800 flex-col p-5 z-40">
+      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-fundo border-r border-gray-800 flex-col p-5 z-40">
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-branco font-bold">
             QJ
           </div>
           <span className="text-xl font-bold text-white">QuemJogaFC</span>
@@ -150,7 +152,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           {user?.role === 'admin' && (
             <Link
               to="/novo"
-              className="flex items-center gap-3 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors mt-4"
+              className="flex items-center gap-3 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-branco font-semibold rounded-xl transition-colors mt-4"
             >
               {NAV_ITEMS.find(item => item.isFab)?.icon}
               Criar Racha
@@ -196,6 +198,15 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
               Perfil
             </Link>
             <button
+              type="button"
+              onClick={alternarTema}
+              aria-label={claro ? 'Usar tema escuro' : 'Usar tema claro'}
+              title={claro ? 'Tema escuro' : 'Tema claro'}
+              className="flex items-center justify-center px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              {claro ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
+            <button
               onClick={handleLogout}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
             >
@@ -207,7 +218,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
       </aside>
 
       {/* Header Mobile */}
-      <header className="md:hidden sticky top-0 bg-[#0b0f1a]/80 backdrop-blur-md border-b border-gray-800 z-30 px-6 h-16 flex items-center justify-between">
+      <header className="md:hidden sticky top-0 bg-fundo/80 backdrop-blur-md border-b border-gray-800 z-30 px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 overflow-hidden">
           {resolvedShowBack && (
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400">
@@ -217,6 +228,15 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           <h1 className="text-lg font-bold text-white truncate">{resolvedTitle}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={claro ? 'Usar tema escuro' : 'Usar tema claro'}
+            title={claro ? 'Tema escuro' : 'Tema claro'}
+            onClick={alternarTema}
+            className="p-2 -mr-1 rounded-full text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+          >
+            {claro ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
           <button
             type="button"
             aria-label="Cronometro"
@@ -269,7 +289,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
         })
 
         return (
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b0f1a]/95 backdrop-blur-xl border-t border-gray-800 px-6 h-20 flex items-center justify-around z-50">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-fundo/95 backdrop-blur-xl border-t border-gray-800 px-6 h-20 flex items-center justify-around z-50">
             {filteredItems.map((item) => {
               const active =
                 location.pathname === item.path ||
@@ -281,7 +301,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
                   <div key={item.path} className="relative -top-6">
                     <Link
                       to={item.path}
-                      className="w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/40 border-4 border-[#0b0f1a] active:scale-95 transition-transform"
+                      className="w-14 h-14 bg-emerald-600 text-branco rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/40 border-4 border-fundo active:scale-95 transition-transform"
                     >
                       {item.icon}
                     </Link>

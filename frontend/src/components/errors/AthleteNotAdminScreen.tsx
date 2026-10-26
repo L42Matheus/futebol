@@ -10,7 +10,7 @@ export default function AthleteNotAdminScreen({
   onUseOtherEmail,
 }: AthleteNotAdminScreenProps) {
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-fundo flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-gray-900/40 rounded-2xl p-8 border border-gray-800">
         <div className="text-center mb-6">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -40,7 +40,7 @@ export default function AthleteNotAdminScreen({
         <div className="space-y-3">
           <button
             onClick={onContinueAsAthlete}
-            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-branco font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             <Users size={18} />
             Continuar como Atleta

@@ -92,7 +92,7 @@ export default function PlacarVolei({ opcoes, padrao }: { opcoes: number[]; padr
                   onClick={() => marcar(lado, 1)}
                   disabled={vencedor !== null}
                   aria-label={`Ponto para ${nome}`}
-                  className="flex h-14 w-full items-center justify-center rounded-2xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600 disabled:opacity-40"
+                  className="flex h-14 w-full items-center justify-center rounded-2xl bg-emerald-500 text-branco transition-colors hover:bg-emerald-600 disabled:opacity-40"
                 >
                   <Plus size={26} />
                 </button>
@@ -131,7 +131,7 @@ export default function PlacarVolei({ opcoes, padrao }: { opcoes: number[]; padr
               onClick={() => setEstado((e) => ({ ...e, alvo }))}
               className={`h-12 rounded-2xl border text-sm font-black transition-colors ${
                 estado.alvo === alvo
-                  ? 'border-emerald-400 bg-emerald-500 text-white'
+                  ? 'border-emerald-400 bg-emerald-500 text-branco'
                   : 'border-gray-800 bg-gray-900/40 text-gray-300 hover:border-emerald-500/40'
               }`}
             >

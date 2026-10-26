@@ -346,7 +346,7 @@ export default function NovoRacha() {
                     navigator.clipboard.writeText(inviteLinks.atleta)
                     toast('Link de atleta copiado!', 'success')
                   }}
-                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-branco font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <Copy size={18} />
                   Copiar Link
@@ -375,7 +375,7 @@ export default function NovoRacha() {
                     navigator.clipboard.writeText(inviteLinks.admin)
                     toast('Link de admin copiado!', 'success')
                   }}
-                  className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-branco font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <Copy size={18} />
                   Copiar Link

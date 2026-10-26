@@ -5,13 +5,16 @@ import {
   CheckCircle2,
   ClipboardList,
   DollarSign,
+  Moon,
   Sparkles,
+  Sun,
   Trophy,
   Users,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ESPORTES } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
+import { useTema } from '../hooks/useTema'
 
 const features = [
   {
@@ -46,19 +49,20 @@ const steps = [
 export default function Landing() {
   const { isAuthenticated } = useAuth()
   const appPath = isAuthenticated ? '/app' : '/perfil'
+  const { claro, alternar: alternarTema } = useTema()
   const prefereMenosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#0b0f1a] text-white">
+    <div className="min-h-screen overflow-hidden bg-fundo text-white">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="absolute top-80 -left-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="absolute bottom-20 -right-24 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
       </div>
 
-      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-5 py-6">
+      <header className="relative mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-6">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 font-black text-white shadow-lg shadow-emerald-950/40">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 font-black text-branco shadow-lg shadow-emerald-950/40">
             QJ
           </div>
           <span className="text-xl font-black tracking-tight">
@@ -67,6 +71,15 @@ export default function Landing() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={alternarTema}
+            aria-label={claro ? 'Usar tema escuro' : 'Usar tema claro'}
+            title={claro ? 'Tema escuro' : 'Tema claro'}
+            className="rounded-2xl p-2.5 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+          >
+            {claro ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
           <Link
             to="/perfil"
             className="hidden rounded-2xl px-4 py-2 text-sm font-bold text-gray-300 transition-colors hover:text-white sm:inline-flex"
@@ -75,7 +88,7 @@ export default function Landing() {
           </Link>
           <Link
             to={appPath}
-            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-black text-white shadow-lg shadow-emerald-950/40 transition-transform active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-black text-branco shadow-lg shadow-emerald-950/40 transition-transform active:scale-[0.98]"
           >
             Começar <ArrowRight size={16} />
           </Link>
@@ -107,7 +120,7 @@ export default function Landing() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 to={appPath}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-white shadow-2xl shadow-emerald-950/40 transition-transform active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-2xl shadow-emerald-950/40 transition-transform active:scale-[0.98]"
               >
                 Criar meu racha <ArrowRight size={19} />
               </Link>
@@ -186,7 +199,7 @@ export default function Landing() {
             <AnimacaoAtiva.Provider value={!prefereMenosMovimento}>
               <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {ESPORTES.map(({ id, nome, Icone, Cena }) => (
-                  <figure key={id} className="overflow-hidden rounded-[1.5rem] border border-gray-800 bg-[#0b0f1a] sm:rounded-[2rem]">
+                  <figure key={id} className="overflow-hidden rounded-[1.5rem] border border-gray-800 bg-fundo sm:rounded-[2rem]">
                     <div className="aspect-square">
                       <Cena />
                     </div>
@@ -227,7 +240,7 @@ export default function Landing() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               {steps.map((step, index) => (
-                <div key={step} className="rounded-3xl border border-gray-800 bg-[#0b0f1a]/70 p-5">
+                <div key={step} className="rounded-3xl border border-gray-800 bg-fundo/70 p-5">
                   <p className="text-sm font-black text-emerald-400">0{index + 1}</p>
                   <p className="mt-2 text-lg font-black">{step}</p>
                 </div>

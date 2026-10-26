@@ -78,7 +78,7 @@ export default function InputDialog({
           <button
             onClick={handleConfirm}
             disabled={required && !value.trim()}
-            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-branco text-sm font-medium transition-colors"
           >
             {confirmLabel}
           </button>

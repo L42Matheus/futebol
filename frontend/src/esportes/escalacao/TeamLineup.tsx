@@ -242,7 +242,7 @@ export default function TeamLineup() {
 
   return (
     <div className="space-y-6 pb-20">
-      <header className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#08111f] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:px-8">
+      <header className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-painel px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:px-8">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.18),_transparent_40%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.12),_transparent_35%)]" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
@@ -268,7 +268,7 @@ export default function TeamLineup() {
       </header>
 
       {isAdmin && (
-        <section className="rounded-[2rem] border border-white/10 bg-[#08111f] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)] sm:p-6">
+        <section className="rounded-[2rem] border border-white/10 bg-painel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)] sm:p-6">
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
             <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-4">
               <p className="mb-3 text-[11px] font-black uppercase tracking-[0.35em] text-emerald-300/65">Time A</p>
@@ -280,7 +280,7 @@ export default function TeamLineup() {
                       const team = teams.find(t => t.id === parseInt(e.target.value))
                       setSelectedTeamA(team || null)
                     }}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-[#0b1728] px-4 py-4 pr-11 text-sm font-semibold text-white outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
+                    className="w-full appearance-none rounded-2xl border border-white/10 bg-painel-2 px-4 py-4 pr-11 text-sm font-semibold text-white outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
                   >
                     <option value="">Selecione o time</option>
                     {teamAOptions.map(team => (
@@ -338,7 +338,7 @@ export default function TeamLineup() {
                       const team = teams.find(t => t.id === parseInt(e.target.value))
                       setSelectedTeamB(team || null)
                     }}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-[#0b1728] px-4 py-4 pr-11 text-sm font-semibold text-white outline-none transition-colors focus:border-sky-400/50 focus:ring-2 focus:ring-sky-400/20"
+                    className="w-full appearance-none rounded-2xl border border-white/10 bg-painel-2 px-4 py-4 pr-11 text-sm font-semibold text-white outline-none transition-colors focus:border-sky-400/50 focus:ring-2 focus:ring-sky-400/20"
                   >
                     <option value="">Selecione o time</option>
                     {teamBOptions.map(team => (
@@ -397,7 +397,7 @@ export default function TeamLineup() {
               showMeta={isAdmin}
             />
           ) : (
-            <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-[#08111f] text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+            <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
               <div className="space-y-2 px-6">
                 <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/35">Time A</p>
                 <p className="text-lg font-bold text-white/75">Selecione um time para montar a escalação</p>
@@ -422,7 +422,7 @@ export default function TeamLineup() {
               showMeta={isAdmin}
             />
           ) : (
-            <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-[#08111f] text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+            <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
               <div className="space-y-2 px-6">
                 <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/35">Time B</p>
                 <p className="text-lg font-bold text-white/75">Selecione um time para montar a escalação</p>
@@ -433,7 +433,7 @@ export default function TeamLineup() {
       </div>
 
       {isAdmin && availableAtletas.length > 0 && (
-        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#08111f] shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-painel shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
           <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-200">
@@ -469,7 +469,7 @@ export default function TeamLineup() {
 
       {isAdmin && editingMember && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
-          <div className="w-full max-w-xl rounded-t-[2rem] border border-white/10 bg-[#08111f] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
+          <div className="w-full max-w-xl rounded-t-[2rem] border border-white/10 bg-painel p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/40">Editar</p>
@@ -578,7 +578,7 @@ export default function TeamLineup() {
 
       {isAdmin && addingToTeam && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
-          <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] border border-white/10 bg-[#08111f] p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
+          <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] border border-white/10 bg-painel p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/40">Adicionar</p>
@@ -618,7 +618,7 @@ export default function TeamLineup() {
                         key={member.id}
                         type="button"
                         onClick={() => handlePromoteBench(member)}
-                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1728] px-4 py-3 text-left transition-colors hover:bg-[#0f1d31]"
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-painel-2 px-4 py-3 text-left transition-colors hover:bg-painel-2"
                       >
                         <Avatar src={member.atleta.foto_url} name={member.atleta.apelido || member.atleta.nome} size="md" />
                         <div className="min-w-0 flex-1">
@@ -654,7 +654,7 @@ export default function TeamLineup() {
                         key={atleta.id}
                         type="button"
                         onClick={() => handleAddMember(atleta.id)}
-                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1728] px-4 py-3 text-left transition-colors hover:bg-[#0f1d31]"
+                        className="flex items-center gap-4 rounded-2xl border border-white/10 bg-painel-2 px-4 py-3 text-left transition-colors hover:bg-painel-2"
                       >
                         <Avatar src={atleta.foto_url} name={atleta.apelido || atleta.nome} size="md" />
                         <div className="min-w-0 flex-1">
@@ -670,7 +670,7 @@ export default function TeamLineup() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-white/10 bg-[#0b1728] px-4 py-6 text-center text-sm text-white/45">
+                  <div className="rounded-2xl border border-dashed border-white/10 bg-painel-2 px-4 py-6 text-center text-sm text-white/45">
                     Nenhum atleta disponível
                   </div>
                 )}

@@ -12,7 +12,7 @@ export default function PrivateRoute() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
+      <div className="min-h-screen bg-fundo flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500" />
       </div>
     )

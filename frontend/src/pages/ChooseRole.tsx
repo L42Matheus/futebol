@@ -18,11 +18,11 @@ export default function ChooseRole() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
+    <div className="min-h-screen bg-fundo flex flex-col">
       {/* Header */}
       <div className="pt-12 pb-8 px-6 text-center">
         <Link to="/" aria-label="Ir para a página inicial" className="inline-block">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-600 text-branco flex items-center justify-center shadow-lg">
             <Trophy size={32} />
           </div>
           <h1 className="text-2xl font-bold text-white">QuemJogaFC</h1>

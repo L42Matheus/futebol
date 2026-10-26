@@ -170,7 +170,7 @@ export default function Atletas() {
               {isAdmin && (
                 <button
                   onClick={(e) => { e.preventDefault(); setDeleteId(a.id) }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500/90 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-red-500/90 text-branco rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all opacity-0 group-hover:opacity-100 z-10"
                   title="Excluir Atleta"
                 >
                   <Trash2 size={14} strokeWidth={3} />
@@ -263,7 +263,7 @@ export default function Atletas() {
               />
               <button
                 onClick={handleCopyInvite}
-                className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium flex items-center gap-1.5"
+                className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-branco text-sm font-medium flex items-center gap-1.5"
               >
                 {inviteCopied ? <Check size={14} /> : <Copy size={14} />}
                 {inviteCopied ? 'Copiado' : 'Copiar'}
