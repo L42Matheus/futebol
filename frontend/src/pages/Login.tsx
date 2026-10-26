@@ -138,7 +138,7 @@ export default function Login() {
 
   if (googleLoading) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-fundo flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-gray-900/40 rounded-2xl p-8 border border-gray-800 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
           <p className="mt-4 text-gray-300">Conectando com Google...</p>
@@ -184,7 +184,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
+    <div className="min-h-screen bg-fundo flex flex-col">
       <div className="pt-6 px-4">
         <Link
           to="/perfil"
@@ -196,7 +196,7 @@ export default function Login() {
       </div>
 
       <div className="pt-8 pb-6 px-6 text-center">
-        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-branco flex items-center justify-center shadow-lg">
           <Trophy size={28} />
         </div>
         <h1 className="text-2xl font-bold text-white">Entrar</h1>
@@ -240,7 +240,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:text-gray-400 text-white font-medium rounded-xl transition-colors"
+            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:text-gray-400 text-branco font-medium rounded-xl transition-colors"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
@@ -250,7 +250,7 @@ export default function Login() {
               <div className="w-full border-t border-gray-700"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#101723] text-gray-500">ou</span>
+              <span className="px-2 bg-cartao text-gray-500">ou</span>
             </div>
           </div>
 

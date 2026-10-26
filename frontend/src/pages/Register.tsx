@@ -65,7 +65,7 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex flex-col">
+    <div className="min-h-screen bg-fundo flex flex-col">
       <div className="pt-6 px-4">
         <Link to="/perfil" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white">
           <ArrowLeft size={18} />
@@ -74,7 +74,7 @@ export default function Register() {
       </div>
 
       <div className="pt-8 pb-6 px-6 text-center">
-        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-branco flex items-center justify-center shadow-lg">
           <Trophy size={28} />
         </div>
         <h1 className="text-2xl font-bold text-white">Criar conta</h1>
@@ -134,7 +134,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:text-gray-400 text-white font-medium rounded-xl transition-colors"
+            className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:text-gray-400 text-branco font-medium rounded-xl transition-colors"
           >
             {loading ? 'Criando...' : 'Criar conta'}
           </button>

@@ -407,7 +407,7 @@ export default function AtletaProfile() {
                 <button
                   onClick={() => handleAddCartao('vermelho')}
                   disabled={!isAdminView || adminActionLoading}
-                  className="w-7 h-7 rounded bg-red-500 text-white font-bold hover:bg-red-400 disabled:opacity-40"
+                  className="w-7 h-7 rounded bg-red-500 text-branco font-bold hover:bg-red-400 disabled:opacity-40"
                 >
                   +
                 </button>

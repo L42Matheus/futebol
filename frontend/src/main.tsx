@@ -4,6 +4,9 @@ import App from './App'
 import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
+import { iniciarTema } from './hooks/useTema'
+
+iniciarTema()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

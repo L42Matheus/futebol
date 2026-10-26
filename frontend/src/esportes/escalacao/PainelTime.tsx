@@ -117,7 +117,7 @@ export default function PainelTime({
   }
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#08111f] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-painel shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
       {showMeta && (
         <div className="relative overflow-hidden border-b border-white/10 px-5 py-4">
           <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${theme.header}`} />
@@ -144,7 +144,8 @@ export default function PainelTime({
         </div>
       )}
 
-      <div className={`relative aspect-[3/4] overflow-hidden ${showBench ? 'border-b border-white/10' : ''}`}>
+      {/* O desenho é sempre colorido: textos dos jogadores ficam claros em qualquer tema. */}
+      <div className={`tema-escuro relative aspect-[3/4] overflow-hidden ${showBench ? 'border-b border-white/10' : ''}`}>
         <Fundo tipo={tipo} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.10),_transparent_58%)]" />
 
@@ -238,7 +239,7 @@ export default function PainelTime({
       </div>
 
       {showBench && (
-        <div className="space-y-3 bg-[#091523] px-4 py-4">
+        <div className="space-y-3 bg-painel px-4 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 text-white/70">

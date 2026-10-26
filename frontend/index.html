@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="QuemJogaFC - Organize seu racha sem estresse" />
     <title>QuemJogaFC - Gestão de Rachas</title>
+    <script>
+      // Aplica o tema antes do primeiro desenho, sem piscar o escuro (mesma regra de src/hooks/useTema.ts).
+      try {
+        var tema = localStorage.getItem('quemjogafc:tema')
+        if (tema === 'claro' || (tema !== 'escuro' && matchMedia('(prefers-color-scheme: light)').matches)) {
+          document.documentElement.classList.add('tema-claro')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

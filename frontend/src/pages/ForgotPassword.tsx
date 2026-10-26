@@ -23,7 +23,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-fundo flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="max-w-md w-full bg-gray-900/40 rounded-2xl p-6 border border-gray-800 space-y-4">
         <h1 className="text-xl font-bold text-white">Esqueci minha senha</h1>
         <p className="text-sm text-gray-400">Informe seu e-mail para receber o link de redefinicao.</p>
@@ -50,7 +50,7 @@ export default function ForgotPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white font-medium rounded-xl transition-colors"
+              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-branco font-medium rounded-xl transition-colors"
             >
               {loading ? 'Enviando...' : 'Enviar link'}
             </button>

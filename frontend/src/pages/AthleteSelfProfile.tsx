@@ -115,7 +115,7 @@ export default function AthleteSelfProfile() {
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="relative overflow-hidden bg-gray-900/40 rounded-[2.5rem] border border-gray-800 shadow-sm">
           <div className="h-32 bg-emerald-600 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f1a] to-transparent opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-fundo to-transparent opacity-60"></div>
           </div>
           <div className="px-6 pb-8 -mt-12 relative flex flex-col items-center text-center">
             <div className="relative">
@@ -138,7 +138,7 @@ export default function AthleteSelfProfile() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="absolute bottom-0 right-0 bg-emerald-600 p-2.5 rounded-full shadow-lg text-white border-2 border-[#0b0f1a] hover:bg-emerald-700 transition-colors"
+                className="absolute bottom-0 right-0 bg-emerald-600 p-2.5 rounded-full shadow-lg text-branco border-2 border-fundo hover:bg-emerald-700 transition-colors"
               >
                 {uploading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -268,16 +268,17 @@ export default function AthleteSelfProfile() {
           <p className="text-xs text-gray-500 mt-4 text-center">Em breve com dados reais.</p>
         </section>
 
+
         <div className="flex flex-col gap-3 pt-4 pb-8">
           <button
             onClick={() => navigate('/perfil-basico')}
-            className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-900/40"
+            className="w-full bg-emerald-600 text-branco py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-900/40"
           >
             <Edit2 size={20} /> Editar Perfil
           </button>
           <button
             onClick={handleLogoutAction}
-            className="w-full bg-red-600/10 text-red-500 border border-red-500/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all"
+            className="w-full bg-red-600/10 text-red-500 border border-red-500/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 hover:text-branco transition-all"
           >
             <LogOut size={20} /> Encerrar Sessao
           </button>

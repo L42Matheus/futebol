@@ -43,7 +43,7 @@ export default function Assinatura() {
         </div>
         <button
           onClick={() => navigate('/app', { replace: true })}
-          className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
+          className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-branco font-semibold transition-colors"
         >
           Voltar ao app
         </button>
@@ -189,7 +189,7 @@ export default function Assinatura() {
         <p className="text-xs text-gray-500">Redirecionando para o app…</p>
         <button
           onClick={() => navigate('/app', { replace: true })}
-          className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
+          className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-branco font-semibold transition-colors"
         >
           Ir agora
         </button>
@@ -382,7 +382,7 @@ export default function Assinatura() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors"
+            className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-branco font-semibold rounded-xl transition-colors"
           >
             {submitting ? 'Processando…' : `Pagar ${valor}`}
           </button>

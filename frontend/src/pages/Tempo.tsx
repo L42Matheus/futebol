@@ -168,7 +168,7 @@ function Cronometro({ esporte }: { esporte: Esporte }) {
           <button
             type="button"
             onClick={timer.status === 'running' ? pause : start}
-            className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 font-black text-white transition-colors hover:bg-emerald-600"
+            className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 font-black text-branco transition-colors hover:bg-emerald-600"
           >
             {timer.status === 'running' ? <Pause size={22} /> : <Play size={22} />}
             {timer.status === 'running' ? 'Pausar' : 'Iniciar'}
@@ -199,7 +199,7 @@ function Cronometro({ esporte }: { esporte: Esporte }) {
               onClick={() => handleSetPreset(minutes)}
               className={`h-12 rounded-2xl border text-sm font-black transition-colors ${
                 durationMinutes === minutes
-                  ? 'border-emerald-400 bg-emerald-500 text-white'
+                  ? 'border-emerald-400 bg-emerald-500 text-branco'
                   : 'border-gray-800 bg-gray-900/40 text-gray-300 hover:border-emerald-500/40'
               }`}
             >

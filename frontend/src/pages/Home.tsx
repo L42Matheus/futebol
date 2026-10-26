@@ -163,7 +163,7 @@ function parseDataJogo(dataHora) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
+      <div className="min-h-screen bg-fundo flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
       </div>
     )
@@ -186,7 +186,7 @@ function parseDataJogo(dataHora) {
           {isAdmin && (
             <button
               onClick={() => navigate('/novo')}
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-2xl transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-branco font-semibold rounded-2xl transition-colors"
             >
               <Plus size={20} />
               Criar Primeiro Racha
@@ -236,7 +236,7 @@ function parseDataJogo(dataHora) {
           <button
             type="button"
             onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}
-            className="relative overflow-hidden w-full rounded-[2rem] border border-emerald-500/25 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-950/40 p-5 text-left shadow-lg shadow-black/10"
+            className="relative overflow-hidden w-full rounded-[2rem] border border-emerald-500/25 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-500/10 p-5 text-left shadow-lg shadow-black/10"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.20),transparent_35%)]" />
             <div className="relative space-y-5">
@@ -262,7 +262,7 @@ function parseDataJogo(dataHora) {
                   <span className="font-black text-emerald-400">{nextGame?.total_confirmados || 0}</span>{' '}
                   confirmados
                 </div>
-                <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white">
+                <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-branco">
                   Ver agenda <ChevronRight size={18} />
                 </span>
               </div>
