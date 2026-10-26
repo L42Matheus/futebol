@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
+from app.utils.dinheiro import formatar_reais
 from app.database import get_db
 from app.models import Pagamento, Atleta, StatusPagamento, TipoPagamento, User
 from app.schemas.pagamento import PagamentoCreate, PagamentoResponse, PagamentoAprovacao
@@ -54,7 +55,7 @@ def listar_pendentes(racha_id: int, db: Session = Depends(get_db), current_user:
         Pagamento.status.in_([StatusPagamento.PENDENTE, StatusPagamento.AGUARDANDO_APROVACAO]),
     ).order_by(Pagamento.created_at).all()
     return [{"id": pag.id, "atleta_id": atleta.id, "atleta_nome": atleta.nome, "tipo": pag.tipo.value,
-             "valor": pag.valor, "valor_formatado": f"R$ {pag.valor / 100:.2f}",
+             "valor": pag.valor, "valor_formatado": formatar_reais(pag.valor),
              "status": pag.status.value,
              "comprovante_url": pag.comprovante_url, "referencia": pag.referencia, "created_at": pag.created_at}
             for pag, atleta in results]
