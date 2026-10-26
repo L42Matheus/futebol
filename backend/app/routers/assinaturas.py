@@ -49,28 +49,43 @@ def _trial_ends_at(user: User):
 
 @router.get("/status")
 def status_assinatura(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    settings = get_settings()
+    if not settings.payments_enabled:
+        return {
+            "payments_enabled": False,
+            "subscription_status": "free",
+            "subscription_id": None,
+            "in_trial": False,
+            "trial_ends_at": None,
+            "current_period_end": None,
+            "access_granted": True,
+            "valor": settings.assinatura_valor,
+        }
     trial_end = _trial_ends_at(current_user)
     in_trial = assinatura_ativa(current_user) and current_user.subscription_status != "active"
     return {
+        "payments_enabled": True,
         "subscription_status": current_user.subscription_status,
         "subscription_id": current_user.asaas_subscription_id,
         "in_trial": in_trial,
         "trial_ends_at": trial_end,
         "current_period_end": current_user.subscription_current_period_end,
         "access_granted": assinatura_ativa(current_user),
-        "valor": get_settings().assinatura_valor,
+        "valor": settings.assinatura_valor,
     }
 
 
 @router.post("/assinar", status_code=status.HTTP_201_CREATED)
 async def assinar(payload: AssinarRequest, request: Request, db: Session = Depends(get_db),
                   current_user: User = Depends(get_current_user)):
+    settings = get_settings()
+    if not settings.payments_enabled:
+        raise HTTPException(status_code=403, detail="Pagamentos desativados — teste gratuito")
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Apenas administradores assinam o plano")
     if current_user.subscription_status == "active":
         raise HTTPException(status_code=400, detail="Você já possui uma assinatura ativa")
 
-    settings = get_settings()
     cpf_cnpj = "".join(ch for ch in payload.cpf_cnpj if ch.isdigit())
 
     customer_id = await asaas.criar_ou_obter_customer(

@@ -7,6 +7,7 @@ import { NAV_ITEMS } from '../constants'
 import Avatar from './Avatar'
 import { profileApi } from '../services/api'
 import { useLocalTimer } from '../hooks/useLocalTimer'
+import { PAYMENTS_ENABLED } from '../config/features'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
@@ -154,8 +155,8 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
             </Link>
           )}
 
-          {/* Assinatura - apenas para admins */}
-          {user?.role === 'admin' && (
+          {/* Assinatura - apenas para admins e quando pagamentos estão ativos */}
+          {PAYMENTS_ENABLED && user?.role === 'admin' && (
             <Link
               to="/assinatura"
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors mt-2 ${
@@ -226,7 +227,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           >
             <Clock3 size={20} />
           </button>
-          {user?.role === 'admin' && (
+          {PAYMENTS_ENABLED && user?.role === 'admin' && (
             <Link
               to="/assinatura"
               aria-label="Assinatura"
