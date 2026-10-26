@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { assinaturaApi } from '../services/api'
 import { formatCurrency, formatDateBR } from '../utils/formatters'
+import { PAYMENTS_ENABLED } from '../config/features'
 import type { AssinaturaStatus, AssinarResponse } from '../types'
 
 type Metodo = 'PIX' | 'CREDIT_CARD'
@@ -20,6 +21,36 @@ export default function Assinatura() {
   const { user } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
+
+  // Modo grátis: cobrança desativada, mostra só um aviso.
+  useEffect(() => {
+    if (!PAYMENTS_ENABLED) {
+      const t = setTimeout(() => navigate('/app', { replace: true }), 2500)
+      return () => clearTimeout(t)
+    }
+  }, [navigate])
+  if (!PAYMENTS_ENABLED) {
+    return (
+      <div className="max-w-md mx-auto py-12 px-6 text-center space-y-6">
+        <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+          <CheckCircle size={48} />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Teste grátis liberado</h1>
+          <p className="text-gray-400 mt-2">
+            O QuemJogaFC está em fase de testes — todas as funcionalidades estão liberadas
+            sem cobrança. Aproveite!
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/app', { replace: true })}
+          className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
+        >
+          Voltar ao app
+        </button>
+      </div>
+    )
+  }
 
   const [status, setStatus] = useState<AssinaturaStatus | null>(null)
   const [loading, setLoading] = useState(true)

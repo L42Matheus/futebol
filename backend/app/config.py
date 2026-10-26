@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
 
     # Asaas (gateway de pagamento — assinatura SaaS do admin)
+    payments_enabled: bool = False
     asaas_api_key: str = ""
     asaas_base_url: str = "https://api-sandbox.asaas.com/v3"
     asaas_webhook_token: str = ""

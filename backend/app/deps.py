@@ -8,12 +8,19 @@ from app.models import User, Atleta, RachaAdmin
 
 
 def assinatura_ativa(user: User) -> bool:
-    """Retorna True se o admin pode gerenciar: assinatura ativa OU dentro do trial."""
+    """Retorna True se o admin pode gerenciar: assinatura ativa OU dentro do trial.
+
+    Quando ``payments_enabled`` está desligado, o acesso é sempre liberado
+    (modo de teste gratuito).
+    """
+    settings = get_settings()
+    if not settings.payments_enabled:
+        return True
     if user.subscription_status == "active":
         return True
     created = user.created_at
     if created is not None:
-        trial_dias = get_settings().assinatura_trial_dias
+        trial_dias = settings.assinatura_trial_dias
         agora = datetime.now(created.tzinfo or timezone.utc)
         if agora < created + timedelta(days=trial_dias):
             return True
