@@ -28,11 +28,21 @@ def _enum_labels(type_name: str, values: tuple[str, ...]) -> list[str]:
     ]
 
 
+# Colunas lidas pelo ORM, que só reconhece o nome do membro (ZAGUEIRO). Linhas
+# gravadas com o valor em minúsculas (zagueiro) são passadas para maiúsculas.
+ENUM_COLUMNS_READ_BY_ORM = (
+    ("athlete_profiles", "posicao", "posicao"),
+    ("athlete_profiles", "perna_boa", "pernaboa"),
+    ("atletas", "posicao", "posicao"),
+)
+
+
 def ensure_schema_compatibility(engine: Engine) -> None:
     """Apply safe additive schema fixes.
 
     Every statement is idempotent and only adds missing structures. It never
-    drops, renames or rewrites existing data.
+    drops or renames anything; the only data it rewrites is the case of enum
+    labels in ENUM_COLUMNS_READ_BY_ORM.
     """
 
     statements = [
@@ -385,4 +395,17 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         logger.info("Schema compatibility checks applied.")
     except Exception:
         logger.exception("Failed to apply schema compatibility checks.")
+        raise
+
+    # Transação separada: o Postgres não deixa usar um rótulo de enum na mesma
+    # transação em que ele foi adicionado.
+    try:
+        with engine.begin() as connection:
+            for table, column, type_name in ENUM_COLUMNS_READ_BY_ORM:
+                connection.execute(text(
+                    f"UPDATE {table} SET {column} = upper({column}::text)::{type_name} "
+                    f"WHERE {column}::text <> upper({column}::text)"
+                ))
+    except Exception:
+        logger.exception("Failed to normalize enum labels.")
         raise

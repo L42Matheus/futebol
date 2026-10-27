@@ -78,8 +78,7 @@ def _resolve_enum_label(db: Session, table_name: str, column_name: str, value) -
             {"type_name": udt_name},
         ).all()
     ]
-    if normalized in labels:
-        return normalized
+    # O ORM só lê o nome do membro (ZAGUEIRO); gravar 'zagueiro' quebra o GET /me.
     upper = normalized.upper()
     if upper in labels:
         return upper
