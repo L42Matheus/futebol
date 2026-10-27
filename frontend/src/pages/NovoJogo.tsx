@@ -8,6 +8,7 @@ import { Input, Textarea } from '../components/Input'
 
 interface JogoForm {
   data_hora: string
+  horario: string
   local: string
   endereco: string
   valor_campo: number | ''
@@ -23,6 +24,7 @@ export default function NovoJogo() {
   const isAdmin = user?.role === 'admin'
   const [form, setForm] = useState<JogoForm>({
     data_hora: '',
+    horario: '',
     local: '',
     endereco: '',
     valor_campo: '',
@@ -34,8 +36,8 @@ export default function NovoJogo() {
     if (!rachaId) return
     setLoading(true)
     try {
-      const dataHoraCorrigida = form.data_hora ? `${form.data_hora}T12:00:00` : form.data_hora
-      const payload = { ...form, data_hora: dataHoraCorrigida, racha_id: Number(rachaId) }
+      const { horario, ...dados } = form
+      const payload = { ...dados, data_hora: `${form.data_hora}T${horario}:00`, racha_id: Number(rachaId) }
       await jogosApi.create(payload)
       navigate(`/racha/${rachaId}/jogos`)
     } catch (error) {
@@ -73,9 +75,14 @@ export default function NovoJogo() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Novo Jogo</h1>
       <form onSubmit={handleSubmit} className="card space-y-4">
-        <FormField label="Data">
-          <Input type="date" name="data_hora" value={form.data_hora} onChange={handleChange} required />
-        </FormField>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Data">
+            <Input type="date" name="data_hora" value={form.data_hora} onChange={handleChange} required />
+          </FormField>
+          <FormField label="Horário">
+            <Input type="time" name="horario" value={form.horario} onChange={handleChange} required />
+          </FormField>
+        </div>
         <FormField label="Local">
           <Input type="text" name="local" value={form.local} onChange={handleChange} placeholder="Ex: Plinio Lemos" />
         </FormField>
