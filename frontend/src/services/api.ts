@@ -281,7 +281,7 @@ export const authApi = {
     racha_id: number
     role: string
   }): Promise<AxiosResponse<InviteToken>> => api.post('/auth/invites', data),
-  acceptInvite: (token: string): Promise<AxiosResponse<unknown>> =>
+  acceptInvite: (token: string): Promise<AxiosResponse<InviteToken>> =>
     api.post('/auth/invites/accept', { token }),
   getGoogleUrl: (
     redirectUri: string,

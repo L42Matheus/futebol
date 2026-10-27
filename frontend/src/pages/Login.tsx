@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { authApi } from '../services/api'
 import authService from '../services/auth'
+import { aceitarConvite } from '../services/convite'
 import FormField from '../components/FormField'
 import { Input } from '../components/Input'
 import { RoleConflictScreen, AthleteNotAdminScreen } from '../components/errors'
@@ -25,12 +25,17 @@ export default function Login() {
 
   useEffect(() => {
     // Não redirecionar automaticamente se estamos processando o callback do Google
-    if (processingCallback) return
+    if (processingCallback || loading) return
     if (!authLoading && isAuthenticated) {
       const redirectTo = (location.state as any)?.from?.pathname || '/app'
+      // Já logado e abriu o link de outro racha: entra nele com a conta atual.
+      if (inviteToken) {
+        void aceitarConvite(inviteToken).then(() => navigate('/app', { replace: true }))
+        return
+      }
       navigate(redirectTo, { replace: true })
     }
-  }, [isAuthenticated, authLoading, navigate, location.state, processingCallback])
+  }, [isAuthenticated, authLoading, navigate, location.state, processingCallback, loading, inviteToken])
 
   useEffect(() => {
     const code = searchParams.get('code')
@@ -50,13 +55,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(form.identificador, form.senha)
-      if (inviteToken) {
-        try {
-          await authApi.acceptInvite(inviteToken)
-        } catch (e) {
-          // Ignore invite accept errors after login.
-        }
-      }
+      if (inviteToken) await aceitarConvite(inviteToken)
       const redirectTo = (location.state as any)?.from?.pathname || '/app'
       navigate(redirectTo, { replace: true })
     } catch (err: any) {

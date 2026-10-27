@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Trophy, ArrowLeft, UserCircle2, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { authApi } from '../services/api'
+import { aceitarConvite } from '../services/convite'
 import FormField from '../components/FormField'
 import { Input } from '../components/Input'
 import type { UserRole } from '../types'
@@ -23,10 +24,14 @@ export default function Register() {
   const resolvedRole: UserRole = inviteRole ?? fromRole
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate('/app', { replace: true })
+    if (authLoading || !isAuthenticated) return
+    // Já logado e abriu o link de outro racha: entra nele com a conta atual.
+    if (inviteToken) {
+      void aceitarConvite(inviteToken).then(() => navigate('/app', { replace: true }))
+      return
     }
-  }, [isAuthenticated, authLoading, navigate])
+    navigate('/app', { replace: true })
+  }, [isAuthenticated, authLoading, navigate, inviteToken])
 
   useEffect(() => {
     if (!inviteToken) return
@@ -57,8 +62,13 @@ export default function Register() {
     try {
       await register(form.email, form.telefone, form.senha, form.nome, inviteToken, resolvedRole)
       navigate('/app', { replace: true })
-    } catch {
-      setError('Falha no cadastro. Verifique os dados.')
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      setError(
+        detail === 'Usuário já existe'
+          ? 'Você já tem conta com esse e-mail ou telefone. Toque em "Entrar" para usar o convite.'
+          : 'Falha no cadastro. Verifique os dados.',
+      )
     } finally {
       setLoading(false)
     }
