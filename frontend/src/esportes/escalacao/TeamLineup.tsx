@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Check, ChevronDown, UserMinus, UserPlus, Users, X } from 'lucide-react'
 import { teamsApi, atletasApi, rachasApi } from '../../services/api'
-import { useAuth } from '../../context/AuthContext'
 import PainelTime from './PainelTime'
 import Avatar from '../../components/Avatar'
 import { esporteDaModalidade, getModalidade, labelPosicao, temRecurso } from '..'
@@ -36,8 +35,8 @@ interface Team {
 
 export default function TeamLineup() {
   const { rachaId } = useParams()
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
+  // Admin deste racha (a conta pode ser admin de um racha e atleta em outro).
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const [teams, setTeams] = useState<Team[]>([])
   const [atletas, setAtletas] = useState<Atleta[]>([])
@@ -68,6 +67,7 @@ export default function TeamLineup() {
 
       setTeams(teamsRes.data)
       setAtletas(atletasRes.data)
+      setIsAdmin(Boolean(rachaRes.data.is_admin))
 
       const tipoDoRacha = rachaRes.data.tipo
       const config = esporteDaModalidade(tipoDoRacha).escalacao
@@ -393,8 +393,6 @@ export default function TeamLineup() {
               color="green"
               side="left"
               onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamA, slot, member) : undefined}
-              showBench={isAdmin}
-              showMeta={isAdmin}
             />
           ) : (
             <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
@@ -418,8 +416,6 @@ export default function TeamLineup() {
               color="blue"
               side="right"
               onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamB, slot, member) : undefined}
-              showBench={isAdmin}
-              showMeta={isAdmin}
             />
           ) : (
             <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
