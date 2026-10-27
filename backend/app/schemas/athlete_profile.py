@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 from app.models.atleta import Posicao
@@ -16,7 +16,13 @@ class AthleteProfileBase(BaseModel):
 
 
 class AthleteProfileUpdate(AthleteProfileBase):
-    pass
+    # Campo deixado em branco no formulário chega como "" e significa "não informado".
+    @field_validator("apelido", "telefone", "posicao", "perna_boa", "numero_camisa", "foto_url", mode="before")
+    @classmethod
+    def vazio_vira_none(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
 
 class AthleteProfileResponse(AthleteProfileBase):
