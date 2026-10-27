@@ -13,13 +13,13 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
+import { SELECTED_RACHA_KEY } from '../services/convite'
 import { useAuth } from '../context/AuthContext'
 import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
 import type { Racha } from '../types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
 // Classes completas para o Tailwind encontrar; a quantidade de cards muda com o esporte.
 const GRID_COLS: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
 
@@ -31,7 +31,6 @@ export default function Home() {
   const [saldo, setSaldo] = useState(null)
   const { user } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     loadRachas()
@@ -94,6 +93,8 @@ function parseDataJogo(dataHora) {
   }
 
   const currentRacha = rachas[selectedIndex]
+  // Com um racha aberto vale o papel nele: a mesma conta pode ser admin de um e atleta de outro.
+  const isAdmin = currentRacha ? Boolean(currentRacha.is_admin) : user?.role === 'admin'
   const nextGameDate = nextGame ? parseDataJogo(nextGame.data_hora) : null
   const summaryCards = currentRacha ? [
     {

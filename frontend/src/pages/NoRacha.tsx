@@ -21,6 +21,22 @@ const pernaLabels: Record<string, string> = {
   ambidestra: 'Ambidestra',
 }
 
+const MENSAGEM_CAMPO: Record<string, string> = {
+  nome: 'Use até 100 caracteres.',
+  apelido: 'Use até 50 caracteres.',
+  telefone: 'Use até 20 caracteres.',
+  posicao: 'Escolha uma posição da lista.',
+  perna_boa: 'Escolha uma opção da lista.',
+  numero_camisa: 'O número da camisa vai de 1 a 99.',
+}
+
+function ErroCampo({ mensagem }: { mensagem?: string }) {
+  if (!mensagem) return null
+  return <p className="mt-1.5 text-xs font-medium text-red-400">{mensagem}</p>
+}
+
+const OPCIONAL = <span className="font-normal text-gray-500">(opcional)</span>
+
 export default function NoRacha() {
   const navigate = useNavigate()
   const { logout } = useAuth()
@@ -37,6 +53,8 @@ export default function NoRacha() {
     perna_boa: '',
     numero_camisa: '',
   })
+  const [erros, setErros] = useState<Record<string, string>>({})
+  const [erroGeral, setErroGeral] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -64,19 +82,60 @@ export default function NoRacha() {
     load()
   }, [])
 
+  function validar(): Record<string, string> {
+    const novos: Record<string, string> = {}
+    if (!form.nome.trim()) novos.nome = 'Informe seu nome.'
+    if (form.numero_camisa) {
+      const numero = Number(form.numero_camisa)
+      if (!Number.isInteger(numero) || numero < 1 || numero > 99) {
+        novos.numero_camisa = 'O número da camisa vai de 1 a 99.'
+      }
+    }
+    return novos
+  }
+
   async function handleSave() {
+    const novos = validar()
+    setErros(novos)
+    setErroGeral('')
+    if (Object.keys(novos).length > 0) return
+
     setSaving(true)
     try {
-      const payload: any = { ...form }
-      payload.numero_camisa = form.numero_camisa ? parseInt(form.numero_camisa) : null
-      const res = await profileApi.update(payload)
+      // Campos opcionais em branco vão como null: o backend recusa "" em posição e perna boa.
+      const opcional = (valor: string) => valor.trim() || null
+      const res = await profileApi.update({
+        nome: form.nome.trim(),
+        apelido: opcional(form.apelido),
+        telefone: opcional(form.telefone),
+        posicao: opcional(form.posicao),
+        perna_boa: opcional(form.perna_boa),
+        numero_camisa: form.numero_camisa ? Number(form.numero_camisa) : null,
+      } as any)
       setProfile(res.data)
       navigate('/perfil-atleta', { replace: true })
     } catch (e) {
-      alert('Erro ao salvar perfil.')
+      const detail = (e as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      if (Array.isArray(detail)) {
+        // 422 do FastAPI: aponta o campo com problema.
+        const porCampo: Record<string, string> = {}
+        for (const item of detail) {
+          const campo = item?.loc?.[item.loc.length - 1]
+          if (typeof campo === 'string') porCampo[campo] = MENSAGEM_CAMPO[campo] || 'Valor inválido.'
+        }
+        setErros(porCampo)
+        setErroGeral('Confira os campos destacados.')
+      } else {
+        setErroGeral(typeof detail === 'string' ? detail : 'Não foi possível salvar o perfil. Tente de novo.')
+      }
     } finally {
       setSaving(false)
     }
+  }
+
+  function campo(nome: keyof typeof form, valor: string) {
+    setForm({ ...form, [nome]: valor })
+    if (erros[nome]) setErros({ ...erros, [nome]: '' })
   }
 
   function handleBack() {
@@ -143,42 +202,56 @@ export default function NoRacha() {
             </div>
           </div>
 
+          <p className="text-xs text-gray-500">Só o nome é obrigatório. O resto você completa quando quiser.</p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">Nome</label>
-              <input className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+              <label className="label" htmlFor="perfil-nome">Nome</label>
+              <input id="perfil-nome" className={`input ${erros.nome ? '!border-red-500' : ''}`} value={form.nome} onChange={(e) => campo('nome', e.target.value)} />
+              <ErroCampo mensagem={erros.nome} />
             </div>
             <div>
-              <label className="label">Apelido</label>
-              <input className="input" value={form.apelido} onChange={(e) => setForm({ ...form, apelido: e.target.value })} />
+              <label className="label" htmlFor="perfil-apelido">Apelido {OPCIONAL}</label>
+              <input id="perfil-apelido" className={`input ${erros.apelido ? '!border-red-500' : ''}`} value={form.apelido} onChange={(e) => campo('apelido', e.target.value)} />
+              <ErroCampo mensagem={erros.apelido} />
             </div>
             <div>
-              <label className="label">Telefone</label>
-              <input className="input" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+              <label className="label" htmlFor="perfil-telefone">Telefone {OPCIONAL}</label>
+              <input id="perfil-telefone" className={`input ${erros.telefone ? '!border-red-500' : ''}`} value={form.telefone} onChange={(e) => campo('telefone', e.target.value)} />
+              <ErroCampo mensagem={erros.telefone} />
             </div>
             <div>
-              <label className="label">Numero da camisa</label>
-              <input className="input" type="number" min="1" max="99" value={form.numero_camisa} onChange={(e) => setForm({ ...form, numero_camisa: e.target.value })} />
+              <label className="label" htmlFor="perfil-numero">Número da camisa {OPCIONAL}</label>
+              <input id="perfil-numero" className={`input ${erros.numero_camisa ? '!border-red-500' : ''}`} type="number" min="1" max="99" value={form.numero_camisa} onChange={(e) => campo('numero_camisa', e.target.value)} />
+              <ErroCampo mensagem={erros.numero_camisa} />
             </div>
             <div>
-              <label className="label">Posicao</label>
-              <select className="input" value={form.posicao} onChange={(e) => setForm({ ...form, posicao: e.target.value })}>
-                <option value="">Selecione</option>
+              <label className="label" htmlFor="perfil-posicao">Posição {OPCIONAL}</label>
+              <select id="perfil-posicao" className={`input ${erros.posicao ? '!border-red-500' : ''}`} value={form.posicao} onChange={(e) => campo('posicao', e.target.value)}>
+                <option value="">Não informar</option>
                 {Object.entries(posicaoLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>
+              <ErroCampo mensagem={erros.posicao} />
             </div>
             <div>
-              <label className="label">Perna boa</label>
-              <select className="input" value={form.perna_boa} onChange={(e) => setForm({ ...form, perna_boa: e.target.value })}>
-                <option value="">Selecione</option>
+              <label className="label" htmlFor="perfil-perna">Perna boa {OPCIONAL}</label>
+              <select id="perfil-perna" className={`input ${erros.perna_boa ? '!border-red-500' : ''}`} value={form.perna_boa} onChange={(e) => campo('perna_boa', e.target.value)}>
+                <option value="">Não informar</option>
                 {Object.entries(pernaLabels).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>
+              <ErroCampo mensagem={erros.perna_boa} />
             </div>
           </div>
+
+          {erroGeral && (
+            <div role="alert" className="p-3 rounded-xl bg-red-500/10 text-sm text-red-400 border border-red-500/20">
+              {erroGeral}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <button
