@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Check, X, Clock, Trash2, Save, Trophy } from 'lucide-react'
-import { jogosApi, presencasApi, teamsApi } from '../services/api'
-import { useAuth } from '../context/AuthContext'
+import { Check, X, Clock, Trash2, Save, Trophy, Radio, ChevronRight } from 'lucide-react'
+import { jogosApi, presencasApi, rachasApi, teamsApi } from '../services/api'
 import { useToast } from '../context/ToastContext'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { Jogo, JogoLista } from '../types'
 
+// data_hora vem sem fuso, no horário do racha: monta a data local sem converter.
 function parseGameDate(dataHora: string) {
-  const dateStr = String(dataHora).substring(0, 10)
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day, 12, 0, 0)
+  const [datePart, timePart] = String(dataHora).split('T')
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = (timePart || '12:00').split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute, 0)
 }
 
 export default function JogoDetail() {
@@ -36,9 +37,9 @@ export default function JogoDetail() {
     placar_time_b: '',
   })
   const [teams, setTeams] = useState<{ id: number; nome: string }[]>([])
-  const { user } = useAuth()
   const { toast } = useToast()
-  const isAdmin = user?.role === 'admin'
+  // Admin deste racha: a conta pode ser admin de um racha e atleta de outro.
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!jogoId) return
@@ -63,6 +64,10 @@ export default function JogoDetail() {
             : String(jogoRes.data.placar_time_b),
       })
       setLista(listaRes.data as typeof lista)
+      rachasApi
+        .get(jogoRes.data.racha_id)
+        .then((res) => setIsAdmin(Boolean(res.data.is_admin)))
+        .catch(() => setIsAdmin(false))
 
       // Carrega times do racha (best-effort — se falhar, mantém só os inputs livres)
       try {
@@ -186,6 +191,31 @@ export default function JogoDetail() {
           </button>
         )}
       </div>
+
+      {(isAdmin || jogo.iniciado_em) && (
+        <button
+          type="button"
+          onClick={() => navigate(`/racha/${jogo.racha_id}/jogo/${jogo.id}/partida`)}
+          className="flex w-full items-center gap-3 rounded-[1.5rem] border border-emerald-500/30 bg-emerald-500/10 p-4 text-left transition-colors hover:border-emerald-500/50"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-branco">
+            <Radio size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-black text-white">
+              {!jogo.iniciado_em ? 'Iniciar partida ao vivo' : jogo.finalizado ? 'Ver lances da partida' : 'Partida ao vivo'}
+            </span>
+            <span className="block text-sm text-gray-400">
+              {!jogo.iniciado_em
+                ? 'Marque gols, assistências, cartões e substituições durante o jogo.'
+                : jogo.finalizado
+                  ? 'Veja quem marcou e os cartões do jogo.'
+                  : 'Acompanhe o placar e os lances em tempo real.'}
+            </span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-gray-400" />
+        </button>
+      )}
 
       <div className="card space-y-4">
         <div className="flex items-center justify-between gap-3">
