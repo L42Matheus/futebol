@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 
@@ -59,8 +59,12 @@ def listar_jogos(racha_id: int, apenas_futuros: bool = True, skip: int = 0, limi
     query = db.query(Jogo).filter(Jogo.racha_id == racha_id, Jogo.cancelado.is_(False))
     if apenas_futuros:
         agora_brt = datetime.now(BRT).replace(tzinfo=None)
-        query = query.filter(Jogo.data_hora >= agora_brt)
-    jogos = query.order_by(Jogo.data_hora).offset(skip).limit(limit).all()
+        # A partida ao vivo continua na lista mesmo depois do horário marcado.
+        em_andamento = and_(Jogo.iniciado_em.isnot(None), Jogo.finalizado.is_(False))
+        query = query.filter(or_(Jogo.data_hora >= agora_brt, em_andamento))
+    # Sem filtro de data, o limite pega os mais recentes, e não os mais antigos do racha.
+    ordem = Jogo.data_hora if apenas_futuros else Jogo.data_hora.desc()
+    jogos = query.order_by(ordem).offset(skip).limit(limit).all()
     jogo_ids = [j.id for j in jogos]
 
     # Busca todos os contadores de confirmados em uma única query
