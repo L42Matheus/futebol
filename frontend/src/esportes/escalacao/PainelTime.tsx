@@ -33,6 +33,9 @@ interface PainelTimeProps {
   onSlotClick?: (slot: PositionSlot, currentPlayer?: TeamMember) => void
   showBench?: boolean
   showMeta?: boolean
+  // Gols de cada atleta na partida ao vivo entre os dois times (atleta_id -> gols).
+  gols?: Record<number, number>
+  IconePonto?: ComponentType<{ size?: number; className?: string }>
 }
 
 const BENCH_SLOT: PositionSlot = { id: 'bench', label: 'BANCO', top: '0', left: '0' }
@@ -79,8 +82,13 @@ export default function PainelTime({
   side = 'left',
   onSlotClick,
   showBench = true,
-  showMeta = true
+  showMeta = true,
+  gols = {},
+  IconePonto,
 }: PainelTimeProps) {
+  const bolinhas = (atletaId: number) =>
+    IconePonto ? <BolinhasGol quantidade={gols[atletaId] ?? 0} Icone={IconePonto} /> : null
+
   const titulares = members.filter(m => m.is_titular)
   const reservas = members.filter(m => !m.is_titular)
   const playersBySlot: Record<string, TeamMember> = {}
@@ -178,6 +186,7 @@ export default function PainelTime({
                         size={fieldAvatarSize}
                         className="ring-2 ring-white/80 transition-all group-hover:ring-white"
                       />
+                      {bolinhas(player.atleta.id)}
                       {player.atleta.numero_camisa && (
                         <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-950 text-[10px] font-black text-white shadow-md">
                           {player.atleta.numero_camisa}
@@ -200,6 +209,7 @@ export default function PainelTime({
                         size={fieldAvatarSize}
                         className="ring-2 ring-white/80"
                       />
+                      {bolinhas(player.atleta.id)}
                       {player.atleta.numero_camisa && (
                         <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-950 text-[10px] font-black text-white shadow-md">
                           {player.atleta.numero_camisa}
@@ -271,11 +281,14 @@ export default function PainelTime({
               {reservas.map(member => {
                 const content = (
                   <>
-                    <Avatar
-                      src={member.atleta.foto_url}
-                      name={member.atleta.apelido || member.atleta.nome}
-                      size="sm"
-                    />
+                    <div className="relative shrink-0">
+                      <Avatar
+                        src={member.atleta.foto_url}
+                        name={member.atleta.apelido || member.atleta.nome}
+                        size="sm"
+                      />
+                      {bolinhas(member.atleta.id)}
+                    </div>
                     <div className="min-w-0 flex-1 text-left">
                       <p className="truncate text-sm font-semibold text-white">
                         {member.atleta.apelido || member.atleta.nome}
@@ -314,5 +327,26 @@ export default function PainelTime({
         </div>
       )}
     </div>
+  )
+}
+
+// Uma bolinha por gol no canto da foto; a partir de 4 mostra o número.
+function BolinhasGol({ quantidade, Icone }: { quantidade: number; Icone: ComponentType<{ size?: number; className?: string }> }) {
+  if (quantidade <= 0) return null
+  const visiveis = Math.min(quantidade, 3)
+  return (
+    <span className="absolute -right-2 -top-2 flex items-center" aria-label={`${quantidade} gol${quantidade > 1 ? 's' : ''}`}>
+      {Array.from({ length: visiveis }).map((_, i) => (
+        <span
+          key={i}
+          className={`flex h-5 w-5 items-center justify-center rounded-full bg-branco text-slate-900 shadow-md ring-1 ring-black/10 ${i > 0 ? '-ml-2' : ''}`}
+        >
+          <Icone size={13} />
+        </span>
+      ))}
+      {quantidade > 3 && (
+        <span className="-ml-1 rounded-full bg-emerald-500 px-1 text-[9px] font-black text-branco shadow-md">{quantidade}</span>
+      )}
+    </span>
   )
 }
