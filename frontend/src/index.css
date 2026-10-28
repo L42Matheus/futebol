@@ -76,13 +76,13 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply bg-emerald-600 text-branco px-4 py-2 rounded-lg font-medium
-           hover:bg-emerald-700 transition-colors active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 bg-emerald-600 text-branco px-4 py-2.5 rounded-xl font-semibold
+           hover:bg-emerald-700 transition-colors active:scale-[0.98] disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply bg-gray-800 text-gray-200 px-4 py-2 rounded-lg font-medium
-           hover:bg-gray-700 transition-colors active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 bg-gray-800 text-gray-200 px-4 py-2.5 rounded-xl font-semibold
+           hover:bg-gray-700 transition-colors active:scale-[0.98] disabled:opacity-50;
   }
 
   .card {
