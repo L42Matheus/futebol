@@ -180,7 +180,7 @@ export default function Home() {
       path: isAdmin ? `/racha/${currentRacha.id}/novo-jogo` : `/racha/${currentRacha.id}/jogos`,
     },
     {
-      label: isAdmin ? 'Adicionar atleta' : 'Atletas',
+      label: isAdmin ? 'Novo atleta' : 'Atletas',
       icon: <Users size={24} />,
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
@@ -364,12 +364,13 @@ export default function Home() {
                   key={action.label}
                   type="button"
                   onClick={() => navigate(action.path)}
-                  className="bg-gray-900/40 border border-gray-800 p-3 rounded-3xl flex flex-col items-center justify-center min-h-[112px] text-center gap-3 active:scale-[0.98] transition-all"
+                  className="flex flex-col items-center gap-2.5 rounded-3xl border border-gray-800 bg-gray-900/40 px-2 pb-3 pt-4 text-center transition-all active:scale-[0.98]"
                 >
                   <div className={`w-11 h-11 ${action.bg} ${action.color} rounded-2xl flex items-center justify-center`}>
                     {action.icon}
                   </div>
-                  <p className="text-xs font-bold text-gray-200 leading-tight">{action.label}</p>
+                  {/* Altura fixa de duas linhas: os ícones ficam alinhados mesmo com nomes de tamanhos diferentes. */}
+                  <p className="flex min-h-[2rem] items-center text-xs font-bold leading-tight text-gray-200">{action.label}</p>
                 </button>
               ))}
             </div>
