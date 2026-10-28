@@ -55,6 +55,7 @@ export interface Jogo {
   placar_time_b?: number | null
   vencedor?: 'time_a' | 'time_b' | 'empate' | null
   finalizado?: boolean
+  iniciado_em?: string | null
   status?: string
 }
 
@@ -144,4 +145,61 @@ export interface InviteToken {
   token: string
   racha_id: number
   role: UserRole
+}
+
+// Partida ao vivo (GET /jogos/:id/partida).
+export type TipoLance = 'gol' | 'assistencia' | 'amarelo' | 'vermelho' | 'substituicao'
+
+export interface Lance {
+  id: number
+  lado: 'a' | 'b'
+  tipo: TipoLance
+  atleta_id: number
+  // Na substituição, atleta_id entrou e atleta_sai_id saiu.
+  atleta_sai_id?: number | null
+  valor: number
+  segundos?: number | null
+  created_at?: string
+}
+
+export interface NovoLance {
+  tipo: TipoLance
+  atleta_id: number
+  atleta_sai_id?: number
+  valor?: number
+}
+
+export interface MembroPartida {
+  atleta_id: number
+  nome: string
+  apelido?: string | null
+  foto_url?: string | null
+  posicao?: string | null
+  numero_camisa?: number | null
+  is_titular: boolean
+  posicao_escalacao?: string | null
+}
+
+export interface TimePartida {
+  lado: 'a' | 'b'
+  team_id?: number | null
+  nome: string
+  placar: number
+  membros: MembroPartida[]
+}
+
+export interface Partida {
+  jogo_id: number
+  racha_id: number
+  data_hora: string
+  local?: string | null
+  iniciado_em?: string | null
+  finalizado: boolean
+  agora: string
+  is_admin: boolean
+  esporte: 'futebol' | 'basquete' | 'volei'
+  eventos_permitidos: TipoLance[]
+  valores_pontuacao: number[]
+  times: TimePartida[]
+  eventos: Lance[]
 }

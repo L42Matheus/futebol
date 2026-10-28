@@ -15,6 +15,8 @@ import type {
   AtletaHistorico,
   AssinaturaStatus,
   AssinarResponse,
+  Partida,
+  NovoLance,
 } from '../types'
 
 const API_URL = import.meta.env?.VITE_API_URL || ''
@@ -147,6 +149,20 @@ export const jogosApi = {
   cancel: (id: number | string): Promise<AxiosResponse<void>> => api.delete(`/jogos/${id}`),
   getLista: (jogoId: number | string): Promise<AxiosResponse<JogoLista>> =>
     api.get(`/jogos/${jogoId}/lista`),
+}
+
+export const partidaApi = {
+  get: (jogoId: number | string): Promise<AxiosResponse<Partida>> => api.get(`/jogos/${jogoId}/partida`),
+  iniciar: (
+    jogoId: number | string,
+    times: { time_a_id?: number; time_b_id?: number },
+  ): Promise<AxiosResponse<Partida>> => api.post(`/jogos/${jogoId}/partida/iniciar`, times),
+  encerrar: (jogoId: number | string): Promise<AxiosResponse<Partida>> =>
+    api.post(`/jogos/${jogoId}/partida/encerrar`),
+  registrar: (jogoId: number | string, lance: NovoLance): Promise<AxiosResponse<Partida>> =>
+    api.post(`/jogos/${jogoId}/partida/eventos`, lance),
+  desfazer: (jogoId: number | string, eventoId: number): Promise<AxiosResponse<Partida>> =>
+    api.delete(`/jogos/${jogoId}/partida/eventos/${eventoId}`),
 }
 
 export const presencasApi = {

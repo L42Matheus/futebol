@@ -21,6 +21,7 @@ const basquete: Esporte = {
   },
   posicaoPadrao: 'ala',
   pontuacao: 'Cestas',
+  lance: 'Cesta',
   placar: { tipo: 'tempo', titulo: 'Tempo do quarto', minutos: [5, 8, 10, 12], periodo: { nome: 'quarto', total: 4 } },
   escalacao: escalacaoBasquete,
   recursos: ['escalacao'],

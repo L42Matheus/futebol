@@ -82,6 +82,7 @@ class JogoResponse(JogoBase):
     time_b_nome: Optional[str] = None
     placar_time_a: Optional[int] = None
     placar_time_b: Optional[int] = None
+    iniciado_em: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     total_confirmados: int = 0

@@ -1,4 +1,6 @@
-from app.esportes.base import ARTILHARIA, CARTOES, ESCALACAO, Esporte, Modalidade
+from app.esportes.base import (
+    AMARELO, ARTILHARIA, ASSISTENCIA, CARTOES, ESCALACAO, GOL, SUBSTITUICAO, VERMELHO, Esporte, Modalidade,
+)
 
 FUTEBOL = Esporte(
     id="futebol",
@@ -11,4 +13,5 @@ FUTEBOL = Esporte(
     posicoes=("goleiro", "zagueiro", "lateral", "volante", "meia", "atacante", "ponta"),
     posicao_padrao="meia",
     recursos=frozenset({ESCALACAO, ARTILHARIA, CARTOES}),
+    eventos_partida=(GOL, ASSISTENCIA, AMARELO, VERMELHO, SUBSTITUICAO),
 )

@@ -14,8 +14,10 @@ from app.models.racha_admin import RachaAdmin
 from app.models.athlete_profile import AthleteProfile, PernaBoa
 from app.models.atleta_stat import AtletaStat
 from app.models.temporada import Temporada, StatusTemporada
+from app.models.evento_partida import EventoPartida
 
 __all__ = [
+    "EventoPartida",
     "Racha",
     "TipoRacha",
     "Atleta",

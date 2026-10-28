@@ -1,4 +1,4 @@
-from app.esportes.base import ESCALACAO, Esporte, Modalidade
+from app.esportes.base import ASSISTENCIA, ESCALACAO, GOL, SUBSTITUICAO, Esporte, Modalidade
 
 BASQUETE = Esporte(
     id="basquete",
@@ -10,4 +10,6 @@ BASQUETE = Esporte(
     posicoes=("armador", "ala_armador", "ala", "ala_pivo", "pivo"),
     posicao_padrao="ala",
     recursos=frozenset({ESCALACAO}),
+    eventos_partida=(GOL, ASSISTENCIA, SUBSTITUICAO),
+    valores_pontuacao=(1, 2, 3),
 )
