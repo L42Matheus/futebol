@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User, Team
 from app.schemas.jogo import JogoCreate, JogoUpdate, JogoResponse
 from app.services.auth import get_current_user
-from app.deps import verificar_acesso_racha
+from app.deps import verificar_acesso_racha, verificar_admin_racha
 
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
 
@@ -26,7 +26,7 @@ def _resolve_team(db: Session, racha_id: int, team_id: Optional[int]):
 
 @router.post("/", response_model=JogoResponse, status_code=status.HTTP_201_CREATED)
 def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    verificar_acesso_racha(db, current_user, jogo.racha_id)
+    verificar_admin_racha(db, current_user, jogo.racha_id)
     racha = db.query(Racha).filter(Racha.id == jogo.racha_id).first()
     if not racha:
         raise HTTPException(status_code=404, detail="Racha não encontrado")
@@ -96,7 +96,7 @@ def atualizar_jogo(jogo_id: int, jogo_update: JogoUpdate, db: Session = Depends(
     jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
-    verificar_acesso_racha(db, current_user, jogo.racha_id)
+    verificar_admin_racha(db, current_user, jogo.racha_id)
     update_data = jogo_update.model_dump(exclude_unset=True)
     if "placar_time_a" in update_data and "placar_time_b" in update_data:
         update_data["finalizado"] = True
@@ -124,7 +124,7 @@ def cancelar_jogo(jogo_id: int, db: Session = Depends(get_db), current_user: Use
     jogo = db.query(Jogo).filter(Jogo.id == jogo_id).first()
     if not jogo:
         raise HTTPException(status_code=404, detail="Jogo não encontrado")
-    verificar_acesso_racha(db, current_user, jogo.racha_id)
+    verificar_admin_racha(db, current_user, jogo.racha_id)
     jogo.cancelado = True
     db.commit()
 
