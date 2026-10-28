@@ -43,6 +43,8 @@ export interface Esporte {
   posicaoPadrao: string
   // Como se chama o que o atleta marca: gols, cestas, pontos.
   pontuacao: string
+  // O mesmo no singular, para um lance na partida: gol, cesta, ponto.
+  lance: string
   placar: Placar
   // Presente nos esportes com o recurso 'escalacao'.
   escalacao?: EscalacaoEsporte

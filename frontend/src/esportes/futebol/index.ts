@@ -25,6 +25,7 @@ const futebol: Esporte = {
   },
   posicaoPadrao: 'meia',
   pontuacao: 'Gols',
+  lance: 'Gol',
   placar: { tipo: 'tempo', titulo: 'Tempo de jogo', minutos: [5, 10, 15, 20, 30, 45] },
   escalacao: escalacaoFutebol,
   recursos: ['escalacao', 'artilharia', 'cartoes'],
