@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeftRight, ChevronLeft, Flag, Play, Timer, Undo2, X } from 'lucide-react'
+import { ArrowLeftRight, Flag, Play, Timer, Undo2, X } from 'lucide-react'
 import { format } from 'date-fns'
 import Avatar from '../components/Avatar'
+import EscudoTime from '../components/EscudoTime'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../context/ToastContext'
 import { partidaApi, teamsApi } from '../services/api'
@@ -24,9 +25,33 @@ interface Selecionado {
 
 interface Contagem {
   gols: number
+  // Soma dos valores: no basquete uma cesta vale 1, 2 ou 3.
+  pontos: number
   assistencias: number
   amarelos: number
   vermelhos: number
+  faltas: number
+}
+
+// No basquete a 5ª falta tira o atleta do jogo.
+const LIMITE_FALTAS = 5
+
+function nomePeriodo(partida: Partida, periodo = partida.periodo) {
+  if (partida.periodo_nome === 'set') return `${periodo}º set`
+  if (periodo <= partida.periodos) return `${periodo}º quarto`
+  const extra = periodo - partida.periodos
+  return extra === 1 ? 'Prorrogação' : `${extra}ª prorrogação`
+}
+
+function siglaPeriodo(partida: Partida, periodo: number) {
+  if (partida.periodo_nome === 'set') return `S${periodo}`
+  return periodo <= partida.periodos ? `${periodo}ºQ` : `P${periodo - partida.periodos}`
+}
+
+// Vôlei: até quantos pontos vai o set em andamento (o último set vai até 15).
+function alvoDoSet(partida: Partida) {
+  const pontos = partida.pontos_por_set || 25
+  return partida.periodo === partida.periodos ? Math.min(15, pontos) : pontos
 }
 
 function erroDaApi(e: unknown, padrao: string) {
@@ -48,7 +73,7 @@ function nomeCurto(membro?: MembroPartida) {
 }
 
 export default function PartidaAoVivo() {
-  const { rachaId, jogoId } = useParams<{ rachaId: string; jogoId: string }>()
+  const { jogoId } = useParams<{ jogoId: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [partida, setPartida] = useState<Partida | null>(null)
@@ -64,6 +89,8 @@ export default function PartidaAoVivo() {
   const [enviando, setEnviando] = useState(false)
   const [confirmarFim, setConfirmarFim] = useState(false)
   const [desfazer, setDesfazer] = useState<Lance | null>(null)
+  const [confirmarPeriodo, setConfirmarPeriodo] = useState(false)
+  const [pontosPorSet, setPontosPorSet] = useState(25)
 
   const aplicar = useCallback((dados: Partida) => {
     setPartida(dados)
@@ -124,14 +151,20 @@ export default function PartidaAoVivo() {
   const contagens = useMemo(() => {
     const mapa = new Map<number, Contagem>()
     const de = (id: number) => {
-      if (!mapa.has(id)) mapa.set(id, { gols: 0, assistencias: 0, amarelos: 0, vermelhos: 0 })
+      if (!mapa.has(id)) mapa.set(id, { gols: 0, pontos: 0, assistencias: 0, amarelos: 0, vermelhos: 0, faltas: 0 })
       return mapa.get(id)!
     }
     partida?.eventos.forEach((e) => {
-      if (e.tipo === 'gol') de(e.atleta_id).gols += 1
-      if (e.tipo === 'assistencia') de(e.atleta_id).assistencias += 1
-      if (e.tipo === 'amarelo') de(e.atleta_id).amarelos += 1
-      if (e.tipo === 'vermelho') de(e.atleta_id).vermelhos += 1
+      if (!e.atleta_id) return
+      const c = de(e.atleta_id)
+      if (e.tipo === 'gol') {
+        c.gols += 1
+        c.pontos += e.valor
+      }
+      if (e.tipo === 'assistencia') c.assistencias += 1
+      if (e.tipo === 'amarelo') c.amarelos += 1
+      if (e.tipo === 'vermelho') c.vermelhos += 1
+      if (e.tipo === 'falta') c.faltas += 1
     })
     return mapa
   }, [partida])
@@ -148,7 +181,11 @@ export default function PartidaAoVivo() {
     }
     setEnviando(true)
     try {
-      const res = await partidaApi.iniciar(jogoId, { time_a_id: Number(escolha.a), time_b_id: Number(escolha.b) })
+      const res = await partidaApi.iniciar(jogoId, {
+        time_a_id: Number(escolha.a),
+        time_b_id: Number(escolha.b),
+        ...(esporte.placar.tipo === 'pontos' ? { pontos_por_set: pontosPorSet } : {}),
+      })
       aplicar(res.data)
     } catch (e) {
       toast(erroDaApi(e, 'Não foi possível iniciar a partida.'), 'error')
@@ -166,6 +203,18 @@ export default function PartidaAoVivo() {
       toast('Partida encerrada.', 'success')
     } catch (e) {
       toast(erroDaApi(e, 'Não foi possível encerrar a partida.'), 'error')
+    }
+  }
+
+  async function fecharPeriodo() {
+    if (!jogoId) return
+    setConfirmarPeriodo(false)
+    try {
+      const res = await partidaApi.proximoPeriodo(jogoId)
+      aplicar(res.data)
+      toast(res.data.finalizado ? 'Fim de jogo!' : `Começou o ${nomePeriodo(res.data)}.`, 'success')
+    } catch (e) {
+      toast(erroDaApi(e, 'Não foi possível encerrar esta parte do jogo.'), 'error')
     }
   }
 
@@ -224,6 +273,7 @@ export default function PartidaAoVivo() {
   }
 
   function descreverLance(lance: Lance) {
+    if (!lance.atleta_id) return 'Ponto por erro do adversário'
     const quem = nomeCurto(membros.get(lance.atleta_id))
     switch (lance.tipo) {
       case 'gol':
@@ -234,6 +284,8 @@ export default function PartidaAoVivo() {
         return `Cartão amarelo para ${quem}`
       case 'vermelho':
         return `Cartão vermelho para ${quem}`
+      case 'falta':
+        return `Falta de ${quem}`
       case 'substituicao':
         return lance.atleta_sai_id
           ? `Entrou ${quem}, saiu ${nomeCurto(membros.get(lance.atleta_sai_id))}`
@@ -265,17 +317,19 @@ export default function PartidaAoVivo() {
   const inicio = partida.iniciado_em ? new Date(partida.iniciado_em) : null
   const decorrido = inicio ? (agora + desvio - inicio.getTime()) / 1000 : 0
   const lancesRecentes = [...partida.eventos].reverse()
+  const emSets = partida.placar_por_periodo
+  const temPeriodos = Boolean(partida.periodo_nome)
+  const parcialAtual = partida.parciais[partida.periodo - 1] ?? { periodo: partida.periodo, a: 0, b: 0 }
+  const placarGrande = emSets ? parcialAtual : { a: timeA.placar, b: timeB.placar }
+  const alvo = emSets ? alvoDoSet(partida) : 0
+  const setDecidido =
+    emSets && Math.max(parcialAtual.a, parcialAtual.b) >= alvo && Math.abs(parcialAtual.a - parcialAtual.b) >= 2
+  const faltasNoPeriodo = (lado: 'a' | 'b') =>
+    partida.eventos.filter((e) => e.tipo === 'falta' && e.lado === lado && (e.periodo ?? 1) === partida.periodo).length
+  const parciaisAnteriores = partida.parciais.slice(0, partida.finalizado ? undefined : -1)
 
   return (
     <div className="space-y-5 pb-24">
-      <button
-        type="button"
-        onClick={() => navigate(`/racha/${rachaId}/jogo/${jogoId}`)}
-        className="inline-flex items-center gap-1 text-sm font-semibold text-gray-400 hover:text-white"
-      >
-        <ChevronLeft size={18} /> Voltar ao jogo
-      </button>
-
       {!inicio ? (
         <section className="card space-y-5">
           <div>
@@ -301,6 +355,28 @@ export default function PartidaAoVivo() {
                   <SeletorTime lado="a" valor={escolha.a} times={times} onChange={(a) => setEscolha((atual) => ({ ...atual, a }))} />
                   <span className="pb-3 font-black text-gray-500">x</span>
                   <SeletorTime lado="b" valor={escolha.b} times={times} onChange={(b) => setEscolha((atual) => ({ ...atual, b }))} />
+                </div>
+              )}
+              {esporte.placar.tipo === 'pontos' && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-gray-400">Pontos por set</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {esporte.placar.pontosPorSet.map((pontos) => (
+                      <button
+                        key={pontos}
+                        type="button"
+                        onClick={() => setPontosPorSet(pontos)}
+                        className={`h-11 rounded-2xl border text-sm font-black transition-colors ${
+                          pontosPorSet === pontos
+                            ? 'border-emerald-400 bg-emerald-500 text-branco'
+                            : 'border-gray-800 bg-gray-900/40 text-gray-300 hover:border-emerald-500/40'
+                        }`}
+                      >
+                        {pontos}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">Melhor de {partida.periodos} sets; o último vai até 15.</p>
                 </div>
               )}
               <button
@@ -332,13 +408,34 @@ export default function PartidaAoVivo() {
               <EscudoTime nome={timeA.nome} cor="emerald" />
               <div className="px-1">
                 <p className="text-5xl font-black leading-none tabular-nums text-white">
-                  {timeA.placar}
+                  {placarGrande.a}
                   <span className="mx-2 align-middle text-2xl text-white/40">x</span>
-                  {timeB.placar}
+                  {placarGrande.b}
                 </p>
+                {emSets && (
+                  <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-white/70">
+                    Sets {timeA.placar} x {timeB.placar}
+                  </p>
+                )}
               </div>
               <EscudoTime nome={timeB.nome} cor="sky" />
             </div>
+
+            {temPeriodos && (
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+                {!partida.finalizado && (
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide text-slate-900">
+                    {nomePeriodo(partida)}
+                    {emSets && ` · até ${alvo}`}
+                  </span>
+                )}
+                {parciaisAnteriores.map((p) => (
+                  <span key={p.periodo} className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold tabular-nums text-white/80">
+                    {siglaPeriodo(partida, p.periodo)} {p.a}-{p.b}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="mx-auto mt-5 grid max-w-xs grid-cols-2 divide-x divide-white/15 rounded-2xl bg-white/10 py-3">
               <div>
@@ -355,8 +452,23 @@ export default function PartidaAoVivo() {
               </div>
             </div>
 
+            {partida.is_admin && temPeriodos && !partida.finalizado && (
+              <button
+                type="button"
+                onClick={() => setConfirmarPeriodo(true)}
+                className={`mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-black transition-colors ${
+                  setDecidido
+                    ? 'animate-pulse bg-emerald-400 text-slate-900'
+                    : 'border border-white/20 text-white hover:bg-white/10'
+                }`}
+              >
+                <Flag size={16} /> Fim do {emSets ? 'set' : partida.periodo > partida.periodos ? 'tempo extra' : 'quarto'}
+              </button>
+            )}
+
             {partida.is_admin && (
-              <div className="mt-5 grid grid-cols-2 gap-2">
+              <div className={`mt-2 grid gap-2 ${emSets ? 'grid-cols-1' : 'grid-cols-2'} ${temPeriodos && !partida.finalizado ? '' : 'mt-5'}`}>
+                {!emSets && (
                 <button
                   type="button"
                   onClick={() => navigate('/tempo')}
@@ -364,6 +476,7 @@ export default function PartidaAoVivo() {
                 >
                   <Timer size={16} /> Cronômetro
                 </button>
+                )}
                 {!partida.finalizado ? (
                   <button
                     type="button"
@@ -384,7 +497,9 @@ export default function PartidaAoVivo() {
           {podeEditar && (
             <p className="px-4 text-center text-xs font-medium text-gray-500">
               Toque no atleta para marcar {esporte.lance.toLowerCase()}
-              {permite('amarelo') ? ', cartão' : ''} ou fazer substituição.
+              {permite('amarelo') ? ', cartão' : ''}
+              {permite('falta') ? ', falta' : ''} ou fazer substituição.
+              {partida.ponto_do_time ? ' Erro do adversário: use "+1 ponto" no time.' : ''}
             </p>
           )}
 
@@ -395,7 +510,24 @@ export default function PartidaAoVivo() {
                 time={time}
                 contagens={contagens}
                 IconePonto={esporte.Icone}
+                mostrarPontos={partida.valores_pontuacao.length > 1}
                 onEscolher={podeEditar ? (membro) => setSelecionado({ membro, time }) : undefined}
+                extra={
+                  partida.ponto_do_time && podeEditar ? (
+                    <button
+                      type="button"
+                      disabled={enviando}
+                      onClick={() => void registrar({ tipo: 'gol', lado: time.lado })}
+                      className="mt-2 w-full rounded-xl bg-emerald-500 py-2 text-xs font-black text-branco transition-colors hover:bg-emerald-600 disabled:opacity-40"
+                    >
+                      +1 ponto
+                    </button>
+                  ) : permite('falta') ? (
+                    <p className={`mt-1 text-[11px] font-bold ${faltasNoPeriodo(time.lado) >= LIMITE_FALTAS ? 'text-red-400' : 'text-gray-400'}`}>
+                      {faltasNoPeriodo(time.lado)} faltas no quarto
+                    </p>
+                  ) : null
+                }
               />
             ))}
           </div>
@@ -409,7 +541,7 @@ export default function PartidaAoVivo() {
                 {lancesRecentes.map((lance) => (
                   <li key={lance.id} className="flex items-center gap-3 py-2.5">
                     <span className="w-9 shrink-0 text-xs font-black tabular-nums text-gray-500">
-                      {Math.floor((lance.segundos ?? 0) / 60)}'
+                      {temPeriodos ? siglaPeriodo(partida, lance.periodo ?? 1) : `${Math.floor((lance.segundos ?? 0) / 60)}'`}
                     </span>
                     <IconeLance lance={lance} IconePonto={esporte.Icone} />
                     <p className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
@@ -418,7 +550,8 @@ export default function PartidaAoVivo() {
                         {lance.lado === 'a' ? timeA.nome : timeB.nome}
                       </span>
                     </p>
-                    {partida.is_admin && (
+                    {/* No vôlei o ponto de um set fechado não volta: o set já tem vencedor. */}
+                    {partida.is_admin && !(emSets && (lance.periodo ?? 1) < partida.periodo) && (
                       <button
                         type="button"
                         onClick={() => setDesfazer(lance)}
@@ -443,6 +576,7 @@ export default function PartidaAoVivo() {
           enviando={enviando}
           esporteLance={esporte.lance}
           valores={partida.valores_pontuacao}
+          faltas={contagens.get(selecionado.membro.atleta_id)?.faltas ?? 0}
           permite={permite}
           onFechar={fecharFolha}
           onPonto={(valor) => void marcarPonto(valor)}
@@ -460,6 +594,20 @@ export default function PartidaAoVivo() {
         onCancel={() => setConfirmarFim(false)}
       />
       <ConfirmDialog
+        open={confirmarPeriodo}
+        title={emSets ? 'Fim do set' : `Fim do ${nomePeriodo(partida)}`}
+        description={
+          emSets
+            ? parcialAtual.a === parcialAtual.b
+              ? `O set está ${parcialAtual.a} x ${parcialAtual.b}. Desempate antes de fechar.`
+              : `${parcialAtual.a > parcialAtual.b ? timeA.nome : timeB.nome} vence o set por ${Math.max(parcialAtual.a, parcialAtual.b)} x ${Math.min(parcialAtual.a, parcialAtual.b)}.`
+            : `O placar do ${nomePeriodo(partida)} fica ${parcialAtual.a} x ${parcialAtual.b} e começa o ${nomePeriodo(partida, partida.periodo + 1)}.`
+        }
+        confirmLabel={emSets ? 'Fechar set' : 'Próximo'}
+        onConfirm={() => void fecharPeriodo()}
+        onCancel={() => setConfirmarPeriodo(false)}
+      />
+      <ConfirmDialog
         open={Boolean(desfazer)}
         title="Desfazer lance"
         description={desfazer ? `${descreverLance(desfazer)} será removido.` : ''}
@@ -468,28 +616,6 @@ export default function PartidaAoVivo() {
         onConfirm={() => void confirmarDesfazer()}
         onCancel={() => setDesfazer(null)}
       />
-    </div>
-  )
-}
-
-function EscudoTime({ nome, cor }: { nome: string; cor: 'emerald' | 'sky' }) {
-  const iniciais = nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join('')
-    .toUpperCase()
-  return (
-    <div className="flex min-w-0 flex-col items-center gap-2">
-      <span
-        className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-black text-branco shadow-lg ${
-          cor === 'emerald' ? 'bg-emerald-500 shadow-emerald-950/40' : 'bg-sky-500 shadow-sky-950/40'
-        }`}
-      >
-        {iniciais || '?'}
-      </span>
-      <p className="w-full truncate text-xs font-black uppercase tracking-wide text-white">{nome}</p>
     </div>
   )
 }
@@ -522,12 +648,17 @@ function ColunaTime({
   time,
   contagens,
   IconePonto,
+  mostrarPontos,
   onEscolher,
+  extra,
 }: {
   time: TimePartida
   contagens: Map<number, Contagem>
   IconePonto: ReturnType<typeof getEsporte>['Icone']
+  mostrarPontos: boolean
   onEscolher?: (membro: MembroPartida) => void
+  // Abaixo do nome: ponto do time (vôlei) ou faltas no quarto (basquete).
+  extra?: ReactNode
 }) {
   const titulares = time.membros.filter((m) => m.is_titular)
   const banco = time.membros.filter((m) => !m.is_titular)
@@ -537,9 +668,10 @@ function ColunaTime({
       <div className={`border-b border-gray-800 px-3 py-3 text-center ${time.lado === 'a' ? 'bg-emerald-500/10' : 'bg-sky-500/10'}`}>
         <p className="truncate text-sm font-black text-white">{time.nome}</p>
         <p className="text-[11px] font-semibold text-gray-500">{titulares.length} em jogo · {banco.length} no banco</p>
+        {extra}
       </div>
-      <ListaJogadores titulo="Em jogo" membros={titulares} contagens={contagens} IconePonto={IconePonto} onEscolher={onEscolher} />
-      <ListaJogadores titulo="Banco" membros={banco} contagens={contagens} IconePonto={IconePonto} onEscolher={onEscolher} apagado />
+      <ListaJogadores titulo="Em jogo" membros={titulares} contagens={contagens} IconePonto={IconePonto} mostrarPontos={mostrarPontos} onEscolher={onEscolher} />
+      <ListaJogadores titulo="Banco" membros={banco} contagens={contagens} IconePonto={IconePonto} mostrarPontos={mostrarPontos} onEscolher={onEscolher} apagado />
     </section>
   )
 }
@@ -549,6 +681,7 @@ function ListaJogadores({
   membros,
   contagens,
   IconePonto,
+  mostrarPontos,
   onEscolher,
   apagado = false,
 }: {
@@ -556,6 +689,8 @@ function ListaJogadores({
   membros: MembroPartida[]
   contagens: Map<number, Contagem>
   IconePonto: ReturnType<typeof getEsporte>['Icone']
+  // Basquete: o selo mostra os pontos do atleta, não quantas cestas.
+  mostrarPontos: boolean
   onEscolher?: (membro: MembroPartida) => void
   apagado?: boolean
 }) {
@@ -572,9 +707,9 @@ function ListaJogadores({
               <div className="relative shrink-0">
                 <Avatar src={membro.foto_url ?? undefined} name={membro.apelido || membro.nome} size="sm" />
                 {c && c.gols > 0 && (
-                  <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center gap-px rounded-full bg-white px-0.5 text-[9px] font-black text-slate-900 shadow">
+                  <span className="absolute -bottom-1 -right-1 flex h-4 min-w-4 items-center justify-center gap-px rounded-full bg-branco px-0.5 text-[9px] font-black text-slate-900 shadow">
                     <IconePonto size={10} />
-                    {c.gols > 1 && c.gols}
+                    {mostrarPontos ? c.pontos : c.gols > 1 && c.gols}
                   </span>
                 )}
               </div>
@@ -597,6 +732,15 @@ function ListaJogadores({
                   {c && Array.from({ length: c.vermelhos }).map((_, i) => (
                     <span key={`v${i}`} className="h-3 w-2 shrink-0 rounded-[2px] bg-red-500" aria-label="Cartão vermelho" />
                   ))}
+                  {c && c.faltas > 0 && (
+                    <span
+                      className={`shrink-0 rounded px-1 text-[9px] font-black ${
+                        c.faltas >= LIMITE_FALTAS ? 'bg-red-500 text-branco' : 'bg-amber-500/20 text-amber-300'
+                      }`}
+                    >
+                      {c.faltas >= LIMITE_FALTAS ? 'FORA' : `${c.faltas} F`}
+                    </span>
+                  )}
                 </div>
               </div>
             </>
@@ -622,6 +766,13 @@ function ListaJogadores({
 }
 
 function IconeLance({ lance, IconePonto }: { lance: Lance; IconePonto: ReturnType<typeof getEsporte>['Icone'] }) {
+  if (lance.tipo === 'falta') {
+    return (
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-black text-amber-300">
+        F
+      </span>
+    )
+  }
   if (lance.tipo === 'gol') {
     return (
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
@@ -656,6 +807,7 @@ function FolhaLances({
   enviando,
   esporteLance,
   valores,
+  faltas,
   permite,
   onFechar,
   onPonto,
@@ -667,6 +819,7 @@ function FolhaLances({
   enviando: boolean
   esporteLance: string
   valores: number[]
+  faltas: number
   permite: (tipo: NovoLance['tipo']) => boolean
   onFechar: () => void
   onPonto: (valor: number) => void
@@ -734,6 +887,18 @@ function FolhaLances({
                   </BotaoLance>
                 )}
               </div>
+            )}
+            {permite('falta') && (
+              <BotaoLance disabled={enviando} onClick={() => onLance({ tipo: 'falta', atleta_id: membro.atleta_id })}>
+                Falta{faltas > 0 ? ` (${faltas + 1}ª)` : ''}
+              </BotaoLance>
+            )}
+            {permite('falta') && faltas >= LIMITE_FALTAS - 1 && (
+              <p className={`text-center text-xs font-semibold ${faltas >= LIMITE_FALTAS ? 'text-red-400' : 'text-amber-300'}`}>
+                {faltas >= LIMITE_FALTAS
+                  ? `${nomeCurto(membro)} já tem ${faltas} faltas e está fora do jogo. Faça a substituição.`
+                  : `Mais uma falta e ${nomeCurto(membro)} sai do jogo.`}
+              </p>
             )}
             {membro.is_titular && permite('substituicao') && (
               <BotaoLance disabled={enviando || trocas.length === 0} onClick={onSubstituir}>

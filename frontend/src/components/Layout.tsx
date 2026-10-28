@@ -13,6 +13,8 @@ import { useTema } from '../hooks/useTema'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
+  { test: /\/jogo\/\d+\/partida$/, title: 'Partida ao vivo' },
+  { test: /\/jogo\/\d+$/, title: 'Jogo' },
   { test: /^\/tempo$/, title: 'Tempo' },
   { test: /^\/novo$/, title: 'Novo Racha' },
   { test: /\/racha\/\d+$/, title: 'Racha' },
