@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Check, ChevronDown, UserMinus, UserPlus, Users, X } from 'lucide-react'
-import { teamsApi, atletasApi, rachasApi } from '../../services/api'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { ChevronDown, ChevronRight, UserMinus, UserPlus, Users, X } from 'lucide-react'
+import { teamsApi, atletasApi, rachasApi, jogosApi, partidaApi } from '../../services/api'
+import { useToast } from '../../context/ToastContext'
+import type { Partida } from '../../types'
 import PainelTime from './PainelTime'
 import Avatar from '../../components/Avatar'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { esporteDaModalidade, getModalidade, labelPosicao, temRecurso } from '..'
 import type { EscalacaoEsporte, Formation, PositionSlot } from './tipos'
 
@@ -52,6 +55,13 @@ export default function TeamLineup() {
   const [memberForm, setMemberForm] = useState({ is_titular: true, posicao_escalacao: '' })
   const [addingToTeam, setAddingToTeam] = useState<{ team: Team; slot?: PositionSlot } | null>(null)
   const [esporteSemEscalacao, setEsporteSemEscalacao] = useState<string | null>(null)
+  // Partida ao vivo entre os dois times da tela: dá as bolinhas de gol e o botão de marcar.
+  const [partida, setPartida] = useState<Partida | null>(null)
+  const [marcando, setMarcando] = useState(false)
+  const [salvamento, setSalvamento] = useState<'parado' | 'salvando' | 'salvo'>('parado')
+  const [confirmarRemocao, setConfirmarRemocao] = useState(false)
+  const [assistenciaDe, setAssistenciaDe] = useState<{ team: Team; autorId: number } | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     loadData()
@@ -114,10 +124,87 @@ export default function TeamLineup() {
     }
   }
 
+  const carregarPartida = useCallback(async () => {
+    if (!rachaId || !selectedTeamA || !selectedTeamB) {
+      setPartida(null)
+      return
+    }
+    try {
+      const res = await jogosApi.list(rachaId, true)
+      const ids = [selectedTeamA.id, selectedTeamB.id].sort().join('-')
+      const aoVivo = res.data.find(
+        (j) => j.iniciado_em && !j.finalizado && [j.time_a_id, j.time_b_id].sort().join('-') === ids,
+      )
+      setPartida(aoVivo ? (await partidaApi.get(aoVivo.id)).data : null)
+    } catch {
+      setPartida(null)
+    }
+  }, [rachaId, selectedTeamA?.id, selectedTeamB?.id])
+
+  useEffect(() => {
+    void carregarPartida()
+  }, [carregarPartida])
+
+  useEffect(() => {
+    if (!partida) return
+    const intervalo = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void carregarPartida()
+    }, 15000)
+    return () => window.clearInterval(intervalo)
+  }, [partida?.jogo_id, carregarPartida])
+
+  const gols = useMemo(() => {
+    const mapa: Record<number, number> = {}
+    partida?.eventos.forEach((e) => {
+      if (e.tipo === 'gol' && e.atleta_id) mapa[e.atleta_id] = (mapa[e.atleta_id] ?? 0) + 1
+    })
+    return mapa
+  }, [partida])
+
+  async function marcarGol(valor: number) {
+    if (!partida || !editingMember) return
+    const { team, member } = editingMember
+    setMarcando(true)
+    try {
+      const res = await partidaApi.registrar(partida.jogo_id, { tipo: 'gol', atleta_id: member.atleta_id, valor })
+      setPartida(res.data)
+      const companheiros = team.membros.some((m) => m.is_titular && m.atleta_id !== member.atleta_id)
+      if (res.data.eventos_permitidos.includes('assistencia') && companheiros) {
+        setAssistenciaDe({ team, autorId: member.atleta_id })
+      } else {
+        toast(`${esporteDaModalidade(tipo).lance} registrado!`, 'success')
+        setEditingMember(null)
+      }
+    } catch (e: any) {
+      toast(e.response?.data?.detail || 'Não foi possível registrar.', 'error')
+    } finally {
+      setMarcando(false)
+    }
+  }
+
+  async function marcarAssistencia(atletaId: number | null) {
+    if (!partida) return
+    setMarcando(true)
+    try {
+      if (atletaId) {
+        const res = await partidaApi.registrar(partida.jogo_id, { tipo: 'assistencia', atleta_id: atletaId })
+        setPartida(res.data)
+      }
+      toast(`${esporteDaModalidade(tipo).lance} registrado!`, 'success')
+    } catch (e: any) {
+      toast(e.response?.data?.detail || 'Não foi possível registrar a assistência.', 'error')
+    } finally {
+      setMarcando(false)
+      setAssistenciaDe(null)
+      setEditingMember(null)
+    }
+  }
+
   function handleSlotClick(team: Team, slot: PositionSlot, member?: TeamMember) {
     if (!isAdmin) return
 
     if (member) {
+      setSalvamento('parado')
       const teamFormation = team.id === selectedTeamA?.id ? formationA : formationB
       setEditingMember({ team, member, slot })
       setMemberForm({
@@ -130,32 +217,34 @@ export default function TeamLineup() {
     setAddingToTeam({ team, slot })
   }
 
-  async function handleUpdateMember() {
+  // Em campo/banco e posição salvam na hora: a janela fica só com o que importa no jogo.
+  async function salvarMembro(novo: typeof memberForm) {
     if (!isAdmin || !editingMember) return
-
+    const anterior = memberForm
+    setMemberForm(novo)
+    setSalvamento('salvando')
     try {
-      await teamsApi.updateMember(
-        editingMember.team.id,
-        editingMember.member.atleta_id,
-        memberForm
-      )
-      await loadData()
-      setEditingMember(null)
+      await teamsApi.updateMember(editingMember.team.id, editingMember.member.atleta_id, novo)
+      setEditingMember((atual) => (atual ? { ...atual, member: { ...atual.member, ...novo } } : atual))
+      await Promise.all([loadData(), carregarPartida()])
+      setSalvamento('salvo')
     } catch (e: any) {
-      alert(e.response?.data?.detail || 'Erro ao atualizar')
+      setMemberForm(anterior)
+      setSalvamento('parado')
+      toast(e.response?.data?.detail || 'Não foi possível salvar.', 'error')
     }
   }
 
   async function handleRemoveMember() {
     if (!isAdmin || !editingMember) return
-    if (!window.confirm('Remover jogador do time?')) return
-
+    setConfirmarRemocao(false)
     try {
       await teamsApi.removeMember(editingMember.team.id, editingMember.member.atleta_id)
-      await loadData()
+      await Promise.all([loadData(), carregarPartida()])
+      toast('Atleta tirado do time.', 'success')
       setEditingMember(null)
     } catch (e: any) {
-      alert(e.response?.data?.detail || 'Erro ao remover')
+      toast(e.response?.data?.detail || 'Não foi possível tirar do time.', 'error')
     }
   }
 
@@ -171,7 +260,7 @@ export default function TeamLineup() {
       await loadData()
       setAddingToTeam(null)
     } catch (e: any) {
-      alert(e.response?.data?.detail || 'Erro ao adicionar')
+      toast(e.response?.data?.detail || 'Não foi possível adicionar.', 'error')
     }
   }
 
@@ -188,7 +277,7 @@ export default function TeamLineup() {
       await loadData()
       setAddingToTeam(null)
     } catch (e: any) {
-      alert(e.response?.data?.detail || 'Erro ao mover do banco')
+      toast(e.response?.data?.detail || 'Não foi possível tirar do banco.', 'error')
     }
   }
 
@@ -242,146 +331,87 @@ export default function TeamLineup() {
 
   return (
     <div className="space-y-6 pb-20">
-      <header className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-painel px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:px-8">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.18),_transparent_40%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.12),_transparent_35%)]" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <p className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-300/70">
-              Painel de Escalação
-            </p>
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-white">Escalação</h1>
-              <p className="mt-1 max-w-2xl text-sm text-white/60">
-                {escalacao?.descricao(tipo)}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-white/70">
-              {getModalidade(tipo).nome}
-            </span>
-            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-emerald-100">
-              {playersPerSide} por time
-            </span>
-          </div>
-        </div>
-      </header>
+      {/* O título "Escalação" já está no cabeçalho do app: aqui só o resumo da modalidade. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <p className="text-sm text-gray-400">{escalacao?.descricao(tipo)}</p>
+        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-300">
+          {getModalidade(tipo).nome} · {playersPerSide} por time
+        </span>
+      </div>
 
       {isAdmin && (
-        <section className="rounded-[2rem] border border-white/10 bg-painel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.28)] sm:p-6">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
-            <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-4">
-              <p className="mb-3 text-[11px] font-black uppercase tracking-[0.35em] text-emerald-300/65">Time A</p>
-              <div className="space-y-3">
-                <div className="relative">
-                  <select
-                    value={selectedTeamA?.id || ''}
-                    onChange={(e) => {
-                      const team = teams.find(t => t.id === parseInt(e.target.value))
-                      setSelectedTeamA(team || null)
-                    }}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-painel-2 px-4 py-4 pr-11 text-sm font-semibold text-white outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
-                  >
-                    <option value="">Selecione o time</option>
-                    {teamAOptions.map(team => (
-                      <option key={team.id} value={team.id}>{team.nome}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/45" size={18} />
-                </div>
-
-                <div className="relative">
-                  <select
-                    value={formationA?.id || ''}
-                    onChange={(e) => {
-                      const form = getFormation(e.target.value)
-                      if (form) setFormationA(form)
-                    }}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white/80 outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
-                  >
-                    {formationOptions.map(form => (
-                      <option key={form.id} value={form.id}>{form.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/45" size={18} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">Titulares</p>
-                    <p className="mt-1 text-lg font-black text-white">{getStarterCount(selectedTeamA)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">Banco</p>
-                    <p className="mt-1 text-lg font-black text-white">{getBenchMembers(selectedTeamA).length}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center">
-              <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full border border-emerald-300/20 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.22),_rgba(13,20,32,0.95))] shadow-[0_12px_30px_rgba(16,185,129,0.18)]">
-                <span className="text-[11px] font-black uppercase tracking-[0.35em] text-emerald-200/75">VS</span>
-                <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">
-                  {getModalidade(tipo).nome}
-                </span>
-              </div>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-4">
-              <p className="mb-3 text-[11px] font-black uppercase tracking-[0.35em] text-sky-300/65">Time B</p>
-              <div className="space-y-3">
-                <div className="relative">
-                  <select
-                    value={selectedTeamB?.id || ''}
-                    onChange={(e) => {
-                      const team = teams.find(t => t.id === parseInt(e.target.value))
-                      setSelectedTeamB(team || null)
-                    }}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-painel-2 px-4 py-4 pr-11 text-sm font-semibold text-white outline-none transition-colors focus:border-sky-400/50 focus:ring-2 focus:ring-sky-400/20"
-                  >
-                    <option value="">Selecione o time</option>
-                    {teamBOptions.map(team => (
-                      <option key={team.id} value={team.id}>{team.nome}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/45" size={18} />
-                </div>
-
-                <div className="relative">
-                  <select
-                    value={formationB?.id || ''}
-                    onChange={(e) => {
-                      const form = getFormation(e.target.value)
-                      if (form) setFormationB(form)
-                    }}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white/80 outline-none transition-colors focus:border-sky-400/50 focus:ring-2 focus:ring-sky-400/20"
-                  >
-                    {formationOptions.map(form => (
-                      <option key={form.id} value={form.id}>{form.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/45" size={18} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">Titulares</p>
-                    <p className="mt-1 text-lg font-black text-white">{getStarterCount(selectedTeamB)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">Banco</p>
-                    <p className="mt-1 text-lg font-black text-white">{getBenchMembers(selectedTeamB).length}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <section className="rounded-[1.75rem] border border-white/10 bg-painel p-3 shadow-[0_18px_40px_rgba(0,0,0,0.2)]">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+            <SeletorEquipe
+              rotulo="Time A"
+              cor="emerald"
+              time={selectedTeamA}
+              opcoes={teamAOptions}
+              formacao={formationA}
+              formacoes={formationOptions}
+              titulares={getStarterCount(selectedTeamA)}
+              banco={getBenchMembers(selectedTeamA).length}
+              onTime={(id) => setSelectedTeamA(teams.find((t) => t.id === id) || null)}
+              onFormacao={(id) => {
+                const form = getFormation(id)
+                if (form) setFormationA(form)
+              }}
+            />
+            <span className="mt-7 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-[10px] font-black text-white/60">
+              VS
+            </span>
+            <SeletorEquipe
+              rotulo="Time B"
+              cor="sky"
+              time={selectedTeamB}
+              opcoes={teamBOptions}
+              formacao={formationB}
+              formacoes={formationOptions}
+              titulares={getStarterCount(selectedTeamB)}
+              banco={getBenchMembers(selectedTeamB).length}
+              onTime={(id) => setSelectedTeamB(teams.find((t) => t.id === id) || null)}
+              onFormacao={(id) => {
+                const form = getFormation(id)
+                if (form) setFormationB(form)
+              }}
+            />
           </div>
         </section>
       )}
 
+      {partida ? (
+        <Link
+          to={`/racha/${rachaId}/jogo/${partida.jogo_id}/partida`}
+          className="tema-escuro flex items-center gap-3 rounded-[1.5rem] border border-white/10 bg-gradient-to-br from-sky-900 via-slate-900 to-emerald-800 px-4 py-3"
+        >
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Ao vivo
+          </span>
+          <p className="min-w-0 flex-1 truncate text-sm font-black text-white">
+            {partida.times[0].nome} {partida.times[0].placar} x {partida.times[1].placar} {partida.times[1].nome}
+          </p>
+          <ChevronRight size={18} className="shrink-0 text-white/60" />
+        </Link>
+      ) : (
+        isAdmin && selectedTeamA && selectedTeamB && (
+          <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-xs text-white/55">
+            Para marcar {esporteDaModalidade(tipo).pontuacao.toLowerCase()} aqui, inicie a partida ao vivo entre {selectedTeamA.nome} e{' '}
+            {selectedTeamB.nome} pela{' '}
+            <Link to={`/racha/${rachaId}/jogos`} className="font-bold text-emerald-300 underline-offset-2 hover:underline">
+              agenda
+            </Link>
+            .
+          </p>
+        )
+      )}
+
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <div>
+          {isAdmin && selectedTeamA && (
+            <p className="mb-2 flex items-center gap-2 px-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-400">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" /> Time A · {selectedTeamA.nome}
+            </p>
+          )}
           {selectedTeamA && formationA && escalacao ? (
             <PainelTime
               Fundo={escalacao.Fundo}
@@ -393,6 +423,9 @@ export default function TeamLineup() {
               color="green"
               side="left"
               onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamA, slot, member) : undefined}
+              showMeta={!isAdmin}
+              gols={gols}
+              IconePonto={partida ? esporteDaModalidade(tipo).Icone : undefined}
             />
           ) : (
             <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
@@ -405,6 +438,11 @@ export default function TeamLineup() {
         </div>
 
         <div>
+          {isAdmin && selectedTeamB && (
+            <p className="mb-2 flex items-center gap-2 px-1 text-[11px] font-black uppercase tracking-[0.22em] text-sky-400">
+              <span className="h-2 w-2 rounded-full bg-sky-400" /> Time B · {selectedTeamB.nome}
+            </p>
+          )}
           {selectedTeamB && formationB && escalacao ? (
             <PainelTime
               Fundo={escalacao.Fundo}
@@ -416,6 +454,9 @@ export default function TeamLineup() {
               color="blue"
               side="right"
               onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamB, slot, member) : undefined}
+              showMeta={!isAdmin}
+              gols={gols}
+              IconePonto={partida ? esporteDaModalidade(tipo).Icone : undefined}
             />
           ) : (
             <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
@@ -465,112 +506,169 @@ export default function TeamLineup() {
 
       {isAdmin && editingMember && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
-          <div className="w-full max-w-xl rounded-t-[2rem] border border-white/10 bg-painel p-6 shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/40">Editar</p>
-                <h2 className="text-2xl font-black text-white">Ajustar jogador</h2>
-                <p className="mt-1 text-sm text-white/50">{editingMember.team.nome}</p>
+          <div className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-[2rem] border border-white/10 bg-painel p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_32px_80px_rgba(0,0,0,0.45)] md:rounded-[2rem]">
+            <div className="mb-5 flex items-center gap-3">
+              <Avatar
+                src={editingMember.member.atleta.foto_url}
+                name={editingMember.member.atleta.apelido || editingMember.member.atleta.nome}
+                size="md"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-black text-white">
+                  {editingMember.member.atleta.apelido || editingMember.member.atleta.nome}
+                </p>
+                <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {labelPosicao(editingMember.member.atleta.posicao)} · {editingMember.team.nome}
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setEditingMember(null)}
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-white/60 transition-colors hover:text-white"
+                aria-label="Fechar"
+                onClick={() => {
+                  setEditingMember(null)
+                  setAssistenciaDe(null)
+                }}
+                className="shrink-0 rounded-full border border-white/10 bg-white/5 p-2 text-white/60 transition-colors hover:text-white"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="mb-5 flex items-center gap-4 rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-4">
-              <Avatar
-                src={editingMember.member.atleta.foto_url}
-                name={editingMember.member.atleta.apelido || editingMember.member.atleta.nome}
-                size="lg"
-              />
-              <div className="min-w-0">
-                <p className="truncate text-lg font-black text-white">
-                  {editingMember.member.atleta.apelido || editingMember.member.atleta.nome}
-                </p>
-                <p className="mt-1 text-xs uppercase tracking-[0.22em] text-white/45">
-                  {labelPosicao(editingMember.member.atleta.posicao)}
+            {partida && !partida.finalizado && (
+              <div className="mb-5">
+                {assistenciaDe ? (
+                  <>
+                    <p className="text-sm font-black text-white">{esporteDaModalidade(tipo).lance} marcado! Quem deu a assistência?</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {assistenciaDe.team.membros
+                        .filter((m) => m.is_titular && m.atleta_id !== assistenciaDe.autorId)
+                        .map((m) => (
+                          <button
+                            key={m.atleta_id}
+                            type="button"
+                            disabled={marcando}
+                            onClick={() => void marcarAssistencia(m.atleta_id)}
+                            className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-sm font-bold text-white transition-colors hover:border-emerald-300/40 disabled:opacity-40"
+                          >
+                            <Avatar src={m.atleta.foto_url} name={m.atleta.apelido || m.atleta.nome} size="xs" />
+                            <span className="truncate">{m.atleta.apelido || m.atleta.nome.split(' ')[0]}</span>
+                          </button>
+                        ))}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={marcando}
+                      onClick={() => void marcarAssistencia(null)}
+                      className="mt-2 w-full rounded-2xl border border-white/10 py-2.5 text-sm font-bold text-white/70 hover:bg-white/[0.05]"
+                    >
+                      Sem assistência
+                    </button>
+                  </>
+                ) : editingMember.member.is_titular ? (
+                  <>
+                    <p className="flex items-center gap-2 text-xs font-bold text-white/60">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                      Ao vivo · {partida.times[0].nome} {partida.times[0].placar} x {partida.times[1].placar} {partida.times[1].nome}
+                    </p>
+                    <div className={`mt-3 grid gap-2 ${partida.valores_pontuacao.length > 1 ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      {partida.valores_pontuacao.map((valor) => (
+                        <button
+                          key={valor}
+                          type="button"
+                          disabled={marcando}
+                          onClick={() => void marcarGol(valor)}
+                          className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-500 text-sm font-black text-branco transition-colors hover:bg-emerald-600 disabled:opacity-40"
+                        >
+                          {partida.valores_pontuacao.length > 1
+                            ? `${esporteDaModalidade(tipo).lance} +${valor}`
+                            : `Marcar ${esporteDaModalidade(tipo).lance.toLowerCase()}`}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-center text-sm text-white/60">
+                    No banco não marca {esporteDaModalidade(tipo).lance.toLowerCase()}. Coloque como titular para marcar.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-xs font-semibold text-white/60">Situação no time</p>
+                <p className="h-4 text-[11px] font-bold text-white/45" aria-live="polite">
+                  {salvamento === 'salvando' ? 'Salvando...' : salvamento === 'salvo' ? 'Salvo ✓' : ''}
                 </p>
               </div>
-            </div>
-
-            <div className="space-y-5">
-              <div>
-                <p className="mb-2 text-sm font-semibold text-white/75">Status no time</p>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+                {([
+                  [true, 'Em campo'],
+                  [false, 'No banco'],
+                ] as const).map(([titular, nome]) => (
                   <button
+                    key={nome}
                     type="button"
-                    onClick={() => setMemberForm({ ...memberForm, is_titular: true })}
-                    className={`rounded-2xl border px-4 py-3 text-sm font-bold transition-all ${
-                      memberForm.is_titular
-                        ? 'border-emerald-300/25 bg-emerald-400/10 text-emerald-100'
-                        : 'border-white/10 bg-white/[0.03] text-white/60'
+                    disabled={salvamento === 'salvando'}
+                    onClick={() => {
+                      if (memberForm.is_titular !== titular) void salvarMembro({ ...memberForm, is_titular: titular })
+                    }}
+                    className={`h-10 rounded-xl text-sm font-bold transition-colors ${
+                      memberForm.is_titular === titular
+                        ? 'bg-painel-2 text-white shadow-sm ring-1 ring-white/10'
+                        : 'text-white/50 hover:text-white'
                     }`}
                   >
-                    Titular
+                    {nome}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setMemberForm({ ...memberForm, is_titular: false })}
-                    className={`rounded-2xl border px-4 py-3 text-sm font-bold transition-all ${
-                      !memberForm.is_titular
-                        ? 'border-amber-300/25 bg-amber-400/10 text-amber-100'
-                        : 'border-white/10 bg-white/[0.03] text-white/60'
-                    }`}
-                  >
-                    Reserva
-                  </button>
-                </div>
+                ))}
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-white/75">Posição na escalação</label>
+              {/* Posição só faz sentido para quem está em campo. */}
+              {memberForm.is_titular && (
                 <div className="relative">
                   <select
                     value={memberForm.posicao_escalacao}
-                    onChange={(e) => setMemberForm({ ...memberForm, posicao_escalacao: e.target.value })}
-                    className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 pr-11 text-sm text-white outline-none transition-colors focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20"
+                    disabled={salvamento === 'salvando'}
+                    onChange={(e) => void salvarMembro({ ...memberForm, posicao_escalacao: e.target.value })}
+                    aria-label={`Posição no ${escalacao?.local ?? 'campo'}`}
+                    className="h-11 w-full appearance-none rounded-xl border border-white/10 bg-white/[0.03] px-3 pr-10 text-sm font-semibold text-white outline-none transition-colors focus:border-emerald-400/50"
                   >
                     {editingFormation?.positions.map((slot) => (
-                      <option key={slot.id} value={slot.id}>{slot.label} ({slot.id})</option>
+                      <option key={slot.id} value={slot.id}>Posição: {slot.label}</option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/45" size={18} />
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/45" size={16} />
                 </div>
-              </div>
+              )}
 
-              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={handleRemoveMember}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-100 transition-colors hover:bg-red-500/15"
-                >
-                  <UserMinus size={16} />
-                  Remover
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingMember(null)}
-                  className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-bold text-white/75 transition-colors hover:bg-white/[0.06]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUpdateMember}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-100 transition-colors hover:bg-emerald-400/15"
-                >
-                  <Check size={16} />
-                  Salvar alterações
-                </button>
-              </div>
+              {/* Ação rara e destrutiva: discreta, no fim da janela. */}
+              <button
+                type="button"
+                onClick={() => setConfirmarRemocao(true)}
+                className="mt-1 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-red-400 transition-colors hover:bg-red-500/10"
+              >
+                <UserMinus size={14} />
+                Tirar do time
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmarRemocao && Boolean(editingMember)}
+        title="Tirar do time"
+        description={
+          editingMember
+            ? `${editingMember.member.atleta.apelido || editingMember.member.atleta.nome} sai do ${editingMember.team.nome}. Continua no racha e pode voltar depois.`
+            : ''
+        }
+        confirmLabel="Tirar do time"
+        danger
+        onConfirm={() => void handleRemoveMember()}
+        onCancel={() => setConfirmarRemocao(false)}
+      />
 
       {isAdmin && addingToTeam && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/75 backdrop-blur-sm md:items-center md:p-6">
@@ -675,6 +773,69 @@ export default function TeamLineup() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function SeletorEquipe({
+  rotulo,
+  cor,
+  time,
+  opcoes,
+  formacao,
+  formacoes,
+  titulares,
+  banco,
+  onTime,
+  onFormacao,
+}: {
+  rotulo: string
+  cor: 'emerald' | 'sky'
+  time: Team | null
+  opcoes: Team[]
+  formacao: Formation | null
+  formacoes: Formation[]
+  titulares: number
+  banco: number
+  onTime: (id: number) => void
+  onFormacao: (id: string) => void
+}) {
+  const foco = cor === 'emerald' ? 'focus:border-emerald-400/50' : 'focus:border-sky-400/50'
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <p className={`px-1 text-[10px] font-black uppercase tracking-[0.25em] ${cor === 'emerald' ? 'text-emerald-400' : 'text-sky-400'}`}>
+        {rotulo}
+      </p>
+      <div className="relative">
+        <select
+          value={time?.id || ''}
+          onChange={(e) => onTime(parseInt(e.target.value))}
+          aria-label={`${rotulo}: time`}
+          className={`h-11 w-full appearance-none truncate rounded-xl border border-white/10 bg-painel-2 pl-3 pr-8 text-sm font-bold text-white outline-none ${foco}`}
+        >
+          <option value="">Escolha</option>
+          {opcoes.map((t) => (
+            <option key={t.id} value={t.id}>{t.nome}</option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/45" size={16} />
+      </div>
+      <div className="relative">
+        <select
+          value={formacao?.id || ''}
+          onChange={(e) => onFormacao(e.target.value)}
+          aria-label={`${rotulo}: formação`}
+          className={`h-9 w-full appearance-none truncate rounded-xl border border-white/10 bg-white/[0.03] pl-3 pr-8 text-xs text-white/80 outline-none ${foco}`}
+        >
+          {formacoes.map((f) => (
+            <option key={f.id} value={f.id}>{f.name}</option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/45" size={14} />
+      </div>
+      <p className="px-1 text-[11px] font-semibold text-white/50">
+        {titulares} titulares · {banco} no banco
+      </p>
     </div>
   )
 }
