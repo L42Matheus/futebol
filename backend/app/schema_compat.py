@@ -390,6 +390,22 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         ALTER TABLE jogos
         ADD COLUMN IF NOT EXISTS iniciado_em TIMESTAMPTZ
         """,
+        """
+        ALTER TABLE jogos
+        ADD COLUMN IF NOT EXISTS periodo INTEGER
+        """,
+        """
+        ALTER TABLE jogos
+        ADD COLUMN IF NOT EXISTS pontos_por_set INTEGER
+        """,
+        """
+        ALTER TABLE eventos_partida
+        ADD COLUMN IF NOT EXISTS periodo INTEGER
+        """,
+        """
+        ALTER TABLE eventos_partida
+        ALTER COLUMN atleta_id DROP NOT NULL
+        """,
     ]
 
     try:

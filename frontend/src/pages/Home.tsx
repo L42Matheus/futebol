@@ -11,14 +11,34 @@ import {
   ChevronRight,
   MapPin,
   ChevronDown,
+  Radio,
 } from 'lucide-react'
 import { rachasApi, jogosApi } from '../services/api'
 import { SELECTED_RACHA_KEY } from '../services/convite'
+import EscudoTime from '../components/EscudoTime'
+import { parseDataJogo } from '../utils/dataJogo'
 import { useAuth } from '../context/AuthContext'
 import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
-import type { Racha } from '../types'
+import type { Jogo, Racha, Saldo } from '../types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+
+function tempoDecorrido(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(total / 3600)
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
+  const s = String(total % 60).padStart(2, '0')
+  return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`
+}
+
+// "2º quarto" no basquete e "Sets · 3º set" no vôlei; o futebol não tem partes.
+function nomePeriodoAoVivo(tipo: string, periodo: number) {
+  const { placar } = esporteDaModalidade(tipo)
+  if (placar.tipo === 'pontos') return `Sets · ${periodo}º set`
+  if (!placar.periodo) return null
+  if (periodo > placar.periodo.total) return 'Prorrogação'
+  return `${periodo}º ${placar.periodo.nome}`
+}
 
 // Classes completas para o Tailwind encontrar; a quantidade de cards muda com o esporte.
 const GRID_COLS: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
@@ -27,8 +47,10 @@ export default function Home() {
   const [rachas, setRachas] = useState<Racha[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [nextGame, setNextGame] = useState(null)
-  const [saldo, setSaldo] = useState(null)
+  const [nextGame, setNextGame] = useState<Jogo | null>(null)
+  // Partida ao vivo do racha: quando existe, aparece no lugar do próximo jogo.
+  const [liveGame, setLiveGame] = useState<Jogo | null>(null)
+  const [saldo, setSaldo] = useState<Saldo | null>(null)
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -45,10 +67,13 @@ export default function Home() {
           jogosApi.list(current.id, true),
           rachasApi.getSaldo(current.id)
         ])
-        setNextGame(jogosRes.data?.[0] || null)
+        const lista = jogosRes.data || []
+        setLiveGame(lista.find((jogo) => jogo.iniciado_em && !jogo.finalizado) || null)
+        setNextGame(lista.find((jogo) => !jogo.iniciado_em) || null)
         setSaldo(saldoRes.data || null)
       } catch (e) {
         console.error(e)
+        setLiveGame(null)
         setNextGame(null)
         setSaldo(null)
       }
@@ -56,14 +81,30 @@ export default function Home() {
     loadExtras()
   }, [rachas, selectedIndex])
 
+  // Relógio da partida ao vivo no card da tela inicial.
+  const [agora, setAgora] = useState(Date.now())
+  useEffect(() => {
+    if (!liveGame) return
+    const relogio = window.setInterval(() => setAgora(Date.now()), 1000)
+    return () => window.clearInterval(relogio)
+  }, [liveGame?.id])
 
-function parseDataJogo(dataHora) {
-  const str = String(dataHora)
-  const [datePart, timePart] = str.includes('T') ? str.split('T') : str.split(' ')
-  const [year, month, day] = datePart.split('-').map(Number)
-  const [hour, minute] = (timePart || '12:00').split(':').map(Number)
-  return new Date(year, month - 1, day, hour, minute, 0)
-}
+  // Com partida ao vivo, o placar da tela inicial se atualiza sozinho.
+  useEffect(() => {
+    if (!liveGame) return
+    const intervalo = window.setInterval(async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const res = await jogosApi.get(liveGame.id)
+        setLiveGame(res.data.finalizado ? null : res.data)
+      } catch {
+        // mantém o último placar
+      }
+    }, 15000)
+    return () => window.clearInterval(intervalo)
+  }, [liveGame?.id])
+
+
 
   async function loadRachas() {
     try {
@@ -83,7 +124,7 @@ function parseDataJogo(dataHora) {
     }
   }
 
-  function handleSelectRacha(event) {
+  function handleSelectRacha(event: React.ChangeEvent<HTMLSelectElement>) {
     const rachaId = event.target.value
     const nextIndex = rachas.findIndex((racha) => String(racha.id) === rachaId)
     if (nextIndex < 0) return
@@ -96,6 +137,7 @@ function parseDataJogo(dataHora) {
   // Com um racha aberto vale o papel nele: a mesma conta pode ser admin de um e atleta de outro.
   const isAdmin = currentRacha ? Boolean(currentRacha.is_admin) : user?.role === 'admin'
   const nextGameDate = nextGame ? parseDataJogo(nextGame.data_hora) : null
+  const periodoAoVivo = liveGame && currentRacha ? nomePeriodoAoVivo(currentRacha.tipo, liveGame.periodo ?? 1) : null
   const summaryCards = currentRacha ? [
     {
       label: 'Atletas',
@@ -234,6 +276,49 @@ function parseDataJogo(dataHora) {
             )}
           </div>
 
+          {liveGame ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/racha/${currentRacha.id}/jogo/${liveGame.id}/partida`)}
+              className="tema-escuro w-full overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-sky-900 via-slate-900 to-emerald-800 px-5 py-5 text-center shadow-lg shadow-black/10"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                  Ao vivo
+                </span>
+                <span className="text-sm font-black tabular-nums text-white/80">
+                  {liveGame.iniciado_em ? tempoDecorrido(agora - Date.parse(liveGame.iniciado_em)) : ''}
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <EscudoTime nome={liveGame.time_a_nome || 'Time A'} cor="emerald" />
+                <div className="px-1">
+                  <p className="text-5xl font-black leading-none tabular-nums text-white">
+                    {liveGame.placar_time_a ?? 0}
+                    <span className="mx-2 align-middle text-2xl text-white/40">x</span>
+                    {liveGame.placar_time_b ?? 0}
+                  </p>
+                  {periodoAoVivo && (
+                    <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/70">{periodoAoVivo}</p>
+                  )}
+                </div>
+                <EscudoTime nome={liveGame.time_b_nome || 'Time B'} cor="sky" />
+              </div>
+
+              {/* O card inteiro abre a partida; o rodapé só indica a ação. */}
+              <span className="-mx-5 -mb-5 mt-5 flex items-center justify-between gap-3 border-t border-white/10 bg-white/5 px-5 py-3.5">
+                <span className="inline-flex items-center gap-2 text-sm font-bold text-white">
+                  <Radio size={16} className="text-emerald-300" />
+                  {isAdmin ? 'Controlar partida' : 'Acompanhar lances'}
+                </span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-400 text-slate-900">
+                  <ChevronRight size={18} />
+                </span>
+              </span>
+            </button>
+          ) : (
           <button
             type="button"
             onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}
@@ -269,6 +354,7 @@ function parseDataJogo(dataHora) {
               </div>
             </div>
           </button>
+          )}
 
           <div className="space-y-3">
             <p className="px-1 text-[10px] uppercase font-black text-gray-500 tracking-widest">Ações rápidas</p>

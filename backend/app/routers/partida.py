@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import esporte_do_racha, verificar_acesso_racha, verificar_admin_racha
-from app.esportes import AMARELO, ASSISTENCIA, GOL, SUBSTITUICAO, VERMELHO
+from app.esportes import AMARELO, ASSISTENCIA, GOL, SUBSTITUICAO, VERMELHO, Esporte
 from app.models import (
     Atleta,
     AtletaStat,
@@ -28,6 +28,7 @@ from app.schemas.partida import (
     EventoResponse,
     IniciarPartida,
     MembroPartida,
+    Parcial,
     PartidaResponse,
     TimePartida,
 )
@@ -94,6 +95,28 @@ def _somar_placar(jogo: Jogo, lado: str, delta: int) -> None:
     setattr(jogo, campo, max(0, (getattr(jogo, campo) or 0) + delta))
 
 
+def _periodo(jogo: Jogo) -> int:
+    return jogo.periodo or 1
+
+
+def _parciais(jogo: Jogo) -> list[Parcial]:
+    """Pontos de cada time por quarto ou set, a partir dos lances."""
+    parciais = [Parcial(periodo=p, a=0, b=0) for p in range(1, _periodo(jogo) + 1)]
+    for evento in jogo.eventos:
+        if evento.tipo != GOL:
+            continue
+        indice = min(max((evento.periodo or 1), 1), len(parciais)) - 1
+        if evento.lado == "a":
+            parciais[indice].a += evento.valor
+        else:
+            parciais[indice].b += evento.valor
+    return parciais
+
+
+def _sets_para_vencer(esporte: Esporte) -> int:
+    return esporte.periodos // 2 + 1
+
+
 def _montar_resposta(db: Session, jogo: Jogo, user: User) -> PartidaResponse:
     acesso = verificar_acesso_racha(db, user, jogo.racha_id)
     esporte = esporte_do_racha(db, jogo.racha_id)
@@ -133,6 +156,13 @@ def _montar_resposta(db: Session, jogo: Jogo, user: User) -> PartidaResponse:
         esporte=esporte.id,
         eventos_permitidos=list(esporte.eventos_partida),
         valores_pontuacao=list(esporte.valores_pontuacao),
+        periodo=_periodo(jogo),
+        periodo_nome=esporte.periodo_nome,
+        periodos=esporte.periodos,
+        placar_por_periodo=esporte.placar_por_periodo,
+        ponto_do_time=esporte.ponto_do_time,
+        pontos_por_set=jogo.pontos_por_set,
+        parciais=_parciais(jogo),
         times=times,
         eventos=[EventoResponse.model_validate(e) for e in jogo.eventos],
     )
@@ -171,10 +201,14 @@ def iniciar_partida(
         raise HTTPException(status_code=400, detail="Escolha dois times diferentes")
 
     if not jogo.iniciado_em:
+        esporte = esporte_do_racha(db, jogo.racha_id)
         jogo.iniciado_em = _agora()
         jogo.finalizado = False
+        jogo.periodo = 1
         jogo.placar_time_a = jogo.placar_time_a or 0
         jogo.placar_time_b = jogo.placar_time_b or 0
+        if esporte.placar_por_periodo:
+            jogo.pontos_por_set = payload.pontos_por_set or 25
     db.commit()
     db.refresh(jogo)
     return _montar_resposta(db, jogo, current_user)
@@ -187,6 +221,36 @@ def encerrar_partida(jogo_id: int, db: Session = Depends(get_db), current_user: 
     if not jogo.iniciado_em:
         raise HTTPException(status_code=400, detail="A partida ainda não começou")
     jogo.finalizado = True
+    db.commit()
+    db.refresh(jogo)
+    return _montar_resposta(db, jogo, current_user)
+
+
+@router.post("/{jogo_id}/partida/proximo-periodo", response_model=PartidaResponse)
+def proximo_periodo(jogo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Fecha o quarto (basquete) ou o set (vôlei) em andamento e começa o próximo."""
+    jogo = _carregar_jogo(db, jogo_id)
+    verificar_admin_racha(db, current_user, jogo.racha_id)
+    if not jogo.iniciado_em or jogo.finalizado:
+        raise HTTPException(status_code=400, detail="A partida não está em andamento")
+    esporte = esporte_do_racha(db, jogo.racha_id)
+    if not esporte.periodo_nome:
+        raise HTTPException(status_code=400, detail=f"O {esporte.nome.lower()} não é jogado em partes")
+
+    if esporte.placar_por_periodo:
+        atual = _parciais(jogo)[-1]
+        if atual.a == atual.b:
+            raise HTTPException(status_code=400, detail="O set está empatado")
+        vencedor = "a" if atual.a > atual.b else "b"
+        _somar_placar(jogo, vencedor, 1)
+        sets = jogo.placar_time_a if vencedor == "a" else jogo.placar_time_b
+        if sets >= _sets_para_vencer(esporte):
+            jogo.finalizado = True
+            db.commit()
+            db.refresh(jogo)
+            return _montar_resposta(db, jogo, current_user)
+
+    jogo.periodo = _periodo(jogo) + 1
     db.commit()
     db.refresh(jogo)
     return _montar_resposta(db, jogo, current_user)
@@ -210,9 +274,15 @@ def registrar_evento(
     if payload.tipo not in esporte.eventos_partida:
         raise HTTPException(status_code=400, detail=f"Lance não disponível no {esporte.nome.lower()}")
 
-    lado, membro = _lado_do_atleta(db, jogo, payload.atleta_id)
-    if payload.tipo in (GOL, ASSISTENCIA) and not membro.is_titular:
-        raise HTTPException(status_code=400, detail="Quem está no banco não marca nem dá assistência. Coloque o atleta em jogo primeiro.")
+    if payload.atleta_id is None:
+        # Ponto do time sem atleta: no vôlei, quando o adversário erra.
+        if payload.tipo != GOL or not esporte.ponto_do_time or not payload.lado:
+            raise HTTPException(status_code=400, detail="Escolha o atleta do lance")
+        lado, membro = payload.lado, None
+    else:
+        lado, membro = _lado_do_atleta(db, jogo, payload.atleta_id)
+        if payload.tipo in (GOL, ASSISTENCIA) and not membro.is_titular:
+            raise HTTPException(status_code=400, detail="Quem está no banco não marca nem dá assistência. Coloque o atleta em jogo primeiro.")
     valor = 1
     evento = EventoPartida(
         jogo_id=jogo.id,
@@ -220,14 +290,18 @@ def registrar_evento(
         tipo=payload.tipo,
         atleta_id=payload.atleta_id,
         segundos=int((_agora() - jogo.iniciado_em).total_seconds()),
+        periodo=_periodo(jogo),
     )
 
     if payload.tipo == GOL:
         if payload.valor not in esporte.valores_pontuacao:
             raise HTTPException(status_code=400, detail="Valor de pontuação inválido para este esporte")
         valor = payload.valor
-        _somar_placar(jogo, lado, valor)
-        _stat(db, payload.atleta_id, jogo.racha_id).gols += 1
+        # No vôlei o placar do jogo é de sets; os pontos ficam nas parciais.
+        if not esporte.placar_por_periodo:
+            _somar_placar(jogo, lado, valor)
+        if payload.atleta_id:
+            _stat(db, payload.atleta_id, jogo.racha_id).gols += 1
     elif payload.tipo == ASSISTENCIA:
         _stat(db, payload.atleta_id, jogo.racha_id).assistencias += 1
     elif payload.tipo in CARTAO_POR_EVENTO:
@@ -282,10 +356,16 @@ def desfazer_evento(
     if not evento:
         raise HTTPException(status_code=404, detail="Lance não encontrado")
 
+    esporte = esporte_do_racha(db, jogo.racha_id)
+    if esporte.placar_por_periodo and (evento.periodo or 1) < _periodo(jogo):
+        raise HTTPException(status_code=400, detail="Esse lance é de um set já encerrado")
+
     if evento.tipo == GOL:
-        _somar_placar(jogo, evento.lado, -evento.valor)
-        stat = _stat(db, evento.atleta_id, jogo.racha_id)
-        stat.gols = max(0, (stat.gols or 0) - 1)
+        if not esporte.placar_por_periodo:
+            _somar_placar(jogo, evento.lado, -evento.valor)
+        if evento.atleta_id:
+            stat = _stat(db, evento.atleta_id, jogo.racha_id)
+            stat.gols = max(0, (stat.gols or 0) - 1)
     elif evento.tipo == ASSISTENCIA:
         stat = _stat(db, evento.atleta_id, jogo.racha_id)
         stat.assistencias = max(0, (stat.assistencias or 0) - 1)

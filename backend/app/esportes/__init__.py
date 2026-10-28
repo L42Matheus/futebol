@@ -5,7 +5,7 @@ Os enums do banco (modalidades e posições) são gerados a partir daqui.
 """
 
 from app.esportes.base import (
-    AMARELO, ARTILHARIA, ASSISTENCIA, CARTOES, ESCALACAO, GOL, SUBSTITUICAO, VERMELHO, Esporte, Modalidade,
+    AMARELO, ARTILHARIA, ASSISTENCIA, CARTOES, ESCALACAO, FALTA, GOL, SUBSTITUICAO, VERMELHO, Esporte, Modalidade,
 )
 from app.esportes.basquete import BASQUETE
 from app.esportes.futebol import FUTEBOL
@@ -47,6 +47,7 @@ __all__ = [
     "CARTOES",
     "ESCALACAO",
     "ESPORTES",
+    "FALTA",
     "GOL",
     "SUBSTITUICAO",
     "VERMELHO",

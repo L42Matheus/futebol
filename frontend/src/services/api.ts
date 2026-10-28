@@ -155,10 +155,13 @@ export const partidaApi = {
   get: (jogoId: number | string): Promise<AxiosResponse<Partida>> => api.get(`/jogos/${jogoId}/partida`),
   iniciar: (
     jogoId: number | string,
-    times: { time_a_id?: number; time_b_id?: number },
+    times: { time_a_id?: number; time_b_id?: number; pontos_por_set?: number },
   ): Promise<AxiosResponse<Partida>> => api.post(`/jogos/${jogoId}/partida/iniciar`, times),
   encerrar: (jogoId: number | string): Promise<AxiosResponse<Partida>> =>
     api.post(`/jogos/${jogoId}/partida/encerrar`),
+  // Fecha o quarto (basquete) ou o set (vôlei) e começa o próximo.
+  proximoPeriodo: (jogoId: number | string): Promise<AxiosResponse<Partida>> =>
+    api.post(`/jogos/${jogoId}/partida/proximo-periodo`),
   registrar: (jogoId: number | string, lance: NovoLance): Promise<AxiosResponse<Partida>> =>
     api.post(`/jogos/${jogoId}/partida/eventos`, lance),
   desfazer: (jogoId: number | string, eventoId: number): Promise<AxiosResponse<Partida>> =>

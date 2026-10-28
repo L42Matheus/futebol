@@ -26,6 +26,8 @@ export interface Racha {
   max_atletas: number
   escalacao_size?: number | null
   valor_mensalidade?: number
+  // Se quem está logado é admin deste racha.
+  is_admin?: boolean
 }
 
 export interface Atleta {
@@ -56,6 +58,8 @@ export interface Jogo {
   vencedor?: 'time_a' | 'time_b' | 'empate' | null
   finalizado?: boolean
   iniciado_em?: string | null
+  // Quarto ou set em andamento na partida ao vivo.
+  periodo?: number | null
   status?: string
 }
 
@@ -88,6 +92,9 @@ export interface Profile {
   foto_url?: string
   email: string
   telefone?: string
+  posicao?: string | null
+  perna_boa?: string | null
+  numero_camisa?: number | null
 }
 
 export interface AtletaHistorico {
@@ -148,23 +155,28 @@ export interface InviteToken {
 }
 
 // Partida ao vivo (GET /jogos/:id/partida).
-export type TipoLance = 'gol' | 'assistencia' | 'amarelo' | 'vermelho' | 'substituicao'
+export type TipoLance = 'gol' | 'assistencia' | 'amarelo' | 'vermelho' | 'falta' | 'substituicao'
 
 export interface Lance {
   id: number
   lado: 'a' | 'b'
   tipo: TipoLance
-  atleta_id: number
+  // Vazio no ponto do time do vôlei (erro do adversário).
+  atleta_id?: number | null
   // Na substituição, atleta_id entrou e atleta_sai_id saiu.
   atleta_sai_id?: number | null
   valor: number
   segundos?: number | null
+  // Quarto ou set do lance.
+  periodo?: number | null
   created_at?: string
 }
 
 export interface NovoLance {
   tipo: TipoLance
-  atleta_id: number
+  atleta_id?: number
+  // Só no ponto do time, sem atleta.
+  lado?: 'a' | 'b'
   atleta_sai_id?: number
   valor?: number
 }
@@ -200,6 +212,15 @@ export interface Partida {
   esporte: 'futebol' | 'basquete' | 'volei'
   eventos_permitidos: TipoLance[]
   valores_pontuacao: number[]
+  // Quarto (basquete) ou set (vôlei) em andamento; 1 no futebol.
+  periodo: number
+  periodo_nome?: 'quarto' | 'set' | null
+  periodos: number
+  // Vôlei: o placar dos times é de sets, e os pontos ficam nas parciais.
+  placar_por_periodo: boolean
+  ponto_do_time: boolean
+  pontos_por_set?: number | null
+  parciais: { periodo: number; a: number; b: number }[]
   times: TimePartida[]
   eventos: Lance[]
 }

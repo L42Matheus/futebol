@@ -1,19 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Check, X, Clock, Trash2, Save, Trophy, Radio, ChevronRight } from 'lucide-react'
+import { Check, X, Clock, Trash2, Save, Trophy, Radio, ChevronDown, MapPin, Play } from 'lucide-react'
 import { jogosApi, presencasApi, rachasApi, teamsApi } from '../services/api'
 import { useToast } from '../context/ToastContext'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { esporteDaModalidade } from '../esportes'
+import { parseDataJogo } from '../utils/dataJogo'
 import type { Jogo, JogoLista } from '../types'
 
-// data_hora vem sem fuso, no horário do racha: monta a data local sem converter.
-function parseGameDate(dataHora: string) {
-  const [datePart, timePart] = String(dataHora).split('T')
-  const [year, month, day] = datePart.split('-').map(Number)
-  const [hour, minute] = (timePart || '12:00').split(':').map(Number)
-  return new Date(year, month - 1, day, hour, minute, 0)
+
+function primeiraMaiuscula(texto: string) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
 export default function JogoDetail() {
@@ -40,6 +39,8 @@ export default function JogoDetail() {
   const { toast } = useToast()
   // Admin deste racha: a conta pode ser admin de um racha e atleta de outro.
   const [isAdmin, setIsAdmin] = useState(false)
+  const [tipoRacha, setTipoRacha] = useState<string | null>(null)
+  const [placarManual, setPlacarManual] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!jogoId) return
@@ -66,7 +67,10 @@ export default function JogoDetail() {
       setLista(listaRes.data as typeof lista)
       rachasApi
         .get(jogoRes.data.racha_id)
-        .then((res) => setIsAdmin(Boolean(res.data.is_admin)))
+        .then((res) => {
+          setIsAdmin(Boolean(res.data.is_admin))
+          setTipoRacha(res.data.tipo)
+        })
         .catch(() => setIsAdmin(false))
 
       // Carrega times do racha (best-effort — se falhar, mantém só os inputs livres)
@@ -114,6 +118,11 @@ export default function JogoDetail() {
   async function handleSaveScore(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!jogoId || !jogo) return
+
+    if (teams.length > 0 && (scoreForm.time_a_id === '' || scoreForm.time_b_id === '')) {
+      toast('Escolha os dois times.', 'error')
+      return
+    }
 
     if (scoreForm.placar_time_a === '' || scoreForm.placar_time_b === '') {
       toast('Informe o placar dos dois times.', 'error')
@@ -165,183 +174,210 @@ export default function JogoDetail() {
   const winnerLabel = hasScore
     ? jogo.placar_time_a === jogo.placar_time_b
       ? 'Empate'
-      : jogo.placar_time_a > jogo.placar_time_b
+      : (jogo.placar_time_a ?? 0) > (jogo.placar_time_b ?? 0)
         ? jogo.time_a_nome || 'Time A'
         : jogo.time_b_nome || 'Time B'
     : 'Aguardando resultado'
 
+  const aoVivo = Boolean(jogo.iniciado_em) && !jogo.finalizado
+  const nomeA = jogo.time_a_nome || 'Time A'
+  const nomeB = jogo.time_b_nome || 'Time B'
+  const statusLabel = aoVivo ? 'Ao vivo' : jogo.finalizado || hasScore ? 'Encerrado' : 'Ainda não começou'
+  const emSets = esporteDaModalidade(tipoRacha).placar.tipo === 'pontos'
+
   return (
-    <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-white">
-            {format(parseGameDate(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR })}
+    <div className="space-y-5 pb-20">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-black text-white">
+            {primeiraMaiuscula(format(parseDataJogo(jogo.data_hora), "EEEE, d 'de' MMMM", { locale: ptBR }))}
           </h1>
-          <p className="text-gray-400">
-            {format(parseGameDate(jogo.data_hora), 'HH:mm')} - {jogo.local ?? 'Local não definido'}
-          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+            <span className="inline-flex items-center gap-1.5">
+              <Clock size={15} /> {format(parseDataJogo(jogo.data_hora), 'HH:mm')}
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <MapPin size={15} /> <span className="truncate">{jogo.local || 'Local não definido'}</span>
+            </span>
+          </div>
         </div>
         {isAdmin && (
           <button
             onClick={() => setConfirmDelete(true)}
-            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="rounded-xl p-2 text-red-500 transition-colors hover:bg-red-500/10"
             title="Excluir jogo"
+            aria-label="Excluir jogo"
           >
             <Trash2 size={18} />
           </button>
         )}
       </div>
 
-      {(isAdmin || jogo.iniciado_em) && (
-        <button
-          type="button"
-          onClick={() => navigate(`/racha/${jogo.racha_id}/jogo/${jogo.id}/partida`)}
-          className="flex w-full items-center gap-3 rounded-[1.5rem] border border-emerald-500/30 bg-emerald-500/10 p-4 text-left transition-colors hover:border-emerald-500/50"
+      <section className="tema-escuro overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-sky-900 via-slate-900 to-emerald-800 px-5 py-5 text-center shadow-xl shadow-black/20">
+        <span
+          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] ${
+            aoVivo ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/10 text-white/70'
+          }`}
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-branco">
-            <Radio size={20} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-black text-white">
-              {!jogo.iniciado_em ? 'Iniciar partida ao vivo' : jogo.finalizado ? 'Ver lances da partida' : 'Partida ao vivo'}
-            </span>
-            <span className="block text-sm text-gray-400">
-              {!jogo.iniciado_em
-                ? 'Marque gols, assistências, cartões e substituições durante o jogo.'
-                : jogo.finalizado
-                  ? 'Veja quem marcou e os cartões do jogo.'
-                  : 'Acompanhe o placar e os lances em tempo real.'}
-            </span>
-          </span>
-          <ChevronRight size={20} className="shrink-0 text-gray-400" />
-        </button>
-      )}
+          {aoVivo && <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />}
+          {statusLabel}
+        </span>
 
-      <div className="card space-y-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <p className="truncate text-right text-sm font-black uppercase tracking-wide text-white">{nomeA}</p>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
-              Resultado
+            <p className="text-4xl font-black leading-none tabular-nums text-white">
+              {hasScore || aoVivo ? jogo.placar_time_a ?? 0 : '-'}
+              <span className="mx-2 align-middle text-xl text-white/40">x</span>
+              {hasScore || aoVivo ? jogo.placar_time_b ?? 0 : '-'}
             </p>
-            <h2 className="text-lg font-bold text-white">Placar da partida</h2>
+            {emSets && (hasScore || aoVivo) && (
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/60">sets</p>
+            )}
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full border border-gray-700 px-3 py-1 text-xs font-semibold text-gray-300">
-            <Trophy size={14} className={hasScore ? 'text-amber-400' : 'text-gray-500'} />
-            {winnerLabel}
-          </span>
+          <p className="truncate text-left text-sm font-black uppercase tracking-wide text-white">{nomeB}</p>
         </div>
 
-        {isAdmin ? (
-          <form onSubmit={handleSaveScore} className="space-y-4">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
-              <label className="space-y-2">
-                <span className="text-xs font-semibold text-gray-400">Time A</span>
-                {teams.length > 0 ? (
-                  <select
-                    value={scoreForm.time_a_id}
-                    onChange={(e) => {
-                      const id = e.target.value
-                      const team = teams.find((t) => String(t.id) === id)
-                      setScoreForm((current) => ({
-                        ...current,
-                        time_a_id: id === '' ? '' : Number(id),
-                        time_a_nome: team ? team.nome : current.time_a_nome,
-                      }))
-                    }}
-                    className="input"
-                  >
-                    <option value="">— Digitar manualmente —</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.nome}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-                {scoreForm.time_a_id === '' && (
-                  <input
-                    value={scoreForm.time_a_nome}
-                    onChange={(e) => setScoreForm((current) => ({ ...current, time_a_nome: e.target.value }))}
-                    className="input"
-                    placeholder="Ex: Verde"
-                  />
-                )}
-              </label>
-              <span className="pb-3 text-lg font-bold text-gray-500">x</span>
-              <label className="space-y-2">
-                <span className="text-xs font-semibold text-gray-400">Time B</span>
-                {teams.length > 0 ? (
-                  <select
-                    value={scoreForm.time_b_id}
-                    onChange={(e) => {
-                      const id = e.target.value
-                      const team = teams.find((t) => String(t.id) === id)
-                      setScoreForm((current) => ({
-                        ...current,
-                        time_b_id: id === '' ? '' : Number(id),
-                        time_b_nome: team ? team.nome : current.time_b_nome,
-                      }))
-                    }}
-                    className="input"
-                  >
-                    <option value="">— Digitar manualmente —</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.nome}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-                {scoreForm.time_b_id === '' && (
-                  <input
-                    value={scoreForm.time_b_nome}
-                    onChange={(e) => setScoreForm((current) => ({ ...current, time_b_nome: e.target.value }))}
-                    className="input"
-                    placeholder="Ex: Azul"
-                  />
-                )}
-              </label>
-            </div>
-
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-              <input
-                type="number"
-                min="0"
-                value={scoreForm.placar_time_a}
-                onChange={(e) => setScoreForm((current) => ({ ...current, placar_time_a: e.target.value }))}
-                className="input text-center text-2xl font-bold"
-                placeholder="0"
-              />
-              <span className="text-2xl font-bold text-gray-500">x</span>
-              <input
-                type="number"
-                min="0"
-                value={scoreForm.placar_time_b}
-                onChange={(e) => setScoreForm((current) => ({ ...current, placar_time_b: e.target.value }))}
-                className="input text-center text-2xl font-bold"
-                placeholder="0"
-              />
-            </div>
-
-            <button type="submit" disabled={savingScore} className="btn-primary w-full">
-              <Save size={18} />
-              {savingScore ? 'Salvando...' : 'Salvar placar'}
-            </button>
-          </form>
-        ) : (
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
-            <div>
-              <p className="text-sm text-gray-400">{jogo.time_a_nome || 'Time A'}</p>
-              <p className="text-3xl font-bold text-white">{hasScore ? jogo.placar_time_a : '-'}</p>
-            </div>
-            <span className="text-2xl font-bold text-gray-500">x</span>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">{jogo.time_b_nome || 'Time B'}</p>
-              <p className="text-3xl font-bold text-white">{hasScore ? jogo.placar_time_b : '-'}</p>
-            </div>
-          </div>
+        {hasScore && !aoVivo && (
+          <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-white/80">
+            <Trophy size={15} className="text-amber-300" />
+            {winnerLabel === 'Empate' ? 'Empate' : `Vitória do ${winnerLabel}`}
+          </p>
         )}
-      </div>
+
+        {(isAdmin || jogo.iniciado_em) ? (
+          <button
+            type="button"
+            onClick={() => navigate(`/racha/${jogo.racha_id}/jogo/${jogo.id}/partida`)}
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-slate-900 transition-colors hover:bg-white/90"
+          >
+            {!jogo.iniciado_em ? <Play size={17} /> : <Radio size={17} />}
+            {!jogo.iniciado_em
+              ? 'Iniciar partida ao vivo'
+              : aoVivo
+                ? isAdmin ? 'Abrir partida ao vivo' : 'Acompanhar ao vivo'
+                : 'Ver lances da partida'}
+          </button>
+        ) : (
+          <p className="mt-4 text-xs font-medium text-white/60">O placar aparece aqui quando a partida começar.</p>
+        )}
+      </section>
+
+      {isAdmin && !jogo.iniciado_em && (
+        <div className="card">
+          <button
+            type="button"
+            onClick={() => setPlacarManual((aberto) => !aberto)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
+            <span>
+              <span className="block text-sm font-black text-white">Lançar só o placar</span>
+              <span className="block text-xs text-gray-500">Para quando o jogo não foi acompanhado ao vivo.</span>
+            </span>
+            <ChevronDown size={18} className={`shrink-0 text-gray-400 transition-transform ${placarManual ? 'rotate-180' : ''}`} />
+          </button>
+          {placarManual && (
+            <div className="mt-4 border-t border-gray-800 pt-4">
+              <form onSubmit={handleSaveScore} className="space-y-4">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+                  <label className="space-y-2">
+                    <span className="text-xs font-semibold text-gray-400">Time A</span>
+                    {teams.length > 0 ? (
+                      <select
+                        value={scoreForm.time_a_id}
+                        onChange={(e) => {
+                          const id = e.target.value
+                          const team = teams.find((t) => String(t.id) === id)
+                          setScoreForm((current) => ({
+                            ...current,
+                            time_a_id: id === '' ? '' : Number(id),
+                            time_a_nome: team ? team.nome : current.time_a_nome,
+                          }))
+                        }}
+                        className="input"
+                      >
+                        <option value="">Escolha o time</option>
+                        {teams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.nome}
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}
+                    {teams.length === 0 && (
+                      <input
+                        value={scoreForm.time_a_nome}
+                        onChange={(e) => setScoreForm((current) => ({ ...current, time_a_nome: e.target.value }))}
+                        className="input"
+                        placeholder="Ex: Verde"
+                      />
+                    )}
+                  </label>
+                  <span className="pb-3 text-lg font-bold text-gray-500">x</span>
+                  <label className="space-y-2">
+                    <span className="text-xs font-semibold text-gray-400">Time B</span>
+                    {teams.length > 0 ? (
+                      <select
+                        value={scoreForm.time_b_id}
+                        onChange={(e) => {
+                          const id = e.target.value
+                          const team = teams.find((t) => String(t.id) === id)
+                          setScoreForm((current) => ({
+                            ...current,
+                            time_b_id: id === '' ? '' : Number(id),
+                            time_b_nome: team ? team.nome : current.time_b_nome,
+                          }))
+                        }}
+                        className="input"
+                      >
+                        <option value="">Escolha o time</option>
+                        {teams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.nome}
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}
+                    {teams.length === 0 && (
+                      <input
+                        value={scoreForm.time_b_nome}
+                        onChange={(e) => setScoreForm((current) => ({ ...current, time_b_nome: e.target.value }))}
+                        className="input"
+                        placeholder="Ex: Azul"
+                      />
+                    )}
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                  <input
+                    type="number"
+                    min="0"
+                    value={scoreForm.placar_time_a}
+                    onChange={(e) => setScoreForm((current) => ({ ...current, placar_time_a: e.target.value }))}
+                    className="input text-center text-2xl font-bold"
+                    placeholder="0"
+                  />
+                  <span className="text-2xl font-bold text-gray-500">x</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={scoreForm.placar_time_b}
+                    onChange={(e) => setScoreForm((current) => ({ ...current, placar_time_b: e.target.value }))}
+                    className="input text-center text-2xl font-bold"
+                    placeholder="0"
+                  />
+                </div>
+
+                <button type="submit" disabled={savingScore} className="btn-primary flex w-full items-center justify-center gap-2">
+                  <Save size={18} />
+                  {savingScore ? 'Salvando...' : 'Salvar placar'}
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center py-3">

@@ -8,11 +8,15 @@ class IniciarPartida(BaseModel):
     # Opcionais quando o jogo já tem os dois times definidos.
     time_a_id: Optional[int] = None
     time_b_id: Optional[int] = None
+    # Vôlei: até quantos pontos vai cada set.
+    pontos_por_set: Optional[int] = Field(None, ge=5, le=50)
 
 
 class EventoCreate(BaseModel):
     tipo: str = Field(..., max_length=20)
-    atleta_id: int
+    # Sem atleta só no ponto do time do vôlei; aí o lado diz de quem é o ponto.
+    atleta_id: Optional[int] = None
+    lado: Optional[str] = Field(None, pattern="^[ab]$")
     # Só na substituição: quem sai (atleta_id é quem entra).
     atleta_sai_id: Optional[int] = None
     valor: int = Field(1, ge=1, le=3)
@@ -22,10 +26,11 @@ class EventoResponse(BaseModel):
     id: int
     lado: str
     tipo: str
-    atleta_id: int
+    atleta_id: Optional[int] = None
     atleta_sai_id: Optional[int] = None
     valor: int
     segundos: Optional[int] = None
+    periodo: Optional[int] = None
     created_at: Optional[datetime] = None
 
     class Config:
@@ -51,6 +56,13 @@ class TimePartida(BaseModel):
     membros: list[MembroPartida]
 
 
+class Parcial(BaseModel):
+    """Pontos de cada time em um quarto ou set."""
+    periodo: int
+    a: int
+    b: int
+
+
 class PartidaResponse(BaseModel):
     jogo_id: int
     racha_id: int
@@ -63,5 +75,12 @@ class PartidaResponse(BaseModel):
     esporte: str
     eventos_permitidos: list[str]
     valores_pontuacao: list[int]
+    periodo: int
+    periodo_nome: Optional[str] = None
+    periodos: int
+    placar_por_periodo: bool
+    ponto_do_time: bool
+    pontos_por_set: Optional[int] = None
+    parciais: list[Parcial]
     times: list[TimePartida]
     eventos: list[EventoResponse]
