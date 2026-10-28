@@ -24,6 +24,10 @@ class Jogo(Base):
     placar_time_b = Column(Integer, nullable=True)
     # Preenchido quando o admin inicia a partida ao vivo.
     iniciado_em = Column(DateTime(timezone=True), nullable=True)
+    # Quarto ou set em andamento na partida ao vivo.
+    periodo = Column(Integer, nullable=True)
+    # Vôlei: até quantos pontos vai cada set.
+    pontos_por_set = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=False), server_default=func.now())  
     updated_at = Column(DateTime(timezone=False), onupdate=func.now())  
 

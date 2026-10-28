@@ -11,4 +11,8 @@ VOLEI = Esporte(
     posicao_padrao="ponteiro",
     recursos=frozenset({ESCALACAO}),
     eventos_partida=(GOL, SUBSTITUICAO),
+    periodo_nome="set",
+    periodos=5,
+    placar_por_periodo=True,
+    ponto_do_time=True,
 )

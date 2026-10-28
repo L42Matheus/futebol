@@ -10,6 +10,7 @@ ASSISTENCIA = "assistencia"
 AMARELO = "amarelo"
 VERMELHO = "vermelho"
 SUBSTITUICAO = "substituicao"
+FALTA = "falta"
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,13 @@ class Esporte:
     eventos_partida: tuple[str, ...]
     # Quanto um GOL pode valer no placar (a cesta do basquete vale 1, 2 ou 3).
     valores_pontuacao: tuple[int, ...] = (1,)
+    # Partes da partida ao vivo (quartos no basquete, sets no vôlei). None = jogo corrido.
+    periodo_nome: str | None = None
+    periodos: int = 1
+    # Vôlei: o placar do jogo é de sets; os pontos valem dentro de cada set.
+    placar_por_periodo: bool = False
+    # Vôlei: ponto do time sem atleta (erro do adversário).
+    ponto_do_time: bool = False
 
     def tem(self, recurso: str) -> bool:
         return recurso in self.recursos
