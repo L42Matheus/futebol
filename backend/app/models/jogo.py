@@ -22,9 +22,12 @@ class Jogo(Base):
     time_b_nome = Column(String(80), nullable=True)
     placar_time_a = Column(Integer, nullable=True)
     placar_time_b = Column(Integer, nullable=True)
+    # Preenchido quando o admin inicia a partida ao vivo.
+    iniciado_em = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=False), server_default=func.now())  
     updated_at = Column(DateTime(timezone=False), onupdate=func.now())  
 
     racha = relationship("Racha", back_populates="jogos")
     presencas = relationship("Presenca", back_populates="jogo", cascade="all, delete-orphan")
     cartoes = relationship("Cartao", back_populates="jogo", cascade="all, delete-orphan")
+    eventos = relationship("EventoPartida", back_populates="jogo", cascade="all, delete-orphan", order_by="EventoPartida.id")

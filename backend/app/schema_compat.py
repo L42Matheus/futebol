@@ -386,6 +386,10 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         """
         CREATE INDEX IF NOT EXISTS ix_teams_temporada_id ON teams (temporada_id)
         """,
+        """
+        ALTER TABLE jogos
+        ADD COLUMN IF NOT EXISTS iniciado_em TIMESTAMPTZ
+        """,
     ]
 
     try:

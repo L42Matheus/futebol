@@ -4,7 +4,9 @@ Para adicionar um esporte: crie um módulo nesta pasta e inclua-o em ESPORTES.
 Os enums do banco (modalidades e posições) são gerados a partir daqui.
 """
 
-from app.esportes.base import ARTILHARIA, CARTOES, ESCALACAO, Esporte, Modalidade
+from app.esportes.base import (
+    AMARELO, ARTILHARIA, ASSISTENCIA, CARTOES, ESCALACAO, GOL, SUBSTITUICAO, VERMELHO, Esporte, Modalidade,
+)
 from app.esportes.basquete import BASQUETE
 from app.esportes.futebol import FUTEBOL
 from app.esportes.volei import VOLEI
@@ -39,10 +41,15 @@ def modalidade_existe(tipo) -> bool:
 
 
 __all__ = [
+    "AMARELO",
     "ARTILHARIA",
+    "ASSISTENCIA",
     "CARTOES",
     "ESCALACAO",
     "ESPORTES",
+    "GOL",
+    "SUBSTITUICAO",
+    "VERMELHO",
     "Esporte",
     "MODALIDADE_PADRAO",
     "Modalidade",
