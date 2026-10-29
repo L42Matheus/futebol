@@ -13,7 +13,7 @@ import {
   ChevronDown,
   Radio,
 } from 'lucide-react'
-import { rachasApi, jogosApi } from '../services/api'
+import { rachasApi, jogosApi, rankingApi } from '../services/api'
 import { SELECTED_RACHA_KEY } from '../services/convite'
 import EscudoTime from '../components/EscudoTime'
 import { parseDataJogo } from '../utils/dataJogo'
@@ -50,6 +50,8 @@ export default function Home() {
   const [nextGame, setNextGame] = useState<Jogo | null>(null)
   // Partida ao vivo do racha: quando existe, aparece no lugar do próximo jogo.
   const [liveGame, setLiveGame] = useState<Jogo | null>(null)
+  // Líder da categoria principal do ranking (gols, pontos...), para o card do resumo.
+  const [lider, setLider] = useState<{ nome: string; valor: string; categoria: string } | null>(null)
   const [saldo, setSaldo] = useState<Saldo | null>(null)
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -76,6 +78,19 @@ export default function Home() {
         setLiveGame(null)
         setNextGame(null)
         setSaldo(null)
+      }
+      try {
+        const { data } = await rankingApi.get(current.id)
+        const principal = data.categorias[0]
+        const melhor = [...data.atletas].sort((a, b) => (b.valores[principal.id] ?? 0) - (a.valores[principal.id] ?? 0))[0]
+        const valor = melhor?.valores[principal.id] ?? 0
+        setLider(
+          melhor && valor > 0
+            ? { nome: melhor.apelido || melhor.nome.split(' ')[0], valor: `${valor} ${principal.nome.toLowerCase()}`, categoria: principal.nome }
+            : { nome: '', valor: '', categoria: principal.nome },
+        )
+      } catch {
+        setLider(null)
       }
     }
     loadExtras()
@@ -161,16 +176,15 @@ export default function Home() {
     },
     {
       label: 'Ranking',
-      value: 'Ver',
-      hint: 'Gols e assist.',
+      value: lider?.nome || 'Ver',
+      hint: lider?.valor || (lider ? `${lider.categoria} e mais` : 'Ver ranking'),
       icon: <Trophy size={20} />,
       color: 'text-yellow-400',
       bg: 'bg-yellow-500/10',
-      path: '/artilharia',
+      path: `/racha/${currentRacha.id}/ranking`,
       disabled: false,
-      recurso: 'artilharia' as const,
     },
-  ].filter((card) => !card.recurso || temRecurso(currentRacha.tipo, card.recurso)) : []
+  ] : []
   const quickActions = currentRacha ? [
     {
       label: isAdmin ? 'Novo jogo' : 'Jogos',

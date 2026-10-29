@@ -6,6 +6,7 @@ import Tempo from './pages/Tempo'
 import RachaDetail from './pages/RachaDetail'
 import JogoDetail from './pages/JogoDetail'
 import PartidaAoVivo from './pages/PartidaAoVivo'
+import Ranking from './pages/Ranking'
 import Atletas from './pages/Atletas'
 import Financeiro from './pages/Financeiro'
 import FinanceiroHub from './pages/FinanceiroHub'
@@ -59,6 +60,7 @@ export default function AppRoutes() {
             <Route path="racha/:rachaId/times" element={<Times />} />
             <Route path="racha/:rachaId/temporadas" element={<Temporadas />} />
             <Route path="racha/:rachaId/escalacao" element={<TeamLineup />} />
+            <Route path="racha/:rachaId/ranking" element={<Ranking />} />
             <Route path="racha/:rachaId/jogos" element={<Jogos />} />
             <Route path="racha/:rachaId/novo-jogo" element={<NovoJogo />} />
             <Route path="racha/:rachaId/jogo/:jogoId" element={<JogoDetail />} />

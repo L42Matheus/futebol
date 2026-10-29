@@ -6,7 +6,7 @@ import os
 
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams, profile, artilharia, temporadas, assinaturas, partida, suporte
+from app.routers import rachas, atletas, jogos, presencas, pagamentos, auth, teams, profile, artilharia, temporadas, assinaturas, partida, suporte, ranking
 from app.schema_compat import ensure_schema_compatibility
 
 logging.basicConfig(
@@ -50,6 +50,7 @@ app.include_router(atletas.router, prefix="/api/v1")
 app.include_router(jogos.router, prefix="/api/v1")
 app.include_router(partida.router, prefix="/api/v1")
 app.include_router(suporte.router, prefix="/api/v1")
+app.include_router(ranking.router, prefix="/api/v1")
 app.include_router(presencas.router, prefix="/api/v1")
 app.include_router(pagamentos.router, prefix="/api/v1")
 app.include_router(artilharia.router, prefix="/api/v1")

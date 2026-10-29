@@ -14,6 +14,7 @@ from app.models import (
     Cartao,
     EventoPartida,
     Jogo,
+    ParticipantePartida,
     Pagamento,
     Racha,
     StatusPagamento,
@@ -79,6 +80,19 @@ def _lado_do_atleta(db: Session, jogo: Jogo, atleta_id: int) -> tuple[str, TeamM
         if membro:
             return lado, membro
     raise HTTPException(status_code=400, detail="O atleta não está em nenhum dos dois times da partida")
+
+
+def _garantir_participante(db: Session, jogo: Jogo, atleta_id: int | None, lado: str) -> None:
+    """Anota que o atleta jogou a partida (conta para jogos, vitórias e aproveitamento)."""
+    if not atleta_id:
+        return
+    existe = db.query(ParticipantePartida).filter(
+        ParticipantePartida.jogo_id == jogo.id, ParticipantePartida.atleta_id == atleta_id
+    ).first()
+    if not existe:
+        db.add(ParticipantePartida(jogo_id=jogo.id, atleta_id=atleta_id, lado=lado))
+        # A sessão não faz autoflush: grava já para a próxima checagem enxergar este registro.
+        db.flush()
 
 
 def _stat(db: Session, atleta_id: int, racha_id: int) -> AtletaStat:
@@ -209,6 +223,9 @@ def iniciar_partida(
         jogo.placar_time_b = jogo.placar_time_b or 0
         if esporte.placar_por_periodo:
             jogo.pontos_por_set = payload.pontos_por_set or 25
+        for lado, team_id in (("a", jogo.time_a_id), ("b", jogo.time_b_id)):
+            for membro, _atleta in _membros(db, team_id):
+                _garantir_participante(db, jogo, membro.atleta_id, lado)
     db.commit()
     db.refresh(jogo)
     return _montar_resposta(db, jogo, current_user)
@@ -337,6 +354,7 @@ def registrar_evento(
         membro.is_titular = True
 
     evento.valor = valor
+    _garantir_participante(db, jogo, evento.atleta_id, lado)
     db.add(evento)
     db.commit()
     db.refresh(jogo)
