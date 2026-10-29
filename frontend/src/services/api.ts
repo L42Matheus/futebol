@@ -17,6 +17,7 @@ import type {
   AssinarResponse,
   Partida,
   NovoLance,
+  Ranking,
 } from '../types'
 
 const API_URL = import.meta.env?.VITE_API_URL || ''
@@ -286,6 +287,10 @@ export const teamsApi = {
     teamId: number | string,
     atletaId: number | string,
   ): Promise<AxiosResponse<void>> => api.delete(`/teams/${teamId}/members/${atletaId}`),
+}
+
+export const rankingApi = {
+  get: (rachaId: number | string): Promise<AxiosResponse<Ranking>> => api.get(`/rachas/${rachaId}/ranking`),
 }
 
 export const suporteApi = {

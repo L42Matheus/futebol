@@ -15,6 +15,7 @@ const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /^\/app$/, title: 'QuemJogaFC' },
   { test: /\/jogo\/\d+\/partida$/, title: 'Partida ao vivo' },
   { test: /\/jogo\/\d+$/, title: 'Jogo' },
+  { test: /\/ranking$/, title: 'Ranking' },
   { test: /^\/tempo$/, title: 'Tempo' },
   { test: /^\/novo$/, title: 'Novo Racha' },
   { test: /\/racha\/\d+$/, title: 'Racha' },

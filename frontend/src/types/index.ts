@@ -224,3 +224,28 @@ export interface Partida {
   times: TimePartida[]
   eventos: Lance[]
 }
+
+// Ranking do racha (GET /rachas/:id/ranking); as categorias variam por esporte.
+export interface CategoriaRanking {
+  id: string
+  nome: string
+  sufixo?: string | null
+}
+
+export interface AtletaRanking {
+  atleta_id: number
+  nome: string
+  apelido?: string | null
+  foto_url?: string | null
+  posicao?: string | null
+  jogos: number
+  // null quando não dá para calcular (ex.: aproveitamento sem jogo encerrado).
+  valores: Record<string, number | null>
+}
+
+export interface Ranking {
+  esporte: 'futebol' | 'basquete' | 'volei'
+  jogos_encerrados: number
+  categorias: CategoriaRanking[]
+  atletas: AtletaRanking[]
+}

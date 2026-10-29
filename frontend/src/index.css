@@ -100,3 +100,11 @@ body {
     @apply block text-sm font-medium text-gray-400 mb-2;
   }
 }
+
+/* Rolagem lateral sem barra visível (fileiras de etiquetas no celular). */
+.sem-barra {
+  scrollbar-width: none;
+}
+.sem-barra::-webkit-scrollbar {
+  display: none;
+}
