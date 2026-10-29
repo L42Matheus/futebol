@@ -1,126 +1,158 @@
 import { Link } from 'react-router-dom'
 import {
+  ArrowLeftRight,
   ArrowRight,
   CalendarCheck,
-  CheckCircle2,
-  ClipboardList,
   DollarSign,
+  LayoutGrid,
+  Link2,
   Moon,
-  Sparkles,
+  Radio,
   Sun,
   Trophy,
   Users,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { ESPORTES } from '../esportes'
+import { ESPORTES, getEsporte } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
 import { useTema } from '../hooks/useTema'
+import EscudoTime from '../components/EscudoTime'
 
-const features = [
+const destaques = [
+  { titulo: 'Ao vivo', icone: <Radio size={18} /> },
+  { titulo: 'Escalação', icone: <LayoutGrid size={18} /> },
+  { titulo: 'Caixa', icone: <DollarSign size={18} /> },
+]
+
+const recursos = [
   {
-    title: 'Agenda sem bagunça',
-    description: 'Marque jogos, acompanhe confirmações e deixe todo mundo na mesma página.',
-    icon: <CalendarCheck size={22} />,
+    titulo: 'Partida ao vivo',
+    texto: 'Gols, cestas e pontos lançados na hora, com assistência, cartões e placar que todo mundo acompanha pelo celular.',
+    icone: <Radio size={22} />,
+    cor: 'bg-emerald-500/10 text-emerald-400',
   },
   {
-    title: 'Atletas organizados',
-    description: 'Centralize perfis, presença, posição, número e participação de cada jogador.',
-    icon: <Users size={22} />,
+    titulo: 'Escalação e substituições',
+    texto: 'Monte o campo ou a quadra, mexa no banco e faça substituições durante o jogo sem perder o histórico.',
+    icone: <ArrowLeftRight size={22} />,
+    cor: 'bg-sky-500/10 text-sky-400',
   },
   {
-    title: 'Times e temporada',
-    description: 'Crie times, registre resultados e evolua para campeões do mês.',
-    icon: <Trophy size={22} />,
+    titulo: 'Agenda e presença',
+    texto: 'Marque os jogos com dia e horário e veja quem confirmou, sem caçar resposta no grupo.',
+    icone: <CalendarCheck size={22} />,
+    cor: 'bg-violet-500/10 text-violet-400',
   },
   {
-    title: 'Caixa mais claro',
-    description: 'Visualize pendências e deixe o financeiro preparado organizado.',
-    icon: <DollarSign size={22} />,
+    titulo: 'Ranking',
+    texto: 'Artilharia e estatísticas de cada atleta saem direto dos lances da partida.',
+    icone: <Trophy size={22} />,
+    cor: 'bg-amber-500/10 text-amber-400',
+  },
+  {
+    titulo: 'Caixa organizado',
+    texto: 'Mensalidades, multas de cartão e quem está pendente, tudo em um lugar.',
+    icone: <DollarSign size={22} />,
+    cor: 'bg-emerald-500/10 text-emerald-400',
+  },
+  {
+    titulo: 'Times e atletas',
+    texto: 'Perfil de cada atleta, times do racha e convite por um único link.',
+    icone: <Users size={22} />,
+    cor: 'bg-rose-500/10 text-rose-400',
   },
 ]
 
-const steps = [
-  'Crie seu racha',
-  'Convide atletas',
-  'Marque jogos',
-  'Acompanhe ranking, caixa e temporada',
+const passos = [
+  { titulo: 'Crie o racha', texto: 'Futebol, basquete ou vôlei, com a modalidade certa.' },
+  { titulo: 'Convide pelo link', texto: 'Mande no grupo e a galera entra sozinha.' },
+  { titulo: 'Marque o jogo', texto: 'Dia, horário, local e lista de presença.' },
+  { titulo: 'Comande ao vivo', texto: 'Placar, lances e substituições na hora.' },
 ]
+
+// Exemplo de lances no celular da landing: o que o admin registra durante o jogo.
+const lancesExemplo = [
+  { minuto: "18'", tipo: 'gol', texto: 'Gol de João', detalhe: 'assist. Pedro' },
+  { minuto: "15'", tipo: 'troca', texto: 'Entrou Lucas', detalhe: 'saiu Davi' },
+  { minuto: "9'", tipo: 'cartao', texto: 'Cartão amarelo', detalhe: 'Caio' },
+] as const
 
 export default function Landing() {
   const { isAuthenticated } = useAuth()
   const appPath = isAuthenticated ? '/app' : '/perfil'
   const { claro, alternar: alternarTema } = useTema()
   const prefereMenosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const BolaFutebol = getEsporte('futebol').Icone
 
   return (
     <div className="min-h-screen overflow-hidden bg-fundo text-white">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="absolute top-80 -left-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="absolute bottom-20 -right-24 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
       </div>
 
-      <header className="relative mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-6">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 font-black text-branco shadow-lg shadow-emerald-950/40">
-            QJ
-          </div>
-          <span className="text-xl font-black tracking-tight">
+      <header className="relative mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-5 sm:px-5">
+        <Link to="/" className="flex min-w-0 items-center gap-2.5">
+          <img src="/icons/icon-192.png" alt="" className="h-10 w-10 shrink-0 rounded-xl shadow-lg shadow-emerald-950/30" />
+          <span className="truncate text-lg font-black tracking-tight sm:text-xl">
             QuemJoga<span className="text-emerald-400">FC</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={alternarTema}
             aria-label={claro ? 'Usar tema escuro' : 'Usar tema claro'}
             title={claro ? 'Tema escuro' : 'Tema claro'}
-            className="rounded-2xl p-2.5 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+            className="rounded-xl p-2.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
           >
             {claro ? <Moon size={18} /> : <Sun size={18} />}
           </button>
           <Link
             to="/perfil"
-            className="hidden rounded-2xl px-4 py-2 text-sm font-bold text-gray-300 transition-colors hover:text-white sm:inline-flex"
+            className="hidden rounded-xl px-3 py-2 text-sm font-bold text-gray-300 transition-colors hover:text-white sm:inline-flex"
           >
             Entrar
           </Link>
           <Link
             to={appPath}
-            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-black text-branco shadow-lg shadow-emerald-950/40 transition-transform active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-2 text-sm font-black text-branco shadow-lg shadow-emerald-950/30 transition-transform active:scale-[0.98]"
           >
-            Começar <ArrowRight size={16} />
+            Começar <ArrowRight size={15} />
           </Link>
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-6xl px-5 pb-16">
-        <section className="grid items-center gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
-          <div>
-            <div className="mb-5 inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
-              <Sparkles size={14} />
+      <main className="relative mx-auto max-w-6xl px-4 pb-10 sm:px-5">
+        <section className="grid items-center gap-10 pb-10 pt-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
+          <div className="text-center lg:text-left">
+            <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
               {ESPORTES.map(({ id, nome, Icone }) => (
-                <span key={id} className="inline-flex items-center gap-1.5">
-                  <Icone size={15} />
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300"
+                >
+                  <Icone size={14} />
                   {nome}
                 </span>
               ))}
             </div>
 
-            <h1 className="max-w-3xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">
-              Organize seu racha sem planilha, cobrança no grito ou grupo bagunçado.
+            <h1 className="mx-auto mt-6 max-w-xl text-[2.5rem] font-black leading-[1.02] tracking-tight text-white sm:text-6xl lg:mx-0">
+              Seu racha organizado, do convite ao placar ao vivo.
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-gray-400">
-              O QuemJogaFC junta agenda, atletas, times, placares, ranking e caixa em uma
-              experiência simples para quem só quer jogar e organizar melhor.
+            <p className="mx-auto mt-5 max-w-lg text-base font-medium leading-7 text-gray-400 sm:text-lg lg:mx-0">
+              Agenda, presença, escalação, partida ao vivo, ranking e caixa num app só, para quem quer jogar e não
+              perder tempo organizando.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mx-auto mt-8 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
               <Link
                 to={appPath}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-2xl shadow-emerald-950/40 transition-transform active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
               >
                 Criar meu racha <ArrowRight size={19} />
               </Link>
@@ -132,57 +164,74 @@ export default function Landing() {
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold text-gray-400">
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={17} className="text-emerald-400" /> Gerencie seu time
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={17} className="text-emerald-400" /> Tenha seu perfil de atleta
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={17} className="text-emerald-400" /> Acompanhe progresso e presença
-              </span>
+            <div className="mx-auto mt-8 grid max-w-sm grid-cols-3 gap-2 lg:mx-0">
+              {destaques.map((item) => (
+                <div
+                  key={item.titulo}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl border border-gray-800 bg-gray-900/40 px-2 py-3"
+                >
+                  <span className="text-emerald-400">{item.icone}</span>
+                  <span className="text-xs font-bold text-gray-300">{item.titulo}</span>
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* Celular de exemplo: sempre escuro, como o placar ao vivo no app. */}
           <div className="relative mx-auto w-full max-w-sm">
-            <div className="absolute inset-0 rounded-[3rem] bg-emerald-500/20 blur-3xl" />
-            <div className="relative overflow-hidden rounded-[2.5rem] border border-gray-800 bg-gray-950/80 p-4 shadow-2xl shadow-black/40">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400">
-                    Racha selecionado
+            <div className="absolute inset-6 rounded-[3rem] bg-emerald-500/25 blur-3xl" />
+            <div className="tema-escuro relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-950 p-4 shadow-2xl shadow-black/40">
+              <div className="rounded-[1.75rem] bg-gradient-to-br from-sky-900 via-slate-900 to-emerald-800 px-4 py-5 text-center">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Ao vivo
+                  </span>
+                  <span className="text-sm font-black tabular-nums text-white/80">32:14</span>
+                </div>
+                <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <EscudoTime nome="Verde" cor="emerald" />
+                  <p className="text-5xl font-black leading-none tabular-nums text-white">
+                    2<span className="mx-2 align-middle text-2xl text-white/40">x</span>1
                   </p>
-                  <p className="text-xl font-black">LombaFC 7x7</p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10 text-sm font-black text-emerald-300">
-                  LM
+                  <EscudoTime nome="Azul" cor="sky" />
                 </div>
               </div>
 
-              <div className="rounded-[2rem] border border-emerald-500/20 bg-gradient-to-br from-gray-900 to-emerald-950/40 p-5">
-                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-400">
-                  Próximo jogo
-                </p>
-                <p className="text-3xl font-black">Sábado, 16:00</p>
-                <p className="mt-2 text-sm font-semibold text-gray-400">Arena Society</p>
-                <div className="mt-5 h-2 overflow-hidden rounded-full bg-gray-800">
-                  <div className="h-full w-3/4 rounded-full bg-emerald-400" />
-                </div>
-                <button className="mt-5 w-full rounded-2xl bg-emerald-500 py-3 text-sm font-black">
-                  Ver chamada
-                </button>
-              </div>
+              <p className="mb-2 mt-4 px-1 text-[10px] font-black uppercase tracking-[0.22em] text-white/50">Lances</p>
+              <ul className="space-y-2">
+                {lancesExemplo.map((lance) => (
+                  <li key={lance.minuto} className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
+                    <span className="w-7 text-xs font-black tabular-nums text-white/50">{lance.minuto}</span>
+                    {lance.tipo === 'gol' && (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+                        <BolaFutebol size={15} />
+                      </span>
+                    )}
+                    {lance.tipo === 'troca' && (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/15 text-sky-300">
+                        <ArrowLeftRight size={14} />
+                      </span>
+                    )}
+                    {lance.tipo === 'cartao' && (
+                      <span className="flex h-7 w-7 items-center justify-center">
+                        <span className="h-4 w-3 rounded-[3px] bg-yellow-400" />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-white">{lance.texto}</span>
+                    <span className="shrink-0 text-xs text-white/50">{lance.detalhe}</span>
+                  </li>
+                ))}
+              </ul>
 
-              <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className="mt-3 grid grid-cols-3 gap-2">
                 {[
                   ['Atletas', '18'],
                   ['Caixa', 'R$ 420'],
-                  ['Ranking', 'João #1'],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-2xl border border-gray-800 bg-gray-900/60 p-3">
-                    <p className="text-[10px] font-black uppercase text-gray-500">{label}</p>
-                    <p className="mt-1 text-lg font-black">{value}</p>
+                  ['Artilheiro', 'João'],
+                ].map(([rotulo, valor]) => (
+                  <div key={rotulo} className="rounded-2xl bg-white/[0.04] px-2 py-2.5 text-center">
+                    <p className="text-[9px] font-black uppercase tracking-wider text-white/45">{rotulo}</p>
+                    <p className="mt-0.5 truncate text-sm font-black text-white">{valor}</p>
                   </div>
                 ))}
               </div>
@@ -191,15 +240,15 @@ export default function Landing() {
         </section>
 
         <section className="py-6">
-          <div className="rounded-[2.5rem] border border-gray-800 bg-gray-900/40 p-3 sm:p-6">
-            <div className="mb-4 flex flex-col gap-1 px-2 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-3 sm:rounded-[2.5rem] sm:p-6">
+            <div className="mb-4 px-2 text-center sm:mb-6 sm:flex sm:items-end sm:justify-between sm:text-left">
               <h2 className="text-2xl font-black sm:text-3xl">Uma arena, três quadras.</h2>
-              <p className="text-sm font-medium text-gray-400">Racha de futebol, basquete ou vôlei no mesmo app.</p>
+              <p className="mt-1 text-sm font-medium text-gray-400">Racha de futebol, basquete ou vôlei no mesmo app.</p>
             </div>
             <AnimacaoAtiva.Provider value={!prefereMenosMovimento}>
               <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {ESPORTES.map(({ id, nome, Icone, Cena }) => (
-                  <figure key={id} className="overflow-hidden rounded-[1.5rem] border border-gray-800 bg-fundo sm:rounded-[2rem]">
+                  <figure key={id} className="overflow-hidden rounded-[1.25rem] border border-gray-800 bg-fundo sm:rounded-[2rem]">
                     <div className="aspect-square">
                       <Cena />
                     </div>
@@ -214,49 +263,58 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <div key={feature.title} className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-5">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
-                {feature.icon}
+        <section className="py-10">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-black sm:text-3xl">Tudo que o racha precisa</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">Do grupo bagunçado ao jogo comandado pelo celular.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {recursos.map((recurso) => (
+              <div key={recurso.titulo} className="flex gap-4 rounded-[1.5rem] border border-gray-800 bg-gray-900/40 p-4">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${recurso.cor}`}>
+                  {recurso.icone}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black text-white">{recurso.titulo}</h3>
+                  <p className="mt-1 text-sm leading-6 text-gray-400">{recurso.texto}</p>
+                </div>
               </div>
-              <h3 className="text-lg font-black">{feature.title}</h3>
-              <p className="mt-2 text-sm font-medium leading-6 text-gray-400">{feature.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
-        <section className="my-10 overflow-hidden rounded-[2.5rem] border border-gray-800 bg-gray-900/40 p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
-                <ClipboardList size={24} />
-              </div>
-              <h2 className="text-3xl font-black">Do convite ao placar, em poucos toques.</h2>
-              <p className="mt-3 text-gray-400">
-                A ideia é tirar o peso da organização e deixar o racha com cara de app de verdade.
-              </p>
+        <section className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-5 sm:p-8">
+          <div className="text-center">
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
+              <Link2 size={22} />
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {steps.map((step, index) => (
-                <div key={step} className="rounded-3xl border border-gray-800 bg-fundo/70 p-5">
-                  <p className="text-sm font-black text-emerald-400">0{index + 1}</p>
-                  <p className="mt-2 text-lg font-black">{step}</p>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-2xl font-black sm:text-3xl">Do convite ao placar, em quatro passos</h2>
           </div>
+
+          <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {passos.map((passo, index) => (
+              <li key={passo.titulo} className="flex gap-3 rounded-2xl border border-gray-800 bg-fundo/70 p-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-branco">
+                  {index + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-black text-white">{passo.titulo}</p>
+                  <p className="mt-0.5 text-sm text-gray-400">{passo.texto}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
           <Link
             to={appPath}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-2xl shadow-emerald-950/40 transition-transform active:scale-[0.98] sm:ml-auto sm:w-fit"
+            className="mx-auto mt-6 flex w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
           >
             Criar meu racha <ArrowRight size={19} />
           </Link>
         </section>
       </main>
 
-      <footer className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-gray-800 px-5 py-6 text-sm text-gray-500">
+      <footer className="relative mx-auto flex max-w-6xl flex-col items-center gap-3 border-t border-gray-800 px-5 py-6 text-sm text-gray-500 sm:flex-row sm:justify-between">
         <span>© {new Date().getFullYear()} QuemJogaFC</span>
         <nav className="flex gap-5">
           <Link to="/privacidade" className="hover:text-white">Privacidade</Link>
