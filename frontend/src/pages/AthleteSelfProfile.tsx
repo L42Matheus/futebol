@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, type ChangeEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown, X } from 'lucide-react'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
@@ -282,6 +282,11 @@ export default function AthleteSelfProfile() {
           >
             <LogOut size={20} /> Encerrar Sessao
           </button>
+          <div className="flex justify-center gap-5 pt-2 text-xs font-semibold text-gray-500">
+            <Link to="/suporte?de=/perfil-atleta" className="hover:text-white">Ajuda e suporte</Link>
+            <Link to="/privacidade" className="hover:text-white">Privacidade</Link>
+            <Link to="/excluir-conta" className="hover:text-red-400">Excluir minha conta</Link>
+          </div>
         </div>
       </div>
 
