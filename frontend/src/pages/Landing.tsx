@@ -255,6 +255,15 @@ export default function Landing() {
           </Link>
         </section>
       </main>
+
+      <footer className="relative mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-gray-800 px-5 py-6 text-sm text-gray-500">
+        <span>© {new Date().getFullYear()} QuemJogaFC</span>
+        <nav className="flex gap-5">
+          <Link to="/privacidade" className="hover:text-white">Privacidade</Link>
+          <Link to="/excluir-conta" className="hover:text-white">Excluir conta</Link>
+          <Link to="/suporte?de=/" className="hover:text-white">Suporte</Link>
+        </nav>
+      </footer>
     </div>
   )
 }

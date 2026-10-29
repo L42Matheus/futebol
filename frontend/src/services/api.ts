@@ -288,7 +288,20 @@ export const teamsApi = {
   ): Promise<AxiosResponse<void>> => api.delete(`/teams/${teamId}/members/${atletaId}`),
 }
 
+export const suporteApi = {
+  enviar: (data: {
+    nome: string
+    email: string
+    assunto: string
+    mensagem: string
+    pagina?: string
+    site?: string
+  }): Promise<AxiosResponse<{ id: number; protocolo: string }>> => api.post('/suporte/', data),
+}
+
 export const authApi = {
+  // Exclui a conta de quem está logado (login, perfil, foto e acesso de admin).
+  excluirConta: (): Promise<AxiosResponse<void>> => api.delete('/auth/me'),
   register: (data: Record<string, unknown>): Promise<AxiosResponse<AuthResponse>> =>
     api.post('/auth/register', data),
   login: (data: Record<string, unknown>): Promise<AxiosResponse<AuthResponse>> =>

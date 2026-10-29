@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0f1a" />
+    <title>Sem conexão · QuemJogaFC</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+        background: #0b0f1a;
+        color: #f3f4f6;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        text-align: center;
+      }
+      img { width: 72px; height: 72px; border-radius: 18px; }
+      h1 { margin: 20px 0 8px; font-size: 22px; }
+      p { margin: 0 auto; max-width: 300px; color: #9ca3af; line-height: 1.5; }
+      button {
+        margin-top: 24px;
+        padding: 12px 22px;
+        border: 0;
+        border-radius: 14px;
+        background: #10b981;
+        color: #fff;
+        font-weight: 800;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="" />
+      <h1>Sem conexão</h1>
+      <p>O QuemJogaFC precisa de internet para mostrar jogos, placar e caixa. Confira a conexão e tente de novo.</p>
+      <button type="button" onclick="location.reload()">Tentar de novo</button>
+    </main>
+  </body>
+</html>

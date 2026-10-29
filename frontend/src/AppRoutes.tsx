@@ -25,6 +25,9 @@ import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
 import PrivateRoute from './components/PrivateRoute'
 import NoRacha from './pages/NoRacha'
+import Privacidade from './pages/Privacidade'
+import ExcluirConta from './pages/ExcluirConta'
+import Suporte from './pages/Suporte'
 import AthleteSelfProfile from './pages/AthleteSelfProfile'
 import Assinatura from './pages/Assinatura'
 
@@ -40,6 +43,9 @@ export default function AppRoutes() {
         <Route path="/esqueci-senha" element={<ForgotPassword />} />
         <Route path="/reset-senha" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/excluir-conta" element={<ExcluirConta />} />
+        <Route path="/suporte" element={<Suporte />} />
 
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
