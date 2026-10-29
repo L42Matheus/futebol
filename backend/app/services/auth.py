@@ -12,6 +12,8 @@ from app.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+# Para rotas abertas que aproveitam o login quando existe (ex.: suporte).
+oauth2_opcional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -76,3 +78,13 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     if not user:
         raise credentials_exception
     return user
+
+
+def get_optional_user(db: Session = Depends(get_db), token: str | None = Depends(oauth2_opcional)) -> User | None:
+    """Usuário logado, ou None quando não há token válido (sem erro 401)."""
+    if not token:
+        return None
+    try:
+        return get_current_user(db, token)
+    except HTTPException:
+        return None

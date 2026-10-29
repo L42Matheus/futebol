@@ -15,8 +15,10 @@ from app.models.athlete_profile import AthleteProfile, PernaBoa
 from app.models.atleta_stat import AtletaStat
 from app.models.temporada import Temporada, StatusTemporada
 from app.models.evento_partida import EventoPartida
+from app.models.chamado_suporte import ChamadoSuporte
 
 __all__ = [
+    "ChamadoSuporte",
     "EventoPartida",
     "Racha",
     "TipoRacha",

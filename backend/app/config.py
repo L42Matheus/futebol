@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     smtp_from_email: str = ""
     smtp_use_tls: bool = True
     brevo_api_key: str = ""
+    # Para onde vão as mensagens do formulário de suporte. Vazio: só ficam salvas no banco.
+    suporte_email: str = ""
 
     # Asaas (gateway de pagamento — assinatura SaaS do admin)
     payments_enabled: bool = False
