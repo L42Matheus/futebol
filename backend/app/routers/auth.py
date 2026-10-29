@@ -28,6 +28,7 @@ from app.services.auth import (
 from app.services.google_auth import exchange_code_for_tokens, get_google_user_info, get_google_auth_url
 from app.services.email_service import send_password_reset_email
 from app.services.invite_service import processar_invite
+from app.services.conta_service import excluir_conta
 from app.deps import verificar_admin_racha
 from app.config import get_settings
 
@@ -106,6 +107,12 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_minha_conta(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Exclui a conta de quem está logado. Não tem volta."""
+    excluir_conta(db, current_user)
 
 
 @router.post("/invites", response_model=InviteResponse, status_code=status.HTTP_201_CREATED)
