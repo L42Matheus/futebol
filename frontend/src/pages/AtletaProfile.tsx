@@ -26,6 +26,8 @@ interface Historico {
     taxa_presenca: string
   }
   financeiro: {
+    total_pago?: number
+    total_pendente?: number
     pago_formatado: string
     pendente_formatado: string
     referencia_mes_atual?: string
@@ -319,7 +321,7 @@ export default function AtletaProfile() {
             </div>
           ) : (
             <>
-              <h2 className="mt-4 text-xl font-bold text-gray-900">
+              <h2 className="mt-4 text-xl font-bold text-white">
                 {atleta.apelido || atleta.nome}
               </h2>
               {atleta.apelido && (
@@ -330,7 +332,7 @@ export default function AtletaProfile() {
                   {labelPosicao(atleta.posicao)}
                 </span>
                 {atleta.numero_camisa && (
-                  <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                  <span className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">
                     #{atleta.numero_camisa}
                   </span>
                 )}
@@ -340,81 +342,96 @@ export default function AtletaProfile() {
         </div>
       </div>
 
-      {/* Estatisticas */}
+      {/* Estatisticas: todos os cards na mesma estrutura (ícone, número, nome e detalhe). */}
       {historico && (
-        <div className={`grid gap-4 ${temCartoes ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          {/* Presencas */}
-          <div className="card p-4 text-center">
-            <Trophy className="mx-auto text-primary-600 mb-2" size={24} />
-            <p className="text-2xl font-bold text-gray-900">{historico.presencas.confirmados}</p>
-            <p className="text-xs text-gray-500">Jogos</p>
-            <p className="text-xs text-primary-600 mt-1">{historico.presencas.taxa_presenca}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="card flex flex-col items-center p-4 text-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+              <Trophy size={20} />
+            </span>
+            <p className="mt-3 text-2xl font-black leading-none text-white">{historico.presencas.confirmados}</p>
+            <p className="mt-1 text-xs font-semibold text-gray-500">Jogos</p>
+            <p className="mt-auto pt-3 text-xs font-bold text-emerald-400">
+              {Math.round(parseFloat(historico.presencas.taxa_presenca) || 0)}% de presença
+            </p>
           </div>
 
-          {/* Financeiro */}
-          <div className="card p-4 text-center">
-            <CreditCard className="mx-auto text-green-600 mb-2" size={24} />
-            <p className="text-lg font-bold text-gray-900">{historico.financeiro.pago_formatado}</p>
-            <p className="text-xs text-gray-500">Pago</p>
-            {historico.financeiro.pendente_formatado !== 'R$ 0.00' && (
-              <p className="text-xs text-amber-600 mt-1">{historico.financeiro.pendente_formatado} pendente</p>
+          <div className="card flex flex-col items-center p-4 text-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+              <CreditCard size={20} />
+            </span>
+            <p className="mt-3 text-2xl font-black leading-none text-white">{historico.financeiro.pago_formatado}</p>
+            <p className="mt-1 text-xs font-semibold text-gray-500">Pago</p>
+            {(historico.financeiro.total_pendente ?? 0) > 0 && (
+              <p className="mt-1 text-xs font-bold text-amber-400">{historico.financeiro.pendente_formatado} pendente</p>
             )}
-            {isAdminView && (
-              <label className="mt-2 inline-flex items-center gap-2 text-xs text-gray-200 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={!!historico.financeiro.pagamento_confirmado_mes_atual}
+            {isAdminView ? (
+              <div className="mt-auto w-full pt-3">
+                <button
+                  type="button"
                   disabled={adminActionLoading}
-                  onChange={(e) => handleTogglePagamentoConfirmado(e.target.checked)}
-                />
-                Confirmar pagamento ({historico.financeiro.referencia_mes_atual || 'mes atual'})
-              </label>
+                  onClick={() => handleTogglePagamentoConfirmado(!historico.financeiro.pagamento_confirmado_mes_atual)}
+                  title={`Mensalidade de ${historico.financeiro.referencia_mes_atual || 'este mês'}`}
+                  className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition-colors disabled:opacity-50 ${
+                    historico.financeiro.pagamento_confirmado_mes_atual
+                      ? 'bg-emerald-500 text-branco'
+                      : 'border border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                  }`}
+                >
+                  {historico.financeiro.pagamento_confirmado_mes_atual ? '✓ Mês pago' : 'Marcar pago'}
+                </button>
+              </div>
+            ) : (
+              <p className="mt-auto pt-3 text-xs font-bold text-gray-400">
+                {historico.financeiro.pagamento_confirmado_mes_atual ? 'Mês em dia' : 'Mês em aberto'}
+              </p>
             )}
           </div>
 
           {temCartoes && (
-          <div className="card p-4 text-center">
-            <AlertTriangle className="mx-auto text-amber-500 mb-2" size={24} />
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-3">
-                <span className="inline-block w-4 h-5 bg-yellow-400 rounded-sm"></span>
-                <button
-                  onClick={() => handleRemoveCartao('amarelo')}
-                  disabled={!isAdminView || adminActionLoading || historico.cartoes.amarelos <= 0}
-                  className="w-7 h-7 rounded bg-gray-700 text-white font-bold border border-gray-600 hover:bg-gray-600 disabled:opacity-40 disabled:hover:bg-gray-700"
-                >
-                  -
-                </button>
-                <p className="text-base font-bold min-w-6 text-white">{historico.cartoes.amarelos}</p>
-                <button
-                  onClick={() => handleAddCartao('amarelo')}
-                  disabled={!isAdminView || adminActionLoading}
-                  className="w-7 h-7 rounded bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-300 disabled:opacity-40"
-                >
-                  +
-                </button>
+            <div className="card col-span-2 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <AlertTriangle className="text-amber-400" size={18} />
+                <p className="text-sm font-bold text-white">Cartões</p>
               </div>
-              <div className="flex items-center justify-center gap-3">
-                <span className="inline-block w-4 h-5 bg-red-500 rounded-sm"></span>
-                <button
-                  onClick={() => handleRemoveCartao('vermelho')}
-                  disabled={!isAdminView || adminActionLoading || historico.cartoes.vermelhos <= 0}
-                  className="w-7 h-7 rounded bg-gray-700 text-white font-bold border border-gray-600 hover:bg-gray-600 disabled:opacity-40 disabled:hover:bg-gray-700"
-                >
-                  -
-                </button>
-                <p className="text-base font-bold min-w-6 text-white">{historico.cartoes.vermelhos}</p>
-                <button
-                  onClick={() => handleAddCartao('vermelho')}
-                  disabled={!isAdminView || adminActionLoading}
-                  className="w-7 h-7 rounded bg-red-500 text-branco font-bold hover:bg-red-400 disabled:opacity-40"
-                >
-                  +
-                </button>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  ['amarelo', 'Amarelos', historico.cartoes.amarelos, 'bg-yellow-400'],
+                  ['vermelho', 'Vermelhos', historico.cartoes.vermelhos, 'bg-red-500'],
+                ] as const).map(([tipo, nome, total, cor]) => (
+                  <div key={tipo} className="flex items-center justify-between gap-2 rounded-2xl border border-gray-800 px-3 py-2.5">
+                    <span className="flex items-center gap-2">
+                      <span className={`inline-block h-5 w-4 rounded-sm ${cor}`} />
+                      <span className="text-xl font-black leading-none text-white">{total}</span>
+                    </span>
+                    {isAdminView ? (
+                      <span className="flex gap-1">
+                        <button
+                          type="button"
+                          aria-label={`Tirar cartão ${tipo}`}
+                          onClick={() => handleRemoveCartao(tipo)}
+                          disabled={adminActionLoading || total <= 0}
+                          className="h-8 w-8 rounded-lg border border-gray-700 font-bold text-gray-300 hover:bg-gray-800 disabled:opacity-40"
+                        >
+                          −
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Dar cartão ${tipo}`}
+                          onClick={() => handleAddCartao(tipo)}
+                          disabled={adminActionLoading}
+                          className={`h-8 w-8 rounded-lg font-bold disabled:opacity-40 ${cor} ${tipo === 'amarelo' ? 'text-slate-900' : 'text-branco'}`}
+                        >
+                          +
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-semibold text-gray-500">{nome}</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Cartoes</p>
-          </div>
           )}
         </div>
       )}
