@@ -259,7 +259,7 @@ export default function Assinatura() {
             <img
               src={`data:image/png;base64,${resultado.pix.encoded_image}`}
               alt="QR Code Pix"
-              className="w-48 h-48 rounded-xl bg-white p-2 mx-auto"
+              className="w-48 h-48 rounded-xl bg-branco p-2 mx-auto"
             />
           )}
           {resultado.pix?.payload && (
