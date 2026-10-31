@@ -5,6 +5,7 @@ import { atletasApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { labelPosicao } from '../esportes'
+import { NotaEstrelas } from '../components/CartaAtleta'
 import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
 import ConfirmDialog from '../components/ConfirmDialog'
 import FormField from '../components/FormField'
@@ -155,10 +156,10 @@ export default function Atletas() {
           atletas.map((a) => (
             <div key={a.id} className="relative group py-4 px-4 hover:bg-gray-800/50 transition-colors">
               <Link to={`/racha/${rachaId}/atleta/${a.id}`} className="flex items-center gap-4">
-                <Avatar src={a.foto_url} name={a.apelido || a.nome} size="lg" />
-                <div className="flex-1">
+                <Avatar src={a.foto_url} name={a.apelido || a.nome} size="md" />
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-white">{a.apelido || a.nome}</p>
+                    <p className="truncate font-medium text-white">{a.apelido || a.nome}</p>
                     {a.is_admin && <Shield className="text-emerald-400" size={16} />}
                   </div>
                   <p className="text-sm text-gray-400">
@@ -166,6 +167,10 @@ export default function Atletas() {
                     {a.numero_camisa != null && ` — #${a.numero_camisa}`}
                   </p>
                 </div>
+                {/* No computador o botão de excluir aparece por cima no hover; abre espaço para ele. */}
+                <span className={`shrink-0 ${isAdmin ? 'md:mr-10' : ''}`}>
+                  <NotaEstrelas nota={a.nota} />
+                </span>
               </Link>
               {isAdmin && (
                 <button
