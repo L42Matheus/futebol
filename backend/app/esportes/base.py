@@ -33,6 +33,8 @@ class Esporte:
     eventos_partida: tuple[str, ...]
     # Quanto um GOL pode valer no placar (a cesta do basquete vale 1, 2 ou 3).
     valores_pontuacao: tuple[int, ...] = (1,)
+    # Atributos da carta do atleta, na ordem em que aparecem: (sigla, nome).
+    atributos: tuple[tuple[str, str], ...] = ()
     # Partes da partida ao vivo (quartos no basquete, sets no vôlei). None = jogo corrido.
     periodo_nome: str | None = None
     periodos: int = 1

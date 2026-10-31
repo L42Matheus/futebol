@@ -11,6 +11,10 @@ VOLEI = Esporte(
     posicao_padrao="ponteiro",
     recursos=frozenset({ESCALACAO}),
     eventos_partida=(GOL, SUBSTITUICAO),
+    atributos=(
+        ("saq", "Saque"), ("atq", "Ataque"), ("blo", "Bloqueio"),
+        ("lev", "Levantamento"), ("def", "Defesa"), ("rec", "Recepção"),
+    ),
     periodo_nome="set",
     periodos=5,
     placar_por_periodo=True,

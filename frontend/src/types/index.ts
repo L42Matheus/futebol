@@ -33,6 +33,9 @@ export interface Racha {
 export interface Atleta {
   id: number
   nome: string
+  // Carta do atleta: notas de 40 a 99 por sigla do esporte e a média geral.
+  atributos?: Record<string, number> | null
+  nota?: number | null
   apelido?: string
   posicao: Posicao
   numero_camisa?: number

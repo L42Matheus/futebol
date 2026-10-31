@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { Camera, Edit2, Save, X, Trophy, CreditCard, AlertTriangle } from 'lucide-react'
-import { atletasApi } from '../services/api'
+import { Camera, Edit2, Save, X, Trophy, CreditCard, AlertTriangle, Share2, SlidersHorizontal } from 'lucide-react'
+import { atletasApi, rachasApi } from '../services/api'
+import { useToast } from '../context/ToastContext'
+import CartaAtleta from '../components/CartaAtleta'
+import { gerarImagemCarta } from '../utils/imagemCarta'
+import { mediaAtributos } from '../utils/carta'
 import { useAuth } from '../context/AuthContext'
-import Avatar from '../components/Avatar'
 import { labelPosicao } from '../esportes'
 import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
 
@@ -17,6 +20,8 @@ interface Atleta {
   foto_url?: string
   user_id?: number
   is_admin: boolean
+  atributos?: Record<string, number> | null
+  nota?: number | null
 }
 
 interface Historico {
@@ -39,6 +44,11 @@ interface Historico {
   }
 }
 
+// "Atacante" -> ATA, "Ala-pivô" -> ALA: sigla curta para a carta.
+function siglaPosicao(nome: string) {
+  return nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 3).toUpperCase()
+}
+
 export default function AtletaProfile() {
   const { rachaId, atletaId } = useParams()
   const esporte = useEsporteDoRacha(rachaId)
@@ -53,7 +63,15 @@ export default function AtletaProfile() {
   const [adminActionLoading, setAdminActionLoading] = useState(false)
   const [form, setForm] = useState({ nome: '', apelido: '', telefone: '', posicao: '', numero_camisa: '' })
 
-  const isAdminView = user?.role === 'admin'
+  // Admin deste racha (a conta pode ser admin de um racha e atleta de outro).
+  const [isAdminRacha, setIsAdminRacha] = useState(false)
+  const [nomeRacha, setNomeRacha] = useState('')
+  const isAdminView = isAdminRacha
+  const [editandoNotas, setEditandoNotas] = useState(false)
+  const [notas, setNotas] = useState<Record<string, number>>({})
+  const [salvandoNotas, setSalvandoNotas] = useState(false)
+  const [gerandoImagem, setGerandoImagem] = useState(false)
+  const { toast } = useToast()
   const temCartoes = esporte?.recursos.includes('cartoes') ?? false
   const canEdit = atleta?.user_id === user?.id || isAdminView
 
@@ -62,11 +80,15 @@ export default function AtletaProfile() {
   }, [atletaId])
 
   async function loadAtleta() {
+    if (!atletaId || !rachaId) return
     try {
-      const [atletaRes, historicoRes] = await Promise.all([
+      const [atletaRes, historicoRes, rachaRes] = await Promise.all([
         atletasApi.get(atletaId),
-        atletasApi.getHistorico(atletaId)
+        atletasApi.getHistorico(atletaId),
+        rachasApi.get(rachaId),
       ])
+      setIsAdminRacha(Boolean(rachaRes.data.is_admin))
+      setNomeRacha(rachaRes.data.nome)
       setAtleta(atletaRes.data)
       setHistorico(historicoRes.data)
       setForm({
@@ -120,6 +142,59 @@ export default function AtletaProfile() {
       alert(e.response?.data?.detail || 'Erro ao enviar foto')
     } finally {
       setUploading(false)
+    }
+  }
+
+  function abrirNotas() {
+    if (!atleta || !esporte) return
+    // Sem nota ainda, todos começam em 70 (três estrelas).
+    setNotas(Object.fromEntries(esporte.atributos.map(({ sigla }) => [sigla, atleta.atributos?.[sigla] ?? 70])))
+    setEditandoNotas(true)
+  }
+
+  async function salvarNotas() {
+    if (!atleta) return
+    setSalvandoNotas(true)
+    try {
+      const res = await atletasApi.definirAtributos(atleta.id, notas)
+      setAtleta(res.data)
+      setEditandoNotas(false)
+      toast(`Notas salvas: geral ${res.data.nota}.`, 'success')
+    } catch (e: any) {
+      toast(e.response?.data?.detail || 'Não foi possível salvar as notas.', 'error')
+    } finally {
+      setSalvandoNotas(false)
+    }
+  }
+
+  async function compartilharCarta() {
+    if (!atleta) return
+    setGerandoImagem(true)
+    try {
+      const imagem = await gerarImagemCarta({
+        nome: atleta.apelido || atleta.nome,
+        fotoUrl: atleta.foto_url,
+        posicao: siglaPosicao(labelPosicao(atleta.posicao)),
+        nota: atleta.nota,
+        atributos: atleta.atributos,
+        lista: esporte?.atributos ?? [],
+        racha: nomeRacha,
+      })
+      const arquivo = new File([imagem], `carta-${(atleta.apelido || atleta.nome).toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' })
+      if (navigator.canShare?.({ files: [arquivo] })) {
+        await navigator.share({ files: [arquivo], title: 'Carta do atleta' })
+      } else {
+        // Sem compartilhamento nativo (computador): baixa a imagem.
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(arquivo)
+        link.download = arquivo.name
+        link.click()
+        URL.revokeObjectURL(link.href)
+      }
+    } catch (e) {
+      if ((e as Error)?.name !== 'AbortError') toast('Não foi possível gerar a imagem da carta.', 'error')
+    } finally {
+      setGerandoImagem(false)
     }
   }
 
@@ -194,58 +269,9 @@ export default function AtletaProfile() {
         )}
       </div>
 
-      {/* Foto e Info Principal */}
-      <div className="card p-6">
-        <div className="flex flex-col items-center">
-          {/* Foto com opcao de upload */}
-          <div className="relative">
-            <Avatar
-              src={atleta.foto_url}
-              name={atleta.apelido || atleta.nome}
-              size="xl"
-            />
-            {canEdit && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-primary-700 transition-colors"
-                >
-                  {uploading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    <Camera size={16} />
-                  )}
-                </button>
-              </>
-            )}
-          </div>
-          {canEdit && atleta.foto_url && (
-            <button
-              onClick={async () => {
-                if (!window.confirm('Remover foto?')) return
-                try {
-                  const res = await atletasApi.removerFoto(atleta.id)
-                  setAtleta(res.data)
-                } catch (e: any) {
-                  alert(e.response?.data?.detail || 'Erro ao remover foto')
-                }
-              }}
-              className="mt-3 text-xs text-red-600"
-            >
-              Remover foto
-            </button>
-          )}
-
-          {/* Nome e Posicao */}
-          {editing ? (
+      {/* Carta do atleta: nota, estrelas e atributos. Editar troca a carta pelo formulário. */}
+      {editing ? (
+        <div className="card flex flex-col items-center p-6">
             <div className="mt-4 w-full max-w-sm space-y-4">
               <div>
                 <label className="label">Nome</label>
@@ -319,28 +345,76 @@ export default function AtletaProfile() {
                 </button>
               </div>
             </div>
-          ) : (
-            <>
-              <h2 className="mt-4 text-xl font-bold text-white">
-                {atleta.apelido || atleta.nome}
-              </h2>
-              {atleta.apelido && (
-                <p className="text-sm text-gray-500">{atleta.nome}</p>
-              )}
-              <div className="mt-2 flex items-center gap-3">
-                <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
-                  {labelPosicao(atleta.posicao)}
-                </span>
-                {atleta.numero_camisa && (
-                  <span className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-medium">
-                    #{atleta.numero_camisa}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
         </div>
-      </div>
+      ) : (
+        <section className="space-y-3">
+          <CartaAtleta
+            nome={atleta.apelido || atleta.nome}
+            fotoUrl={atleta.foto_url}
+            posicao={siglaPosicao(labelPosicao(atleta.posicao))}
+            nota={atleta.nota}
+            atributos={atleta.atributos}
+            lista={esporte?.atributos ?? []}
+          />
+          {atleta.apelido && <p className="text-center text-sm text-gray-500">{atleta.nome}</p>}
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {isAdminRacha && (
+              <button type="button" onClick={abrirNotas} className="btn-primary">
+                <SlidersHorizontal size={16} /> {atleta.nota ? 'Editar notas' : 'Dar notas'}
+              </button>
+            )}
+            <button type="button" onClick={() => void compartilharCarta()} disabled={gerandoImagem} className="btn-secondary">
+              <Share2 size={16} /> {gerandoImagem ? 'Gerando...' : 'Compartilhar'}
+            </button>
+            {canEdit && (
+              <>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn-secondary">
+                  <Camera size={16} /> {uploading ? 'Enviando...' : atleta.foto_url ? 'Trocar foto' : 'Pôr foto'}
+                </button>
+              </>
+            )}
+          </div>
+
+          {editandoNotas && (
+            <div className="card space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-black text-white">Notas da carta</p>
+                <p className="text-sm text-gray-400">
+                  Geral <span className="text-lg font-black tabular-nums text-white">{mediaAtributos(notas) ?? '–'}</span>
+                </p>
+              </div>
+              {(esporte?.atributos ?? []).map(({ sigla, nome }) => (
+                <label key={sigla} className="block">
+                  <span className="flex items-center justify-between text-sm">
+                    <span className="font-semibold text-gray-300">{nome}</span>
+                    <span className="font-black tabular-nums text-white">{notas[sigla]}</span>
+                  </span>
+                  <input
+                    type="range"
+                    min={40}
+                    max={99}
+                    step={1}
+                    value={notas[sigla]}
+                    onChange={(e) => setNotas({ ...notas, [sigla]: Number(e.target.value) })}
+                    className="mt-1 w-full accent-emerald-500"
+                    aria-label={nome}
+                  />
+                </label>
+              ))}
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setEditandoNotas(false)} className="btn-secondary">
+                  Cancelar
+                </button>
+                <button type="button" onClick={() => void salvarNotas()} disabled={salvandoNotas} className="btn-primary">
+                  <Save size={16} /> {salvandoNotas ? 'Salvando...' : 'Salvar notas'}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Estatisticas: todos os cards na mesma estrutura (ícone, número, nome e detalhe). */}
       {historico && (

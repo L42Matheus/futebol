@@ -25,6 +25,13 @@ const getInitials = (name: string) => {
     .toUpperCase()
 }
 
+// Fotos enviadas ficam no backend (/uploads/...); fora disso a URL já é completa.
+export function urlFoto(src: string): string {
+  return src.startsWith('/uploads')
+    ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${src}`
+    : src
+}
+
 export default function Avatar({ src, name, size = 'md', className = '' }: AvatarProps) {
   const sizeClass = sizeClasses[size]
   const [loadFailed, setLoadFailed] = useState(false)
@@ -34,9 +41,7 @@ export default function Avatar({ src, name, size = 'md', className = '' }: Avata
   }, [src])
 
   if (src && !loadFailed) {
-    const resolvedSrc = src.startsWith('/uploads')
-      ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${src}`
-      : src
+    const resolvedSrc = urlFoto(src)
 
     return (
       <div className={`${sizeClass} rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm flex-shrink-0 ${className}`}>

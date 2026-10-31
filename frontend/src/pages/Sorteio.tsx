@@ -44,6 +44,39 @@ function sortear(atletas: Atleta[], quantidade: number, especial: string | null)
   return escolhas
 }
 
+// Equilibrado: os mais bem avaliados são distribuídos um de cada vez, sempre para o time
+// com menos gente e, no empate, o mais fraco. Quem não tem nota conta com a média dos avaliados.
+function sortearEquilibrado(
+  atletas: Atleta[],
+  quantidade: number,
+  especial: string | null,
+): { time: number; atleta: Atleta }[] {
+  const comNota = atletas.filter((a) => a.nota)
+  const media = comNota.length ? comNota.reduce((t, a) => t + (a.nota ?? 0), 0) / comNota.length : 70
+  const forca = (a: Atleta) => a.nota ?? media
+  // Embaralha antes de ordenar para que notas iguais não caiam sempre no mesmo time.
+  const ordenar = (lista: Atleta[]) => embaralhar(lista).sort((a, b) => forca(b) - forca(a))
+  const especiais = especial ? ordenar(atletas.filter((a) => a.posicao === especial)) : []
+  const resto = ordenar(atletas.filter((a) => !especiais.includes(a)))
+  const tamanhos = Array(quantidade).fill(0)
+  const somas = Array(quantidade).fill(0)
+  const escolhas: { time: number; atleta: Atleta }[] = []
+  for (const atleta of [...especiais, ...resto]) {
+    const menor = Math.min(...tamanhos)
+    const candidatos = tamanhos.map((t, i) => (t === menor ? i : -1)).filter((i) => i >= 0)
+    const time = candidatos.sort((a, b) => somas[a] - somas[b])[0]
+    tamanhos[time] += 1
+    somas[time] += forca(atleta)
+    escolhas.push({ time, atleta })
+  }
+  return escolhas
+}
+
+function forcaDoTime(time: Atleta[]): number | null {
+  const notas = time.map((a) => a.nota).filter((n): n is number => Boolean(n))
+  return notas.length ? Math.round(notas.reduce((t, n) => t + n, 0) / notas.length) : null
+}
+
 function nomeCurto(atleta: Atleta) {
   return atleta.apelido?.trim() || atleta.nome.split(' ').slice(0, 2).join(' ')
 }
@@ -61,6 +94,7 @@ export default function Sorteio() {
   const [porTime, setPorTime] = useState(5)
   const [quantidade, setQuantidade] = useState(2)
   const [separar, setSeparar] = useState(true)
+  const [equilibrar, setEquilibrar] = useState(true)
   const [timesExistentes, setTimesExistentes] = useState<string[]>([])
   const [etapa, setEtapa] = useState<Etapa>('configurar')
   const [escolhas, setEscolhas] = useState<{ time: number; atleta: Atleta }[]>([])
@@ -115,6 +149,9 @@ export default function Sorteio() {
   const especial = POSICAO_ESPECIAL[esporte.id]
   const jogadores = atletas.filter((a) => selecionados.has(a.id))
   const sobram = Math.max(0, jogadores.length - quantidade * porTime)
+  const avaliados = jogadores.filter((a) => a.nota).length
+  // O equilibrado só faz sentido com pelo menos dois atletas avaliados.
+  const podeEquilibrar = avaliados >= 2
 
   const times = useMemo(() => {
     const lista: Atleta[][] = Array.from({ length: quantidade }, () => [])
@@ -128,7 +165,10 @@ export default function Sorteio() {
       return
     }
     if (temporizador.current) window.clearInterval(temporizador.current)
-    const novas = sortear(jogadores, quantidade, separar && especial ? especial.posicao : null)
+    const posicaoSeparada = separar && especial ? especial.posicao : null
+    const novas = equilibrar && podeEquilibrar
+      ? sortearEquilibrado(jogadores, quantidade, posicaoSeparada)
+      : sortear(jogadores, quantidade, posicaoSeparada)
     setEscolhas(novas)
     setReveladas(0)
     setTrocando(null)
@@ -291,6 +331,23 @@ export default function Sorteio() {
               <input type="checkbox" checked={separar} onChange={(e) => setSeparar(e.target.checked)} className="h-5 w-5 accent-emerald-500" />
             </label>
           )}
+          <label className={`flex items-center justify-between gap-3 ${podeEquilibrar ? 'cursor-pointer' : 'opacity-60'}`}>
+            <span>
+              <span className="block text-sm font-bold text-white">Equilibrar pelas notas</span>
+              <span className="block text-xs text-gray-500">
+                {podeEquilibrar
+                  ? `${avaliados} de ${jogadores.length} têm nota na carta`
+                  : 'Dê notas aos atletas na carta para usar'}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={equilibrar && podeEquilibrar}
+              disabled={!podeEquilibrar}
+              onChange={(e) => setEquilibrar(e.target.checked)}
+              className="h-5 w-5 accent-emerald-500"
+            />
+          </label>
           <p className="rounded-xl bg-gray-800/60 px-3 py-2 text-center text-xs font-semibold text-gray-300">
             {quantidade} times de até {porTime}
             {sobram > 0 ? ` · ${sobram} vão para o banco` : ''}
@@ -334,6 +391,11 @@ export default function Sorteio() {
             <div className="flex items-center gap-2 border-b border-gray-800 px-3 py-2.5">
               <span className={`h-3 w-3 shrink-0 rounded-full ${CORES[i]}`} />
               <p className="flex-1 truncate text-sm font-black text-white">{NOMES[i]}</p>
+              {forcaDoTime(time) !== null && (
+                <span className="rounded-md bg-amber-500/15 px-1.5 text-xs font-black tabular-nums text-amber-400" title="Força: média das notas">
+                  {forcaDoTime(time)}
+                </span>
+              )}
               <span className="text-xs font-bold text-gray-500">{time.length}</span>
             </div>
             <ul className="space-y-1 p-2">
@@ -356,6 +418,7 @@ export default function Sorteio() {
                       </span>
                       <span className="block truncate text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                         {labelPosicao(atleta.posicao) || '—'}
+                        {atleta.nota ? ` · ${atleta.nota}` : ''}
                       </span>
                     </span>
                   </button>

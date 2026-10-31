@@ -23,7 +23,7 @@ from app.models import (
     TipoPagamento,
     StatusPagamento,
 )
-from app.schemas.atleta import AtletaCreate, AtletaUpdate, AtletaResponse
+from app.schemas.atleta import AtletaCreate, AtletaUpdate, AtletaResponse, AtributosUpdate
 from app.services.auth import get_current_user
 from app.deps import (
     esporte_do_racha,
@@ -106,12 +106,49 @@ def listar_atletas(
     return query.order_by(Atleta.nome).offset(skip).limit(limit).all()
 
 
+@router.get("/meu", response_model=AtletaResponse)
+def meu_atleta(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """O atleta de quem está logado neste racha (para a carta e as estatísticas do próprio perfil)."""
+    verificar_acesso_racha(db, current_user, racha_id)
+    atleta = db.query(Atleta).filter(
+        Atleta.racha_id == racha_id, Atleta.user_id == current_user.id, Atleta.ativo.is_(True)
+    ).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Você ainda não é atleta deste racha")
+    return atleta
+
+
 @router.get("/{atleta_id}", response_model=AtletaResponse)
 def obter_atleta(atleta_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
     verificar_acesso_racha(db, current_user, atleta.racha_id)
+    return atleta
+
+
+@router.put("/{atleta_id}/atributos", response_model=AtletaResponse)
+def definir_atributos(
+    atleta_id: int,
+    payload: AtributosUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Notas da carta do atleta, dadas pelo admin: os atributos do esporte do racha, de 40 a 99."""
+    atleta = db.query(Atleta).filter(Atleta.id == atleta_id).first()
+    if not atleta:
+        raise HTTPException(status_code=404, detail="Atleta não encontrado")
+    verificar_admin_racha(db, current_user, atleta.racha_id)
+    esporte = esporte_do_racha(db, atleta.racha_id)
+    siglas = {sigla for sigla, _ in esporte.atributos}
+    if set(payload.atributos) != siglas:
+        raise HTTPException(status_code=400, detail="Dê nota para todos os atributos do esporte")
+    if any(not 40 <= nota <= 99 for nota in payload.atributos.values()):
+        raise HTTPException(status_code=400, detail="As notas vão de 40 a 99")
+    # Atribui um dicionário novo para o SQLAlchemy perceber a mudança na coluna JSON.
+    atleta.atributos = {sigla: payload.atributos[sigla] for sigla, _ in esporte.atributos}
+    db.commit()
+    db.refresh(atleta)
     return atleta
 
 

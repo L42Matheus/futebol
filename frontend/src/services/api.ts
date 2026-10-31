@@ -101,6 +101,10 @@ export const rachasApi = {
 export const atletasApi = {
   list: (rachaId: number | string): Promise<AxiosResponse<Atleta[]>> =>
     api.get(`/atletas/?racha_id=${rachaId}`),
+  // O atleta de quem está logado no racha (404 quando a pessoa não é atleta dele).
+  meu: (rachaId: number | string): Promise<AxiosResponse<Atleta>> => api.get(`/atletas/meu?racha_id=${rachaId}`),
+  definirAtributos: (id: number | string, atributos: Record<string, number>): Promise<AxiosResponse<Atleta>> =>
+    api.put(`/atletas/${id}/atributos`, { atributos }),
   get: (id: number | string): Promise<AxiosResponse<Atleta>> => api.get(`/atletas/${id}`),
   create: (data: Partial<Atleta> & { racha_id: number }): Promise<AxiosResponse<Atleta>> =>
     api.post('/atletas/', data),
