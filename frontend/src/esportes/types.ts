@@ -45,6 +45,8 @@ export interface Esporte {
   pontuacao: string
   // O mesmo no singular, para um lance na partida: gol, cesta, ponto.
   lance: string
+  // Atributos da carta do atleta, na ordem da carta. Precisa bater com app/esportes no backend.
+  atributos: { sigla: string; nome: string }[]
   placar: Placar
   // Presente nos esportes com o recurso 'escalacao'.
   escalacao?: EscalacaoEsporte
