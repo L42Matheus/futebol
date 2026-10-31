@@ -12,6 +12,10 @@ BASQUETE = Esporte(
     recursos=frozenset({ESCALACAO}),
     eventos_partida=(GOL, ASSISTENCIA, FALTA, SUBSTITUICAO),
     valores_pontuacao=(1, 2, 3),
+    atributos=(
+        ("arr", "Arremesso"), ("inf", "Infiltração"), ("pas", "Passe"),
+        ("reb", "Rebote"), ("def", "Defesa"), ("fis", "Físico"),
+    ),
     periodo_nome="quarto",
     periodos=4,
 )

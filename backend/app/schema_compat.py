@@ -391,6 +391,10 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         ADD COLUMN IF NOT EXISTS iniciado_em TIMESTAMPTZ
         """,
         """
+        ALTER TABLE atletas
+        ADD COLUMN IF NOT EXISTS atributos JSON
+        """,
+        """
         ALTER TABLE jogos
         ADD COLUMN IF NOT EXISTS periodo INTEGER
         """,

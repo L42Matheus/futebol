@@ -29,10 +29,17 @@ class AtletaUpdate(BaseModel):
     ativo: Optional[bool] = None
 
 
+class AtributosUpdate(BaseModel):
+    # Sigla do atributo (do esporte do racha) -> nota de 40 a 99.
+    atributos: dict[str, int]
+
+
 class AtletaResponse(AtletaBase):
     id: int
     racha_id: int
     foto_url: Optional[str] = None
+    atributos: Optional[dict[str, int]] = None
+    nota: Optional[int] = None
     is_admin: bool
     ativo: bool
     created_at: datetime

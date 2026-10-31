@@ -14,4 +14,8 @@ FUTEBOL = Esporte(
     posicao_padrao="meia",
     recursos=frozenset({ESCALACAO, ARTILHARIA, CARTOES}),
     eventos_partida=(GOL, ASSISTENCIA, AMARELO, VERMELHO, SUBSTITUICAO),
+    atributos=(
+        ("rit", "Ritmo"), ("fin", "Finalização"), ("pas", "Passe"),
+        ("con", "Condução"), ("def", "Defesa"), ("fis", "Físico"),
+    ),
 )
