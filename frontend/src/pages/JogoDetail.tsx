@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Check, X, Clock, Trash2, Save, Trophy, Radio, ChevronDown, MapPin, Play, Shuffle } from 'lucide-react'
-import { jogosApi, presencasApi, rachasApi, teamsApi } from '../services/api'
+import { destaquesApi, jogosApi, presencasApi, rachasApi, teamsApi } from '../services/api'
 import { useToast } from '../context/ToastContext'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { esporteDaModalidade } from '../esportes'
 import { parseDataJogo } from '../utils/dataJogo'
-import type { Jogo, JogoLista } from '../types'
+import type { DestaquesPartida, Jogo, JogoLista } from '../types'
 
 
 function primeiraMaiuscula(texto: string) {
@@ -41,6 +41,7 @@ export default function JogoDetail() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [tipoRacha, setTipoRacha] = useState<string | null>(null)
   const [placarManual, setPlacarManual] = useState(false)
+  const [destaques, setDestaques] = useState<DestaquesPartida | null>(null)
 
   const loadData = useCallback(async () => {
     if (!jogoId) return
@@ -90,6 +91,13 @@ export default function JogoDetail() {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // O card dos destaques só aparece depois do apito final.
+  const finalizado = Boolean(jogo?.finalizado)
+  useEffect(() => {
+    if (!jogoId || !finalizado) return
+    destaquesApi.get(jogoId).then(({ data }) => setDestaques(data)).catch(() => setDestaques(null))
+  }, [jogoId, finalizado])
 
   async function handleConfirmar(atletaId: number) {
     if (!jogoId) return
@@ -262,6 +270,31 @@ export default function JogoDetail() {
           <p className="mt-4 text-xs font-medium text-white/60">O placar aparece aqui quando a partida começar.</p>
         )}
       </section>
+
+      {destaques && destaques.situacao !== 'aguardando' && (
+        <button
+          type="button"
+          onClick={() => navigate(`/racha/${jogo.racha_id}/jogo/${jogo.id}/destaques`)}
+          className="flex w-full items-center gap-3 rounded-[1.5rem] border border-amber-500/30 bg-amber-500/5 p-4 text-left transition-colors hover:border-amber-500/60"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
+            <Trophy size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-black text-white">Destaques da partida</span>
+            <span className="block truncate text-sm text-gray-400">
+              {destaques.situacao === 'encerrada'
+                ? destaques.destaques.length
+                  ? `Melhor jogador: ${destaques.destaques[0].apelido || destaques.destaques[0].nome}`
+                  : 'Veja o pódio da partida.'
+                : destaques.pode_votar && destaques.meu_voto.length === 0
+                  ? 'Votação aberta. Escolha os 3 melhores.'
+                  : `Votação aberta · ${destaques.votantes}/${destaques.total_participantes} votaram`}
+            </span>
+          </span>
+          <ChevronDown size={18} className="-rotate-90 shrink-0 text-gray-400" />
+        </button>
+      )}
 
       {isAdmin && !jogo.iniciado_em && (
         <button

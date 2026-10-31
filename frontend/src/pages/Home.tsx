@@ -13,13 +13,14 @@ import {
   ChevronDown,
   Radio,
 } from 'lucide-react'
-import { rachasApi, jogosApi, rankingApi } from '../services/api'
+import { rachasApi, jogosApi, rankingApi, resenhaApi } from '../services/api'
+import ItemResenha from '../components/ItemResenha'
 import { SELECTED_RACHA_KEY } from '../services/convite'
 import EscudoTime from '../components/EscudoTime'
 import { parseDataJogo } from '../utils/dataJogo'
 import { useAuth } from '../context/AuthContext'
 import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
-import type { Jogo, Racha, Saldo } from '../types'
+import type { Jogo, Noticia, Racha, Saldo } from '../types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -53,6 +54,8 @@ export default function Home() {
   // Líder da categoria principal do ranking (gols, pontos...), para o card do resumo.
   const [lider, setLider] = useState<{ nome: string; valor: string; categoria: string } | null>(null)
   const [saldo, setSaldo] = useState<Saldo | null>(null)
+  // As 3 últimas da Resenha; a lista completa fica na tela da Resenha.
+  const [noticias, setNoticias] = useState<Noticia[]>([])
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -79,6 +82,10 @@ export default function Home() {
         setNextGame(null)
         setSaldo(null)
       }
+      resenhaApi
+        .listar(current.id, 3)
+        .then(({ data }) => setNoticias(data))
+        .catch(() => setNoticias([]))
       try {
         const { data } = await rankingApi.get(current.id)
         const principal = data.categorias[0]
@@ -388,6 +395,30 @@ export default function Home() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Resenha</p>
+              <button
+                type="button"
+                onClick={() => navigate(`/racha/${rachas[selectedIndex].id}/resenha`)}
+                className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-400"
+              >
+                Ver tudo <ChevronRight size={14} />
+              </button>
+            </div>
+            {noticias.length > 0 ? (
+              <div className="divide-y divide-gray-800 rounded-3xl border border-gray-800 bg-gray-900/40">
+                {noticias.map((n) => (
+                  <ItemResenha key={n.id} noticia={n} rachaId={rachas[selectedIndex].id} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-3xl border border-dashed border-gray-800 px-4 py-5 text-center text-sm text-gray-500">
+                Resultados, destaques e novidades do racha aparecem aqui.
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">
