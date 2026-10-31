@@ -17,8 +17,13 @@ from app.models.temporada import Temporada, StatusTemporada
 from app.models.evento_partida import EventoPartida
 from app.models.chamado_suporte import ChamadoSuporte
 from app.models.participante_partida import ParticipantePartida
+from app.models.destaque import DestaquePartida, VotoDestaque
+from app.models.noticia import Noticia
 
 __all__ = [
+    "DestaquePartida",
+    "Noticia",
+    "VotoDestaque",
     "ParticipantePartida",
     "ChamadoSuporte",
     "EventoPartida",

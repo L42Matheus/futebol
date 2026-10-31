@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import esporte_do_racha, verificar_acesso_racha
 from app.esportes import ASSISTENCIA, GOL
-from app.models import Atleta, AtletaStat, EventoPartida, Jogo, ParticipantePartida, User
+from app.models import Atleta, AtletaStat, DestaquePartida, EventoPartida, Jogo, ParticipantePartida, User
 from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/rachas", tags=["Ranking"])
@@ -50,6 +50,7 @@ CATEGORIAS = {
         Categoria(id="assistencias", nome="Assistências"),
         Categoria(id="vitorias", nome="Vitórias"),
         Categoria(id="aproveitamento", nome="Aproveitamento", sufixo="%"),
+        Categoria(id="destaques", nome="Destaques"),
     ],
     "basquete": [
         Categoria(id="pontos", nome="Pontos", sufixo="pts"),
@@ -57,12 +58,14 @@ CATEGORIAS = {
         Categoria(id="bolas_de_3", nome="Bolas de 3"),
         Categoria(id="assistencias", nome="Assistências"),
         Categoria(id="vitorias", nome="Vitórias"),
+        Categoria(id="destaques", nome="Destaques"),
     ],
     "volei": [
         Categoria(id="pontos", nome="Pontos", sufixo="pts"),
         Categoria(id="vitorias", nome="Vitórias"),
         Categoria(id="sets", nome="Sets vencidos"),
         Categoria(id="aproveitamento", nome="Aproveitamento", sufixo="%"),
+        Categoria(id="destaques", nome="Destaques"),
     ],
 }
 
@@ -123,6 +126,12 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
         elif e.tipo == ASSISTENCIA:
             assistencias[e.atleta_id] += 1
 
+    # Quantas vezes cada atleta ficou entre os três destaques da partida.
+    destaques: dict[int, int] = defaultdict(int)
+    if ids_jogos:
+        for d in db.query(DestaquePartida).filter(DestaquePartida.jogo_id.in_(ids_jogos)):
+            destaques[d.atleta_id] += 1
+
     # Futebol: gols e assistências da artilharia, que soma os lances e os ajustes do admin.
     artilharia = {}
     if esporte.id == "futebol":
@@ -141,6 +150,7 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
                 "assistencias": stat.assistencias if stat else 0,
                 "vitorias": vitorias[atleta.id],
                 "aproveitamento": aproveitamento,
+                "destaques": destaques[atleta.id],
             }
         elif esporte.id == "basquete":
             valores = {
@@ -149,6 +159,7 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
                 "bolas_de_3": bolas_de_3[atleta.id],
                 "assistencias": assistencias[atleta.id],
                 "vitorias": vitorias[atleta.id],
+                "destaques": destaques[atleta.id],
             }
         else:
             valores = {
@@ -156,6 +167,7 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
                 "vitorias": vitorias[atleta.id],
                 "sets": sets[atleta.id],
                 "aproveitamento": aproveitamento,
+                "destaques": destaques[atleta.id],
             }
         resultado.append(AtletaRanking(
             atleta_id=atleta.id,

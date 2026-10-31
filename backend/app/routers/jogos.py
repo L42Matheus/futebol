@@ -9,6 +9,7 @@ from app.models import Jogo, Racha, Presenca, Atleta, StatusPresenca, User, Team
 from app.schemas.jogo import JogoCreate, JogoUpdate, JogoResponse
 from app.services.auth import get_current_user
 from app.deps import verificar_acesso_racha, verificar_admin_racha
+from app.services.resenha import publicar
 
 router = APIRouter(prefix="/jogos", tags=["Jogos"])
 
@@ -43,6 +44,13 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: Us
 
     db_jogo = Jogo(**data)
     db.add(db_jogo)
+    db.flush()
+    dias = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
+    quando = f"{dias[db_jogo.data_hora.weekday()]}, {db_jogo.data_hora:%d/%m} às {db_jogo.data_hora:%H:%M}"
+    publicar(
+        db, jogo.racha_id, "jogo_marcado", f"Jogo marcado: {quando}",
+        db_jogo.local or None, jogo_id=db_jogo.id,
+    )
     db.commit()
     db.refresh(db_jogo)
     atletas = db.query(Atleta).filter(Atleta.racha_id == jogo.racha_id, Atleta.ativo.is_(True)).all()

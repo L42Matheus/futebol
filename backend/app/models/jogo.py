@@ -28,6 +28,8 @@ class Jogo(Base):
     periodo = Column(Integer, nullable=True)
     # Vôlei: até quantos pontos vai cada set.
     pontos_por_set = Column(Integer, nullable=True)
+    # Votação dos destaques: aberta ao encerrar a partida, até esta hora.
+    votacao_ate = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=False), server_default=func.now())  
     updated_at = Column(DateTime(timezone=False), onupdate=func.now())  
 

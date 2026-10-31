@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.deps import esporte_do_racha, posicao_do_esporte
+from app.services.resenha import nome_curto, publicar
 from app.models import (
     Atleta,
     AthleteProfile,
@@ -55,6 +56,10 @@ def processar_invite(db: Session, user: User, invite: Invite) -> None:
             )
             db.add(atleta)
             db.flush()
+            publicar(
+                db, invite.racha_id, "novo_atleta",
+                f"{nome_curto(atleta)} entrou no racha", "pelo link de convite", atleta_id=atleta.id,
+            )
             if invite.team_id:
                 db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))
 
