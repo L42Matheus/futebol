@@ -7,6 +7,7 @@ import RachaDetail from './pages/RachaDetail'
 import JogoDetail from './pages/JogoDetail'
 import PartidaAoVivo from './pages/PartidaAoVivo'
 import Ranking from './pages/Ranking'
+import Sorteio from './pages/Sorteio'
 import Atletas from './pages/Atletas'
 import Financeiro from './pages/Financeiro'
 import FinanceiroHub from './pages/FinanceiroHub'
@@ -65,6 +66,7 @@ export default function AppRoutes() {
             <Route path="racha/:rachaId/novo-jogo" element={<NovoJogo />} />
             <Route path="racha/:rachaId/jogo/:jogoId" element={<JogoDetail />} />
             <Route path="racha/:rachaId/jogo/:jogoId/partida" element={<PartidaAoVivo />} />
+            <Route path="racha/:rachaId/jogo/:jogoId/sorteio" element={<Sorteio />} />
             <Route path="racha/:rachaId/atletas" element={<Atletas />} />
             <Route path="racha/:rachaId/atleta/:atletaId" element={<AtletaProfile />} />
             <Route path="racha/:rachaId/financeiro" element={<Financeiro />} />

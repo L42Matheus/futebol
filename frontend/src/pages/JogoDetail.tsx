@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Check, X, Clock, Trash2, Save, Trophy, Radio, ChevronDown, MapPin, Play } from 'lucide-react'
+import { Check, X, Clock, Trash2, Save, Trophy, Radio, ChevronDown, MapPin, Play, Shuffle } from 'lucide-react'
 import { jogosApi, presencasApi, rachasApi, teamsApi } from '../services/api'
 import { useToast } from '../context/ToastContext'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -262,6 +262,27 @@ export default function JogoDetail() {
           <p className="mt-4 text-xs font-medium text-white/60">O placar aparece aqui quando a partida começar.</p>
         )}
       </section>
+
+      {isAdmin && !jogo.iniciado_em && (
+        <button
+          type="button"
+          onClick={() => navigate(`/racha/${jogo.racha_id}/jogo/${jogo.id}/sorteio`)}
+          className="flex w-full items-center gap-3 rounded-[1.5rem] border border-gray-800 bg-gray-900/40 p-4 text-left transition-colors hover:border-emerald-500/40"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-400">
+            <Shuffle size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-black text-white">Sortear times</span>
+            <span className="block text-sm text-gray-400">
+              {jogo.time_a_nome && jogo.time_b_nome
+                ? `Hoje: ${jogo.time_a_nome} x ${jogo.time_b_nome}. Sorteie de novo se quiser.`
+                : 'Monte os times na hora com quem confirmou presença.'}
+            </span>
+          </span>
+          <ChevronDown size={18} className="-rotate-90 shrink-0 text-gray-400" />
+        </button>
+      )}
 
       {isAdmin && !jogo.iniciado_em && (
         <div className="card">

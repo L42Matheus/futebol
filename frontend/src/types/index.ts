@@ -249,3 +249,9 @@ export interface Ranking {
   categorias: CategoriaRanking[]
   atletas: AtletaRanking[]
 }
+
+// Confirmação do sorteio de times (POST /jogos/:id/sorteio).
+export interface SorteioConfirmado {
+  jogo_id: number
+  times: { id: number; nome: string; titulares: number; reservas: number }[]
+}

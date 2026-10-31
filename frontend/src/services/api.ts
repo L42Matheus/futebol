@@ -18,6 +18,7 @@ import type {
   Partida,
   NovoLance,
   Ranking,
+  SorteioConfirmado,
 } from '../types'
 
 const API_URL = import.meta.env?.VITE_API_URL || ''
@@ -287,6 +288,13 @@ export const teamsApi = {
     teamId: number | string,
     atletaId: number | string,
   ): Promise<AxiosResponse<void>> => api.delete(`/teams/${teamId}/members/${atletaId}`),
+}
+
+export const sorteioApi = {
+  confirmar: (
+    jogoId: number | string,
+    dados: { jogadores_por_time: number; times: { nome: string; atletas: number[] }[] },
+  ): Promise<AxiosResponse<SorteioConfirmado>> => api.post(`/jogos/${jogoId}/sorteio`, dados),
 }
 
 export const rankingApi = {
