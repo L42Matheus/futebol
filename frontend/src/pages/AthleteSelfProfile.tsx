@@ -1,27 +1,91 @@
 ﻿import { useState, useEffect, useRef, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown, X } from 'lucide-react'
+import { Phone, MapPin, Hash, Footprints, Trophy, Shield, Edit2, Camera, LogOut, ChevronDown, X, Share2 } from 'lucide-react'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
 import { PERNA_LABELS } from '../constants'
 import { esporteDaModalidade, labelPosicao } from '../esportes'
 import { useAuth } from '../context/AuthContext'
-import { profileApi, rachasApi } from '../services/api'
-import type { Racha } from '../types'
+import { atletasApi, profileApi, rachasApi, rankingApi } from '../services/api'
+import type { Atleta, AtletaRanking, Profile, Racha, Ranking } from '../types'
+import CartaAtleta from '../components/CartaAtleta'
+import { gerarImagemCarta } from '../utils/imagemCarta'
+import { useToast } from '../context/ToastContext'
 
 const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
+
+// "Atacante" -> ATA: sigla curta para a carta.
+function siglaPosicao(nome: string) {
+  return nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 3).toUpperCase()
+}
+
+// Jogos, a pontuação principal do esporte (gols, pontos) e vitórias, tirados do ranking do racha.
+function estatisticas(ranking: Ranking | null, atletaId?: number) {
+  const eu: AtletaRanking | undefined = ranking?.atletas.find((a) => a.atleta_id === atletaId)
+  const principal = ranking?.categorias[0]
+  const formatar = (valor: number | null | undefined) => (valor === null || valor === undefined ? '0' : String(valor))
+  return [
+    { rotulo: 'Jogos', valor: String(eu?.jogos ?? 0) },
+    { rotulo: principal?.nome ?? 'Pontos', valor: formatar(principal ? eu?.valores[principal.id] : 0) },
+    { rotulo: 'Vitórias', valor: formatar(eu?.valores.vitorias) },
+  ]
+}
 
 export default function AthleteSelfProfile() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [profile, setProfile] = useState(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [hasRacha, setHasRacha] = useState(false)
   const [rachas, setRachas] = useState<Racha[]>([])
   const [selectedRachaId, setSelectedRachaId] = useState('')
   const [uploading, setUploading] = useState(false)
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false)
-  const fileInputRef = useRef(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  // Carta e números do atleta no racha selecionado.
+  const [meuAtleta, setMeuAtleta] = useState<Atleta | null>(null)
+  const [ranking, setRanking] = useState<Ranking | null>(null)
+  const [gerandoImagem, setGerandoImagem] = useState(false)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (!selectedRachaId) return
+    setMeuAtleta(null)
+    setRanking(null)
+    atletasApi.meu(selectedRachaId).then((res) => setMeuAtleta(res.data)).catch(() => setMeuAtleta(null))
+    rankingApi.get(selectedRachaId).then((res) => setRanking(res.data)).catch(() => setRanking(null))
+  }, [selectedRachaId])
+
+  async function compartilharCarta() {
+    if (!meuAtleta) return
+    setGerandoImagem(true)
+    try {
+      const esporte = esporteDaModalidade(rachas.find((r) => String(r.id) === selectedRachaId)?.tipo)
+      const imagem = await gerarImagemCarta({
+        nome: meuAtleta.apelido || meuAtleta.nome,
+        fotoUrl: meuAtleta.foto_url,
+        posicao: siglaPosicao(labelPosicao(meuAtleta.posicao)),
+        nota: meuAtleta.nota,
+        atributos: meuAtleta.atributos,
+        lista: esporte.atributos,
+        racha: rachas.find((r) => String(r.id) === selectedRachaId)?.nome,
+      })
+      const arquivo = new File([imagem], 'minha-carta.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [arquivo] })) {
+        await navigator.share({ files: [arquivo], title: 'Minha carta' })
+      } else {
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(arquivo)
+        link.download = arquivo.name
+        link.click()
+        URL.revokeObjectURL(link.href)
+      }
+    } catch (e) {
+      if ((e as Error)?.name !== 'AbortError') toast('Não foi possível gerar a imagem da carta.', 'error')
+    } finally {
+      setGerandoImagem(false)
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -59,7 +123,7 @@ export default function AthleteSelfProfile() {
     setSelectedRachaId(rachaId)
   }
 
-  async function handlePhotoUpload(e) {
+  async function handlePhotoUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
@@ -152,9 +216,11 @@ export default function AthleteSelfProfile() {
             {profile.apelido && <p className="text-gray-500 font-medium">{profile.nome}</p>}
 
             <div className="mt-5 flex flex-wrap justify-center gap-2">
-              <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
-                {labelPosicao(profile.posicao) || '-'}
-              </span>
+              {profile.posicao && (
+                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider">
+                  {labelPosicao(profile.posicao)}
+                </span>
+              )}
               <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                 <Footprints size={12} /> {PERNA_LABELS[profile.perna_boa || 'direita']}
               </span>
@@ -244,28 +310,44 @@ export default function AthleteSelfProfile() {
           </div>
         </div>
 
-        <section className="bg-gray-900/40 p-8 rounded-[2.5rem] border border-gray-800">
-          <div className="flex items-center gap-2 mb-8">
+        {meuAtleta && (
+          <section className="space-y-3">
+            <CartaAtleta
+              nome={meuAtleta.apelido || meuAtleta.nome}
+              fotoUrl={meuAtleta.foto_url}
+              posicao={siglaPosicao(labelPosicao(meuAtleta.posicao))}
+              nota={meuAtleta.nota}
+              atributos={meuAtleta.atributos}
+              lista={esporteDaModalidade(selectedRacha?.tipo).atributos}
+            />
+            {meuAtleta.nota ? (
+              <div className="flex justify-center">
+                <button type="button" onClick={() => void compartilharCarta()} disabled={gerandoImagem} className="btn-secondary">
+                  <Share2 size={16} /> {gerandoImagem ? 'Gerando...' : 'Compartilhar minha carta'}
+                </button>
+              </div>
+            ) : (
+              <p className="text-center text-xs text-gray-500">O admin do racha dá as notas da sua carta.</p>
+            )}
+          </section>
+        )}
+
+        <section className="bg-gray-900/40 p-6 rounded-[2.5rem] border border-gray-800">
+          <div className="flex items-center gap-2 mb-6">
             <Trophy size={20} className="text-amber-500" />
-            <h2 className="text-sm font-black text-white uppercase tracking-widest">Estatisticas</h2>
+            <h2 className="text-sm font-black text-white uppercase tracking-widest">Estatísticas</h2>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-3xl font-black text-white tracking-tighter">0</p>
-              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Jogos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-white tracking-tighter">0</p>
-              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">
-                {esporteDaModalidade(selectedRacha?.tipo).pontuacao}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-white tracking-tighter">0%</p>
-              <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Presenca</p>
-            </div>
+            {estatisticas(ranking, meuAtleta?.id).map(({ rotulo, valor }) => (
+              <div key={rotulo} className="text-center">
+                <p className="text-3xl font-black tabular-nums text-white tracking-tighter">{valor}</p>
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">{rotulo}</p>
+              </div>
+            ))}
           </div>
-          <p className="text-xs text-gray-500 mt-4 text-center">Em breve com dados reais.</p>
+          {!meuAtleta && hasRacha && (
+            <p className="text-xs text-gray-500 mt-4 text-center">Você ainda não é atleta deste racha.</p>
+          )}
         </section>
 
 
