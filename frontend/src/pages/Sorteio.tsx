@@ -13,6 +13,7 @@ const CORES = ['bg-emerald-500', 'bg-sky-500', 'bg-red-500', 'bg-yellow-400', 'b
 const POSICAO_ESPECIAL: Record<string, { posicao: string; nome: string }> = {
   futebol: { posicao: 'goleiro', nome: 'goleiros' },
   volei: { posicao: 'levantador', nome: 'levantadores' },
+  basquete: { posicao: 'pivo', nome: 'pivôs' },
 }
 const INTERVALO_REVELACAO = 450
 
