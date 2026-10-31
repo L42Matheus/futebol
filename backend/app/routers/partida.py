@@ -24,6 +24,8 @@ from app.models import (
     TipoPagamento,
     User,
 )
+from app.services.destaques import abrir_votacao
+from app.services.resenha import nome_curto, publicar
 from app.schemas.partida import (
     EventoCreate,
     EventoResponse,
@@ -238,6 +240,7 @@ def encerrar_partida(jogo_id: int, db: Session = Depends(get_db), current_user: 
     if not jogo.iniciado_em:
         raise HTTPException(status_code=400, detail="A partida ainda não começou")
     jogo.finalizado = True
+    abrir_votacao(db, jogo)
     db.commit()
     db.refresh(jogo)
     return _montar_resposta(db, jogo, current_user)
@@ -263,6 +266,7 @@ def proximo_periodo(jogo_id: int, db: Session = Depends(get_db), current_user: U
         sets = jogo.placar_time_a if vencedor == "a" else jogo.placar_time_b
         if sets >= _sets_para_vencer(esporte):
             jogo.finalizado = True
+            abrir_votacao(db, jogo)
             db.commit()
             db.refresh(jogo)
             return _montar_resposta(db, jogo, current_user)
@@ -318,7 +322,17 @@ def registrar_evento(
         if not esporte.placar_por_periodo:
             _somar_placar(jogo, lado, valor)
         if payload.atleta_id:
-            _stat(db, payload.atleta_id, jogo.racha_id).gols += 1
+            stat = _stat(db, payload.atleta_id, jogo.racha_id)
+            stat.gols += 1
+            if stat.gols % 10 == 0:
+                atleta = db.query(Atleta).filter(Atleta.id == payload.atleta_id).first()
+                palavra = {"basquete": "cestas", "volei": "pontos"}.get(esporte.id, "gols")
+                publicar(
+                    db, jogo.racha_id, "marca",
+                    f"{nome_curto(atleta)} chegou a {stat.gols} {palavra} no racha",
+                    f"Na partida {jogo.time_a_nome or 'Time A'} x {jogo.time_b_nome or 'Time B'}",
+                    jogo_id=jogo.id, atleta_id=atleta.id,
+                )
     elif payload.tipo == ASSISTENCIA:
         _stat(db, payload.atleta_id, jogo.racha_id).assistencias += 1
     elif payload.tipo in CARTAO_POR_EVENTO:

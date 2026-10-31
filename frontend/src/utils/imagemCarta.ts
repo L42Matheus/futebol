@@ -14,7 +14,7 @@ interface DadosCarta {
 const LARGURA = 1080
 const ALTURA = 1350
 
-function carregarImagem(src: string): Promise<HTMLImageElement | null> {
+export function carregarImagem(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image()
     // Sem crossOrigin a foto "suja" o canvas e o toBlob falha.

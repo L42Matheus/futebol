@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeftRight, Flag, Play, Timer, Undo2, X } from 'lucide-react'
+import { ArrowLeftRight, ChevronRight, Flag, Play, Timer, Trophy, Undo2, X } from 'lucide-react'
 import { format } from 'date-fns'
 import Avatar from '../components/Avatar'
 import EscudoTime from '../components/EscudoTime'
@@ -200,7 +200,7 @@ export default function PartidaAoVivo() {
     try {
       const res = await partidaApi.encerrar(jogoId)
       aplicar(res.data)
-      toast('Partida encerrada.', 'success')
+      toast('Partida encerrada. A votação dos destaques está aberta.', 'success')
     } catch (e) {
       toast(erroDaApi(e, 'Não foi possível encerrar a partida.'), 'error')
     }
@@ -491,6 +491,18 @@ export default function PartidaAoVivo() {
                   </div>
                 )}
               </div>
+            )}
+
+            {partida.finalizado && (
+              <button
+                type="button"
+                onClick={() => navigate(`/racha/${partida.racha_id}/jogo/${partida.jogo_id}/destaques`)}
+                className="mt-2 flex h-12 w-full items-center gap-3 rounded-2xl bg-amber-400 px-4 text-left text-sm font-black text-slate-900 hover:bg-amber-300"
+              >
+                <Trophy size={17} />
+                <span className="flex-1">Destaques da partida</span>
+                <ChevronRight size={17} />
+              </button>
             )}
           </section>
 

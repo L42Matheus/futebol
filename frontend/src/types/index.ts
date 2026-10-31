@@ -258,3 +258,55 @@ export interface SorteioConfirmado {
   jogo_id: number
   times: { id: number; nome: string; titulares: number; reservas: number }[]
 }
+
+// Destaques da partida (GET /jogos/:id/destaques).
+export interface AtletaDestaque {
+  atleta_id: number
+  nome: string
+  apelido?: string | null
+  foto_url?: string | null
+  posicao?: string | null
+  nota?: number | null
+  lado?: 'a' | 'b' | null
+  // Ex.: "2 gols · 1 assist."
+  resumo: string
+}
+
+export interface Destaque extends AtletaDestaque {
+  colocacao: number
+  origem: 'votacao' | 'admin' | 'lances'
+  pontos?: number | null
+}
+
+export interface DestaquesPartida {
+  jogo_id: number
+  racha_id: number
+  situacao: 'aguardando' | 'votacao' | 'encerrada'
+  votacao_ate?: string | null
+  agora: string
+  is_admin: boolean
+  pode_votar: boolean
+  meu_atleta_id?: number | null
+  meu_voto: number[]
+  votantes: number
+  total_participantes: number
+  time_a_nome: string
+  time_b_nome: string
+  placar_a: number
+  placar_b: number
+  candidatos: AtletaDestaque[]
+  destaques: Destaque[]
+}
+
+// Item da Resenha do racha.
+export interface Noticia {
+  id: number
+  tipo: 'resultado' | 'destaques' | 'marca' | 'novo_atleta' | 'jogo_marcado' | 'aviso'
+  titulo: string
+  texto?: string | null
+  jogo_id?: number | null
+  atleta_id?: number | null
+  foto_url?: string | null
+  autor?: string | null
+  created_at: string
+}

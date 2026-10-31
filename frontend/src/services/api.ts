@@ -19,6 +19,8 @@ import type {
   NovoLance,
   Ranking,
   SorteioConfirmado,
+  DestaquesPartida,
+  Noticia,
 } from '../types'
 
 const API_URL = import.meta.env?.VITE_API_URL || ''
@@ -299,6 +301,25 @@ export const sorteioApi = {
     jogoId: number | string,
     dados: { jogadores_por_time: number; times: { nome: string; atletas: number[] }[] },
   ): Promise<AxiosResponse<SorteioConfirmado>> => api.post(`/jogos/${jogoId}/sorteio`, dados),
+}
+
+export const destaquesApi = {
+  get: (jogoId: number | string): Promise<AxiosResponse<DestaquesPartida>> => api.get(`/jogos/${jogoId}/destaques`),
+  votar: (jogoId: number | string, atletas: number[]): Promise<AxiosResponse<DestaquesPartida>> =>
+    api.post(`/jogos/${jogoId}/destaques/votar`, { atletas }),
+  definir: (jogoId: number | string, atletas: number[]): Promise<AxiosResponse<DestaquesPartida>> =>
+    api.post(`/jogos/${jogoId}/destaques/definir`, { atletas }),
+  encerrarVotacao: (jogoId: number | string): Promise<AxiosResponse<DestaquesPartida>> =>
+    api.post(`/jogos/${jogoId}/destaques/encerrar-votacao`),
+}
+
+export const resenhaApi = {
+  listar: (rachaId: number | string, limite = 30): Promise<AxiosResponse<Noticia[]>> =>
+    api.get(`/rachas/${rachaId}/resenha?limite=${limite}`),
+  publicar: (rachaId: number | string, aviso: { titulo: string; texto?: string }): Promise<AxiosResponse<Noticia>> =>
+    api.post(`/rachas/${rachaId}/resenha`, aviso),
+  apagar: (rachaId: number | string, noticiaId: number): Promise<AxiosResponse<void>> =>
+    api.delete(`/rachas/${rachaId}/resenha/${noticiaId}`),
 }
 
 export const rankingApi = {

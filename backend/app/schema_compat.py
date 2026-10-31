@@ -396,6 +396,10 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         """,
         """
         ALTER TABLE jogos
+        ADD COLUMN IF NOT EXISTS votacao_ate TIMESTAMPTZ
+        """,
+        """
+        ALTER TABLE jogos
         ADD COLUMN IF NOT EXISTS periodo INTEGER
         """,
         """
