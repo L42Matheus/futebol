@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
     # Efí (banco) — cobrança Pix da assinatura. Com as credenciais preenchidas,
     # o Pix sai pela Efí; sem elas, continua pela Asaas. Cartão segue na Asaas.
-    efi_sandbox: bool = True
+    efi_sandbox: bool = False  # produção; true = homologação
     efi_client_id: str = ""
     efi_client_secret: str = ""
     efi_cert_path: str = ""
