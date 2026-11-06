@@ -8,6 +8,20 @@ from app.esportes import Esporte, esporte_da_modalidade
 from app.models import User, Atleta, Posicao, Racha, RachaAdmin
 
 
+def pix_efi_vencido(user: User) -> bool:
+    """O Pix da Efí é avulso: cada pagamento libera até ``subscription_current_period_end``.
+
+    Na Asaas a assinatura é recorrente e o próprio webhook muda o status, então
+    só o Pix da Efí expira por data.
+    """
+    fim = user.subscription_current_period_end
+    if user.subscription_gateway != "efi" or fim is None:
+        return False
+    if fim.tzinfo is None:
+        fim = fim.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) >= fim
+
+
 def assinatura_ativa(user: User) -> bool:
     """Retorna True se o admin pode gerenciar: assinatura ativa OU dentro do trial.
 
@@ -17,7 +31,7 @@ def assinatura_ativa(user: User) -> bool:
     settings = get_settings()
     if not settings.payments_enabled:
         return True
-    if user.subscription_status == "active":
+    if user.subscription_status == "active" and not pix_efi_vencido(user):
         return True
     created = user.created_at
     if created is not None:

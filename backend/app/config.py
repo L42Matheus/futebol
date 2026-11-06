@@ -47,6 +47,17 @@ class Settings(BaseSettings):
     assinatura_valor: int = 2990  # centavos (R$ 29,90/mês)
     assinatura_trial_dias: int = 14
 
+    # Efí (banco) — cobrança Pix da assinatura. Com as credenciais preenchidas,
+    # o Pix sai pela Efí; sem elas, continua pela Asaas. Cartão segue na Asaas.
+    efi_sandbox: bool = True
+    efi_client_id: str = ""
+    efi_client_secret: str = ""
+    efi_cert_path: str = ""
+    efi_cert_base64: str = ""
+    efi_pix_key: str = ""
+    efi_webhook_token: str = ""
+    efi_pix_expiracao: int = 3600  # segundos de validade do QR Code
+
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
 

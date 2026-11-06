@@ -94,6 +94,18 @@ def ensure_schema_compatibility(engine: Engine) -> None:
         END
         $$;
         """,
+        # Pix da assinatura pela Efí.
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS subscription_gateway VARCHAR(20)
+        """,
+        """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS efi_pix_txid VARCHAR(35)
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_users_efi_pix_txid ON users (efi_pix_txid)
+        """,
         # Rachas gained billing/card fields and athlete limits after the first
         # versions of the app.
         """

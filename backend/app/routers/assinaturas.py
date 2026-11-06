@@ -1,6 +1,8 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+
+from dateutil.relativedelta import relativedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -8,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
-from app.deps import assinatura_ativa
+from app.deps import assinatura_ativa, pix_efi_vencido
 from app.models import User, UserRole
-from app.services import asaas
+from app.services import asaas, efi
 from app.services.auth import get_current_user
 
 router = APIRouter(prefix="/assinaturas", tags=["Assinaturas"])
@@ -47,8 +49,39 @@ def _trial_ends_at(user: User):
     return user.created_at + timedelta(days=get_settings().assinatura_trial_dias)
 
 
+def _status_exibido(user: User) -> Optional[str]:
+    # Pix da Efí vencido aparece como "em atraso" para o admin pagar o próximo mês.
+    if user.subscription_status == "active" and pix_efi_vencido(user):
+        return "overdue"
+    return user.subscription_status
+
+
+def _confirmar_pix_efi(db: Session, user: User, cobranca: dict) -> bool:
+    """Ativa a assinatura se a cobrança consultada NA Efí está paga.
+
+    Nunca confia só no corpo do webhook: o status e o valor vêm da consulta
+    à própria Efí, e a cobrança tem de ser a última gerada para o usuário.
+    """
+    txid = cobranca.get("txid")
+    if not txid or txid != user.efi_pix_txid or user.subscription_status != "pending":
+        return False
+    if cobranca.get("status") != "CONCLUIDA":
+        return False
+    esperado = get_settings().assinatura_valor
+    recebido = sum(round(float(p.get("valor", 0)) * 100) for p in cobranca.get("pix") or [])
+    if recebido < esperado:
+        logger.warning("Pix Efí %s pago com valor menor (%s < %s centavos)", txid, recebido, esperado)
+        return False
+    user.subscription_status = "active"
+    user.subscription_gateway = "efi"
+    user.subscription_current_period_end = datetime.now(timezone.utc) + relativedelta(months=1)
+    db.commit()
+    logger.info("Assinatura do usuário %s ativada via Pix Efí (txid=%s)", user.id, txid)
+    return True
+
+
 @router.get("/status")
-def status_assinatura(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def status_assinatura(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     settings = get_settings()
     if not settings.payments_enabled:
         return {
@@ -61,17 +94,58 @@ def status_assinatura(db: Session = Depends(get_db), current_user: User = Depend
             "access_granted": True,
             "valor": settings.assinatura_valor,
         }
+
+    # A tela consulta o status enquanto o QR Code está aberto: se o webhook
+    # ainda não chegou (ou não foi cadastrado), confere direto na Efí.
+    if (current_user.subscription_gateway == "efi" and current_user.subscription_status == "pending"
+            and current_user.efi_pix_txid and efi.configurado()):
+        try:
+            _confirmar_pix_efi(db, current_user, await efi.consultar_cobranca(current_user.efi_pix_txid))
+        except HTTPException:
+            logger.warning("Não foi possível consultar o Pix %s na Efí", current_user.efi_pix_txid)
+
     trial_end = _trial_ends_at(current_user)
-    in_trial = assinatura_ativa(current_user) and current_user.subscription_status != "active"
+    status_exibido = _status_exibido(current_user)
+    in_trial = assinatura_ativa(current_user) and status_exibido != "active"
     return {
         "payments_enabled": True,
-        "subscription_status": current_user.subscription_status,
-        "subscription_id": current_user.asaas_subscription_id,
+        "subscription_status": status_exibido,
+        "subscription_id": current_user.asaas_subscription_id or current_user.efi_pix_txid,
         "in_trial": in_trial,
         "trial_ends_at": trial_end,
         "current_period_end": current_user.subscription_current_period_end,
         "access_granted": assinatura_ativa(current_user),
         "valor": settings.assinatura_valor,
+    }
+
+
+async def _assinar_pix_efi(cpf_cnpj: str, db: Session, user: User) -> dict:
+    settings = get_settings()
+    txid = efi.novo_txid()
+    cobranca = await efi.criar_cobranca_pix(
+        txid=txid,
+        valor_centavos=settings.assinatura_valor,
+        cpf_cnpj=cpf_cnpj,
+        nome=user.nome,
+        descricao="Assinatura QuemJogaFC - gestão de racha",
+    )
+    user.cpf_cnpj = cpf_cnpj
+    user.subscription_gateway = "efi"
+    user.efi_pix_txid = cobranca["txid"]
+    user.subscription_status = "pending"
+    db.commit()
+
+    # Mesmo formato da resposta da Asaas: a tela não muda nada.
+    return {
+        "subscription_id": cobranca["txid"],
+        "billing_type": "PIX",
+        "payment_status": cobranca["status"],
+        "invoice_url": None,
+        "pix": {
+            "payload": cobranca["copia_e_cola"],
+            "encoded_image": cobranca["qrcode_base64"],
+            "expiration_date": cobranca["expira_em"],
+        },
     }
 
 
@@ -83,10 +157,13 @@ async def assinar(payload: AssinarRequest, request: Request, db: Session = Depen
         raise HTTPException(status_code=403, detail="Pagamentos desativados — teste gratuito")
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Apenas administradores assinam o plano")
-    if current_user.subscription_status == "active":
+    if current_user.subscription_status == "active" and not pix_efi_vencido(current_user):
         raise HTTPException(status_code=400, detail="Você já possui uma assinatura ativa")
 
     cpf_cnpj = "".join(ch for ch in payload.cpf_cnpj if ch.isdigit())
+
+    if payload.billing_type == "PIX" and efi.configurado():
+        return await _assinar_pix_efi(cpf_cnpj, db, current_user)
 
     customer_id = await asaas.criar_ou_obter_customer(
         nome=current_user.nome or current_user.email or "Admin",
@@ -109,6 +186,7 @@ async def assinar(payload: AssinarRequest, request: Request, db: Session = Depen
     current_user.cpf_cnpj = cpf_cnpj
     current_user.asaas_customer_id = customer_id
     current_user.asaas_subscription_id = sub["id"]
+    current_user.subscription_gateway = "asaas"
     current_user.subscription_status = "pending"
     db.commit()
 
@@ -178,3 +256,43 @@ async def webhook_asaas(request: Request, db: Session = Depends(get_db)):
 
     db.commit()
     return {"received": True}
+
+
+@router.post("/webhook/efi")
+@router.post("/webhook/efi/pix")
+async def webhook_efi(request: Request, db: Session = Depends(get_db)):
+    """Notificação da Efí quando um Pix cai.
+
+    Cadastre na Efí a URL com o token e um parâmetro descartável no fim, porque
+    a Efí acrescenta "/pix" ao final da URL cadastrada:
+    https://SUA-API/api/v1/assinaturas/webhook/efi?token=EFI_WEBHOOK_TOKEN&ignorar=
+    """
+    settings = get_settings()
+    if settings.efi_webhook_token and request.query_params.get("token") != settings.efi_webhook_token:
+        raise HTTPException(status_code=403, detail="Token de webhook inválido")
+
+    # Ao cadastrar o webhook, a Efí faz uma chamada sem "pix" só para ver se
+    # a URL responde 2xx: corpo vazio é no-op, não erro.
+    try:
+        body = await request.json()
+    except ValueError:
+        body = {}
+    eventos = body.get("pix") if isinstance(body, dict) else None
+
+    resultados = []
+    for evento in eventos if isinstance(eventos, list) else []:
+        txid = evento.get("txid") if isinstance(evento, dict) else None
+        user = db.query(User).filter(User.efi_pix_txid == txid).first() if txid else None
+        if user is None:
+            resultados.append({"txid": txid, "ok": False, "motivo": "cobrança não encontrada"})
+            continue
+        try:
+            ativou = _confirmar_pix_efi(db, user, await efi.consultar_cobranca(txid))
+            resultados.append({"txid": txid, "ok": True, "ativou": ativou})
+        except HTTPException as exc:
+            # A Efí reenvia o webhook se não receber 200; o polling da tela
+            # também confere a cobrança, então só registramos a falha.
+            logger.warning("Webhook Efí: falha ao conferir txid %s: %s", txid, exc.detail)
+            resultados.append({"txid": txid, "ok": False, "motivo": "falha ao consultar a Efí"})
+
+    return {"recebido": True, "resultados": resultados}

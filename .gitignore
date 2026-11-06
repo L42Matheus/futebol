@@ -20,3 +20,8 @@ htmlcov/
 .coverage
 backend/uploads/
 docs/
+
+# Certificados da Efí (Pix)
+backend/certs/
+*.p12
+*.pem

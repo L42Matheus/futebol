@@ -83,6 +83,31 @@ SMTP_FROM_EMAIL=seu-email@gmail.com
 SMTP_USE_TLS=true
 ```
 
+#### Pix pela Efí (opcional)
+
+Com as variáveis abaixo preenchidas, o Pix da tela **Assinatura** é gerado pela
+Efí (QR Code + copia e cola); sem elas, continua pela Asaas. O cartão segue
+sempre pela Asaas.
+
+```env
+EFI_SANDBOX=false                # true = homologação
+EFI_CLIENT_ID=
+EFI_CLIENT_SECRET=
+EFI_CERT_BASE64=                 # .p12 da aplicação em base64 (local: EFI_CERT_PATH)
+EFI_PIX_KEY=                     # chave Pix que recebe
+EFI_WEBHOOK_TOKEN=<token-aleatorio>
+```
+
+Cada Pix pago libera um mês; depois disso a assinatura aparece como "em atraso"
+e o admin gera um novo Pix na mesma tela. A confirmação chega pelo webhook e,
+enquanto o QR Code está aberto, a tela também confere a cobrança direto na Efí.
+
+Para cadastrar o webhook na Efí (uma vez por ambiente):
+
+```bash
+cd backend && python -m scripts.efi_webhook https://sua-api.up.railway.app
+```
+
 ### 3. Frontend
 
 - Root directory: `frontend`
