@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, CalendarDays, Share2 } from 'lucide-react'
 import { compartilharLink, copiarTexto } from '../utils/compartilhar'
 import { rachasApi, authApi, temporadasApi } from '../services/api'
@@ -9,7 +9,7 @@ import FormField from '../components/FormField'
 import { Input, Select } from '../components/Input'
 import { ESPORTES, getEsporte, getModalidade, type EsporteId } from '../esportes'
 import type { TipoRacha } from '../types'
-import { ehEsporte, lerEsporteEscolhido, limparEsporteEscolhido } from '../utils/esporteEscolhido'
+import { definirEsporteAtual, ehEsporte, lerEsporteAtual } from '../utils/esporteEscolhido'
 
 const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
 
@@ -38,11 +38,13 @@ export default function NovoRacha() {
   const [inviteLinks, setInviteLinks] = useState<InviteLinks | null>(null)
   const [createdRachaId, setCreatedRachaId] = useState<number | null>(null)
   const [searchParams] = useSearchParams()
-  // Abre no esporte escolhido na landing (?esporte=volei ou o que ficou guardado no cadastro).
-  const [esporteId, setEsporteId] = useState<EsporteId>(() => {
+  // Esporte em que o app está (página /esporte). Com ele definido, o racha é criado nele
+  // e a tela não oferece os outros esportes; sem ele (contas antigas), mostra a escolha.
+  const [esporteFixo] = useState<EsporteId | null>(() => {
     const doLink = searchParams.get('esporte')
-    return ehEsporte(doLink) ? doLink : lerEsporteEscolhido() ?? 'futebol'
+    return ehEsporte(doLink) ? doLink : lerEsporteAtual()
   })
+  const [esporteId, setEsporteId] = useState<EsporteId>(esporteFixo ?? 'futebol')
   const esporte = getEsporte(esporteId)
   const [form, setForm] = useState<RachaForm>({
     nome: '',
@@ -72,7 +74,8 @@ export default function NovoRacha() {
         ...rachaPayload
       } = form
       const response = await rachasApi.create(rachaPayload)
-      limparEsporteEscolhido()
+      // O app passa a mostrar o esporte do racha recém-criado.
+      definirEsporteAtual(esporteId)
       setCreatedRachaId(response.data.id)
       localStorage.setItem(SELECTED_RACHA_KEY, String(response.data.id))
 
@@ -208,6 +211,13 @@ export default function NovoRacha() {
               required
             />
           </FormField>
+          {esporteFixo ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+              <esporte.Icone size={24} className="text-emerald-400" />
+              <p className="flex-1 font-bold text-white">Racha de {esporte.nome.toLowerCase()}</p>
+              <Link to="/esporte" className="text-sm font-bold text-emerald-400">Trocar</Link>
+            </div>
+          ) : (
           <FormField label="Esporte">
             <div className="grid grid-cols-3 gap-3">
               {ESPORTES.map(({ id, nome, Icone }) => {
@@ -231,6 +241,7 @@ export default function NovoRacha() {
               })}
             </div>
           </FormField>
+          )}
           <FormField label="Modalidade" hint={modalidadeAtual.descricao}>
             <Select name="tipo" value={form.tipo} onChange={handleChange}>
               {esporte.modalidades.map((m) => (

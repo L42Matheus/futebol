@@ -21,13 +21,14 @@ import {
 } from 'lucide-react'
 import { rachasApi, jogosApi, rankingApi, resenhaApi, presencasApi } from '../services/api'
 import ItemResenha from '../components/ItemResenha'
-import { SELECTED_RACHA_KEY } from '../services/convite'
+import { CONVITE_RACHA_KEY, SELECTED_RACHA_KEY } from '../services/convite'
 import EscudoTime from '../components/EscudoTime'
 import { parseDataJogo } from '../utils/dataJogo'
-import { lerEsporteEscolhido, limparEsporteEscolhido } from '../utils/esporteEscolhido'
+import { definirEsporteAtual, lerEsporteAtual } from '../utils/esporteEscolhido'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
+import { ESPORTES, esporteDaModalidade, getEsporte, getModalidade, temRecurso } from '../esportes'
+import type { EsporteId } from '../esportes'
 import type { Jogo, Noticia, Racha, Saldo } from '../types'
 import { differenceInCalendarDays, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -104,6 +105,10 @@ function Esqueleto({ className }: { className: string }) {
 
 export default function Home() {
   const [rachas, setRachas] = useState<Racha[]>([])
+  // Esporte escolhido em /esporte; a tela mostra só os rachas dele.
+  const [esporteAtual, setEsporteAtual] = useState<EsporteId | null>(() => lerEsporteAtual())
+  // Quantos rachas a conta tem nos outros esportes, para o aviso da tela vazia.
+  const [outrosEsportes, setOutrosEsportes] = useState<Partial<Record<EsporteId, number>>>({})
   const [loading, setLoading] = useState(true)
   // Falha ao buscar os rachas: sem isto, um erro de rede parecia "Nenhum racha ainda".
   const [erro, setErro] = useState(false)
@@ -128,30 +133,43 @@ export default function Home() {
     setLoading(true)
     setErro(false)
     try {
-      const response = await rachasApi.list()
-      const list = response.data || []
+      const response = await rachasApi.listTodos()
+      const todos = response.data || []
       const savedRachaId = localStorage.getItem(SELECTED_RACHA_KEY)
+
+      // Acabou de entrar por convite: o app passa para o esporte desse racha (uma vez só).
+      let esporte = lerEsporteAtual()
+      const conviteId = localStorage.getItem(CONVITE_RACHA_KEY)
+      if (conviteId) {
+        localStorage.removeItem(CONVITE_RACHA_KEY)
+        const convidado = todos.find((racha) => String(racha.id) === conviteId)
+        if (convidado && convidado.esporte !== esporte) {
+          esporte = convidado.esporte
+          definirEsporteAtual(esporte)
+        }
+      }
+      setEsporteAtual(esporte)
+
+      const list = esporte ? todos.filter((racha) => racha.esporte === esporte) : todos
+      const outros: Partial<Record<EsporteId, number>> = {}
+      todos.forEach((racha) => {
+        if (racha.esporte !== esporte) outros[racha.esporte] = (outros[racha.esporte] ?? 0) + 1
+      })
+      setOutrosEsportes(outros)
+
       const savedIndex = savedRachaId
         ? list.findIndex((racha) => String(racha.id) === savedRachaId)
         : -1
 
       setRachas(list)
       setSelectedIndex(savedIndex >= 0 ? savedIndex : 0)
-
-      // Acabou de se cadastrar pela landing escolhendo um esporte: segue direto para criar o racha.
-      // A escolha vai no link e sai do armazenamento, para voltar à tela inicial não repetir o desvio.
-      const escolhido = lerEsporteEscolhido()
-      if (list.length === 0 && escolhido && user?.role === 'admin') {
-        limparEsporteEscolhido()
-        navigate(`/novo?esporte=${escolhido}`, { replace: true })
-      }
     } catch (error) {
       console.error('Erro ao carregar rachas:', error)
       setErro(true)
     } finally {
       setLoading(false)
     }
-  }, [navigate, user?.role])
+  }, [])
 
   useEffect(() => {
     loadRachas()
@@ -365,6 +383,27 @@ export default function Home() {
   ].filter((acao) => acao.visivel) : []
   const EsporteIcone = currentRacha ? esporteDaModalidade(currentRacha.tipo).Icone : null
 
+  const EsporteAtualIcone = esporteAtual ? getEsporte(esporteAtual).Icone : null
+
+  function trocarEsporte(id: EsporteId) {
+    definirEsporteAtual(id)
+    void loadRachas()
+  }
+
+  const seletorEsporte = (
+    <div className="flex shrink-0 justify-end">
+      <Link
+        to="/esporte"
+        className={`inline-flex items-center gap-1.5 rounded-full border border-gray-800 bg-gray-900/40 py-1.5 pl-3 pr-2 text-xs font-bold text-gray-300 transition-colors hover:border-emerald-500/40 ${FOCO}`}
+      >
+        {EsporteAtualIcone && <EsporteAtualIcone size={14} className="text-emerald-400" />}
+        {esporteAtual ? getEsporte(esporteAtual).nome : 'Todos os esportes'}
+        <span className="text-gray-500">· trocar</span>
+        <ChevronRight size={14} className="text-gray-500" />
+      </Link>
+    </div>
+  )
+
   if (loading) {
     return (
       <div className="space-y-6" role="status" aria-label="Carregando">
@@ -397,17 +436,22 @@ export default function Home() {
 
   return (
     <div className="space-y-6 overflow-x-hidden">
-      {/* Estado vazio - Nenhum racha */}
+      {/* Esporte em que o app está; tocar leva à página de troca. Com racha, fica na linha da saudação. */}
+      {!currentRacha && seletorEsporte}
+
+      {/* Estado vazio: nenhum racha neste esporte */}
       {rachas.length === 0 && (
-        <div className="flex flex-col items-center justify-center px-6 py-16">
+        <div className="flex flex-col items-center justify-center px-6 py-12">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-800/50">
-            <Users size={40} className="text-gray-600" />
+            {EsporteAtualIcone ? <EsporteAtualIcone size={40} className="text-gray-500" /> : <Users size={40} className="text-gray-600" />}
           </div>
-          <h2 className="mb-2 text-xl font-bold text-white">Nenhum racha ainda</h2>
+          <h2 className="mb-2 text-center text-xl font-bold text-white">
+            {esporteAtual ? `Nenhum racha de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum racha ainda'}
+          </h2>
           <p className="mb-6 max-w-xs text-center text-sm text-gray-500">
             {isAdmin
-              ? 'Crie seu primeiro racha para começar a organizar seus jogos e atletas.'
-              : 'Você ainda não participa de nenhum racha. Peça o link de convite ao organizador.'}
+              ? 'Crie o racha para começar a organizar jogos e atletas.'
+              : 'Peça o link de convite ao organizador do racha.'}
           </p>
           {isAdmin && (
             <button
@@ -416,8 +460,30 @@ export default function Home() {
               className={`flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 font-semibold text-branco transition-colors hover:bg-emerald-700 ${FOCO}`}
             >
               <Plus size={20} />
-              Criar primeiro racha
+              {esporteAtual ? `Criar racha de ${getEsporte(esporteAtual).nome.toLowerCase()}` : 'Criar primeiro racha'}
             </button>
+          )}
+
+          {/* Tem racha em outro esporte: um toque leva até ele. */}
+          {Object.keys(outrosEsportes).length > 0 && (
+            <div className="mt-8 w-full max-w-xs space-y-2">
+              <p className="text-center text-xs font-bold uppercase tracking-wider text-gray-500">Seus rachas em outros esportes</p>
+              {ESPORTES.filter((e) => outrosEsportes[e.id]).map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => trocarEsporte(e.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border border-gray-800 bg-gray-900/40 px-4 py-3 text-left transition-colors hover:border-gray-700 ${FOCO}`}
+                >
+                  <e.Icone size={20} className="text-emerald-400" />
+                  <span className="flex-1 text-sm font-bold text-white">{e.nome}</span>
+                  <span className="text-xs text-gray-500">
+                    {outrosEsportes[e.id]} racha{outrosEsportes[e.id] === 1 ? '' : 's'}
+                  </span>
+                  <ChevronRight size={16} className="text-gray-500" />
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -425,11 +491,16 @@ export default function Home() {
       {currentRacha && (
         <>
           <div className="space-y-3">
-            {primeiroNome && (
-              <p className="px-1 text-sm text-gray-400">
-                {saudacao()}, <span className="font-semibold text-white">{primeiroNome}</span>
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate px-1 text-sm text-gray-400">
+                {primeiroNome && (
+                  <>
+                    {saudacao()}, <span className="font-semibold text-white">{primeiroNome}</span>
+                  </>
+                )}
               </p>
-            )}
+              {seletorEsporte}
+            </div>
 
             <div className={`relative rounded-3xl border border-gray-800 bg-gray-900/40 p-4 transition-colors ${rachas.length > 1 ? 'hover:border-emerald-500/40 focus-within:border-emerald-500/60' : ''}`}>
               <div className="flex items-center gap-3">

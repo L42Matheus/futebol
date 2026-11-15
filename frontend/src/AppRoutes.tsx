@@ -27,6 +27,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Register from './pages/Register'
 import ChooseRole from './pages/ChooseRole'
+import EscolherEsporte from './pages/EscolherEsporte'
 import PrivateRoute from './components/PrivateRoute'
 import NoRacha from './pages/NoRacha'
 import Privacidade from './pages/Privacidade'
@@ -40,6 +41,7 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/esporte" element={<EscolherEsporte />} />
         <Route path="/perfil" element={<ChooseRole />} />
         <Route path="/perfil-basico" element={<NoRacha />} />
         <Route path="/perfil-atleta" element={<AthleteSelfProfile />} />

@@ -1,22 +1,17 @@
-import { ESPORTES, type EsporteId } from '../esportes'
+import type { EsporteId } from '../esportes/types'
 
-// Esporte escolhido na landing antes do cadastro. Fica guardado durante login/cadastro
-// e é usado uma vez para abrir o Novo Racha já com o esporte marcado.
-const CHAVE = 'quemjoga:esporte_escolhido'
+// Esporte em que a pessoa está no app (escolhido na página /esporte). Com ele definido,
+// a lista de rachas mostra só os desse esporte e o Novo Racha já abre nele.
+// Sem escolha (contas antigas), nada é filtrado.
+const CHAVE = 'quemjoga:esporte'
+const IDS: EsporteId[] = ['futebol', 'basquete', 'volei']
+export const ESPORTE_MUDOU = 'quemjoga:esporte_mudou'
 
 export function ehEsporte(valor: string | null | undefined): valor is EsporteId {
-  return ESPORTES.some((esporte) => esporte.id === valor)
+  return IDS.includes(valor as EsporteId)
 }
 
-export function salvarEsporteEscolhido(id: EsporteId) {
-  try {
-    localStorage.setItem(CHAVE, id)
-  } catch {
-    // navegação privada sem armazenamento: o Novo Racha abre em futebol
-  }
-}
-
-export function lerEsporteEscolhido(): EsporteId | null {
+export function lerEsporteAtual(): EsporteId | null {
   try {
     const valor = localStorage.getItem(CHAVE)
     return ehEsporte(valor) ? valor : null
@@ -25,10 +20,11 @@ export function lerEsporteEscolhido(): EsporteId | null {
   }
 }
 
-export function limparEsporteEscolhido() {
+export function definirEsporteAtual(id: EsporteId) {
   try {
-    localStorage.removeItem(CHAVE)
+    localStorage.setItem(CHAVE, id)
   } catch {
-    // nada a limpar
+    // navegação privada sem armazenamento: o app mostra todos os esportes
   }
+  window.dispatchEvent(new Event(ESPORTE_MUDOU))
 }
