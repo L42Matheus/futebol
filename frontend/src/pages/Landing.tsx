@@ -46,7 +46,7 @@ const recursos = [
   },
   {
     titulo: 'Ranking',
-    texto: 'Artilharia e estatísticas de cada atleta saem direto dos lances da partida.',
+    texto: 'Gols, cestas, pontos e estatísticas de cada atleta saem direto dos lances da partida.',
     icone: <Trophy size={22} />,
     cor: 'bg-amber-500/10 text-amber-400',
   },
@@ -230,7 +230,7 @@ export default function Landing() {
                 {[
                   ['Atletas', '18'],
                   ['Caixa', 'R$ 420'],
-                  ['Artilheiro', 'João'],
+                  ['Destaque', 'João'],
                 ].map(([rotulo, valor]) => (
                   <div key={rotulo} className="rounded-2xl bg-white/[0.04] px-2 py-2.5 text-center">
                     <p className="text-[9px] font-black uppercase tracking-wider text-white/45">{rotulo}</p>
