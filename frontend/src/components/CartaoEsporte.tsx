@@ -17,6 +17,8 @@ interface CartaoEsporteProps {
   transicao?: boolean
   // Classes de altura do mascote (passa do topo do cartão quando maior que ele).
   classeMascote?: string
+  // Lado do atleta; com 'esquerda' o texto vai para a direita e o cenário espelha.
+  lado?: 'direita' | 'esquerda'
   className?: string
   style?: CSSProperties
 }
@@ -28,11 +30,13 @@ export default function CartaoEsporte({
   animar = false,
   transicao = false,
   classeMascote = 'h-[118%]',
+  lado = 'direita',
   className = '',
   style,
 }: CartaoEsporteProps) {
   const esporte = getEsporte(id)
   const mascote = mascoteDoAtleta(id)
+  const esquerda = lado === 'esquerda'
 
   return (
     <div className={`relative ${className}`} style={style}>
@@ -41,14 +45,21 @@ export default function CartaoEsporte({
         style={{ viewTransitionName: transicao ? 'esporte-cartao' : undefined }}
       >
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.22),transparent_55%)]"
+          className={`pointer-events-none absolute inset-0 ${
+            esquerda
+              ? 'bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.22),transparent_55%)]'
+              : 'bg-[radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.22),transparent_55%)]'
+          }`}
           aria-hidden="true"
         />
-        <CenarioCartao esporte={id} />
-        <div className="relative z-10 flex h-full max-w-[60%] flex-col justify-between p-5">
+        {/* Espelhado com o atleta à esquerda: trave, tabela ou rede ficam atrás dele. */}
+        <div className={`absolute inset-0 ${esquerda ? '-scale-x-100' : ''}`}>
+          <CenarioCartao esporte={id} />
+        </div>
+        <div className={`relative z-10 flex h-full max-w-[60%] flex-col justify-between p-5 ${esquerda ? 'ml-auto items-end text-right' : ''}`}>
           <div>
             <p
-              className="flex items-center gap-2 self-start text-3xl font-black tracking-tight text-white"
+              className={`flex items-center gap-2 text-3xl font-black tracking-tight text-white ${esquerda ? 'self-end' : 'self-start'}`}
               style={{ viewTransitionName: transicao ? 'esporte-nome' : undefined }}
             >
               <esporte.Icone size={26} className="shrink-0" />
@@ -61,7 +72,7 @@ export default function CartaoEsporte({
       </div>
       {/* Fora do recorte do cartão, para a cabeça passar da borda de cima. */}
       <div
-        className={`pointer-events-none absolute -right-1 bottom-0 flex items-end ${classeMascote}`}
+        className={`pointer-events-none absolute bottom-0 flex items-end ${esquerda ? '-left-1' : '-right-1'} ${classeMascote}`}
         style={{ viewTransitionName: transicao ? 'esporte-mascote' : undefined }}
         aria-hidden="true"
       >
