@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getEsporte } from '../esportes'
 import { MASCOTE_ADMIN, mascoteDoAtleta } from '../esportes/mascotes'
+import CenarioCartao from '../esportes/CenarioCartao'
 import { lerEsporteAtual } from '../utils/esporteEscolhido'
 
 type Recurso = { icone: ReactNode; texto: string }
@@ -81,17 +82,19 @@ export default function ChooseRole() {
                   className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.22),transparent_55%)]"
                   aria-hidden="true"
                 />
+                <CenarioCartao esporte={escolhido} />
                 <div className="relative z-10 flex h-full max-w-[60%] flex-col justify-between p-5">
                   <div>
                     <p
                       className="flex items-center gap-2 self-start text-3xl font-black tracking-tight text-white"
                       style={{ viewTransitionName: 'esporte-nome' }}
                     >
-                      <esporte.Icone size={26} />
+                      <esporte.Icone size={26} className="shrink-0" />
                       {esporte.nome}
                     </p>
-                    <p className="mt-1.5 text-xs font-semibold text-white/80">
-                      {esporte.modalidades.map((m) => m.nome).join(' · ')}
+                    <p className="mt-1.5 text-xs font-medium leading-snug text-white/85">
+                      Organize jogos, times
+                      <br />e campeonatos.
                     </p>
                   </div>
                   <Link
@@ -137,13 +140,15 @@ export default function ChooseRole() {
           >
             <div className="flex items-start gap-4">
               {/* Atleta do esporte escolhido (no futebol, o garoto com a bola); sem um próprio, o apito. */}
-              <img
-                src={mascoteAtleta.src}
-                alt=""
-                width={mascoteAtleta.largura}
-                height={mascoteAtleta.altura}
-                className={`h-20 w-20 shrink-0 object-contain ${mascoteAtleta.busto ? 'mascote-busto' : ''}`}
-              />
+              <div className="flex h-24 w-24 shrink-0 items-end justify-center overflow-hidden rounded-2xl bg-emerald-500/10">
+                <img
+                  src={mascoteAtleta.src}
+                  alt=""
+                  width={mascoteAtleta.largura}
+                  height={mascoteAtleta.altura}
+                  className="h-[92%] w-auto object-contain"
+                />
+              </div>
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Atleta</h2>
                 <p className="text-sm text-gray-400 mt-1">
@@ -161,7 +166,9 @@ export default function ChooseRole() {
           >
             <div className="flex items-start gap-4">
               {/* Mascote de crachá ADM e notebook: o organizador do clube. */}
-              <img src={MASCOTE_ADMIN.src} alt="" width={MASCOTE_ADMIN.largura} height={MASCOTE_ADMIN.altura} className="h-20 w-20 shrink-0 object-contain" />
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10">
+                <img src={MASCOTE_ADMIN.src} alt="" width={MASCOTE_ADMIN.largura} height={MASCOTE_ADMIN.altura} className="h-[86%] w-auto object-contain" />
+              </div>
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Administrador</h2>
                 <p className="text-sm text-gray-400 mt-1">
