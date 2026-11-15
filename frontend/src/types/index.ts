@@ -107,9 +107,10 @@ export interface AtletaHistorico {
 }
 
 export interface JogoLista {
-  confirmados: Array<{ atleta_id: number; nome: string }>
-  recusados: Array<{ atleta_id: number; nome: string }>
-  pendentes: Array<{ atleta_id: number; nome: string }>
+  // user_id identifica quem está logado na lista (atleta sem conta vem null).
+  confirmados: Array<{ atleta_id: number; nome: string; user_id?: number | null }>
+  recusados: Array<{ atleta_id: number; nome: string; user_id?: number | null }>
+  pendentes: Array<{ atleta_id: number; nome: string; user_id?: number | null }>
 }
 
 export interface Team {
