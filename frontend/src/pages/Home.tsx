@@ -392,12 +392,14 @@ export default function Home() {
 
   const seletorEsporte = (
     <div className="flex shrink-0 justify-end">
+      {/* Recebe o painel da página /esporte na transição (mesmo view-transition-name). */}
       <Link
         to="/esporte"
+        style={{ viewTransitionName: 'esporte-cartao' }}
         className={`inline-flex items-center gap-1.5 rounded-full border border-gray-800 bg-gray-900/40 py-1.5 pl-3 pr-2 text-xs font-bold text-gray-300 transition-colors hover:border-emerald-500/40 ${FOCO}`}
       >
         {EsporteAtualIcone && <EsporteAtualIcone size={14} className="text-emerald-400" />}
-        {esporteAtual ? getEsporte(esporteAtual).nome : 'Todos os esportes'}
+        <span style={{ viewTransitionName: 'esporte-nome' }}>{esporteAtual ? getEsporte(esporteAtual).nome : 'Todos os esportes'}</span>
         <span className="text-gray-500">· trocar</span>
         <ChevronRight size={14} className="text-gray-500" />
       </Link>
