@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { ArrowLeftRight, CalendarPlus, CheckCircle2, SquareUser, Layers, Radio, Trophy, UserPlus, Wallet } from 'lucide-react'
+import { ArrowLeftRight, ArrowRight, CalendarPlus, CheckCircle2, SquareUser, Layers, Radio, Trophy, UserPlus, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getEsporte } from '../esportes'
@@ -108,7 +108,8 @@ export default function ChooseRole() {
 
           {/* Card Atleta */}
           <button
-            className="w-full bg-gray-900/40 rounded-2xl p-6 border-2 border-gray-800 hover:border-emerald-500 transition-all active:scale-[0.98]"
+            type="button"
+            className="group w-full rounded-2xl border-2 border-gray-800 bg-gray-900/40 p-6 transition-all hover:border-emerald-500 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             onClick={() => handleChoose('atleta')}
           >
             <div className="flex items-start gap-4">
@@ -130,11 +131,17 @@ export default function ChooseRole() {
                 <ListaRecursos itens={recursosAtleta} />
               </div>
             </div>
+            {/* O cartão inteiro é clicável; o botão deixa isso claro. */}
+            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-branco shadow-md shadow-emerald-950/20 transition-colors group-hover:bg-emerald-700">
+              Entrar como atleta
+              <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
+            </span>
           </button>
 
           {/* Card Admin */}
           <button
-            className="w-full bg-gray-900/40 rounded-2xl p-6 border-2 border-gray-800 hover:border-emerald-500 transition-all active:scale-[0.98]"
+            type="button"
+            className="group w-full rounded-2xl border-2 border-gray-800 bg-gray-900/40 p-6 transition-all hover:border-emerald-500 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             onClick={() => handleChoose('admin')}
           >
             <div className="flex items-start gap-4">
@@ -150,6 +157,11 @@ export default function ChooseRole() {
                 <ListaRecursos itens={RECURSOS_ADMIN} />
               </div>
             </div>
+            {/* O cartão inteiro é clicável; o botão deixa isso claro. */}
+            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-branco shadow-md shadow-emerald-950/20 transition-colors group-hover:bg-emerald-700">
+              Entrar como administrador
+              <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
+            </span>
           </button>
         </div>
       </div>
