@@ -109,7 +109,7 @@ export default function ChooseRole() {
             <img src="/icons/icon-192.png" alt="" className="mx-auto mb-4 h-20 w-20 rounded-2xl shadow-lg shadow-emerald-950/30" />
             <h1 className="text-2xl font-bold text-white">QuemJoga</h1>
           </Link>
-          <p className="text-gray-400 mt-1">Organize seu clube sem estresse</p>
+          <p className="text-gray-400 mt-1">Organize seu time sem estresse</p>
         </div>
       )}
 

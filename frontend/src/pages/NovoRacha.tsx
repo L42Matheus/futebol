@@ -180,7 +180,7 @@ export default function NovoRacha() {
 
   async function enviarConvite(link: string, titulo: string) {
     const papel = titulo === 'Atletas' ? 'jogar' : 'ajudar a organizar'
-    const resultado = await compartilharLink(link, `Entra no ${form.nome || 'nosso clube'} no QuemJoga para ${papel}:`)
+    const resultado = await compartilharLink(link, `Entra no ${form.nome || 'nosso time'} no QuemJoga para ${papel}:`)
     if (resultado === 'copiado') toast('Link copiado! Cole no grupo da galera.', 'success')
     if (resultado === 'falhou') toast('Não consegui compartilhar o link.', 'error')
   }

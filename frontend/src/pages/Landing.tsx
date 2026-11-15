@@ -143,7 +143,7 @@ export default function Landing() {
             </div>
 
             <h1 className="mx-auto mt-6 max-w-xl text-[2.5rem] font-black leading-[1.02] tracking-tight text-white sm:text-6xl lg:mx-0">
-              Seu clube organizado, do convite ao placar ao vivo.
+              Seu time organizado, do convite ao placar ao vivo.
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base font-medium leading-7 text-gray-400 sm:text-lg lg:mx-0">
@@ -286,7 +286,7 @@ export default function Landing() {
 
         <section className="py-10">
           <div className="mb-6 text-center">
-            <h2 className="text-2xl font-black sm:text-3xl">Tudo que o clube precisa</h2>
+            <h2 className="text-2xl font-black sm:text-3xl">Tudo que o seu time precisa</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">Do grupo bagunçado ao jogo comandado pelo celular.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
