@@ -205,7 +205,7 @@ export default function Atletas() {
                   type="text"
                   value={form.apelido}
                   onChange={(e) => setForm({ ...form, apelido: e.target.value })}
-                  placeholder="Como é conhecido no racha"
+                  placeholder="Como é conhecido no clube"
                 />
               </FormField>
               <FormField label="WhatsApp">
@@ -254,7 +254,7 @@ export default function Atletas() {
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-white">Convidar atleta</h2>
                 <p className="text-sm text-gray-400 mt-1">
-                  Compartilhe este link. O atleta cria a própria conta e entra direto no racha.
+                  Compartilhe este link. O atleta cria a própria conta e entra direto no clube.
                 </p>
               </div>
             </div>

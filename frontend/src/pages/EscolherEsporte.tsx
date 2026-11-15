@@ -77,7 +77,7 @@ export default function EscolherEsporte() {
         </Link>
         <div className="min-w-0">
           <h1 className="truncate text-xl font-black tracking-tight">Qual é o seu esporte?</h1>
-          <p className="truncate text-xs text-white/55">O app mostra só os rachas, a escalação e o ranking dele.</p>
+          <p className="truncate text-xs text-white/55">O app mostra só os clubes, a escalação e o ranking dele.</p>
         </div>
       </header>
 
@@ -135,7 +135,7 @@ export default function EscolherEsporte() {
                         </>
                       ) : (
                         <>
-                          {isAuthenticated && total > 0 ? `${total} racha${total === 1 ? '' : 's'} · Entrar` : 'Escolher'}
+                          {isAuthenticated && total > 0 ? `${total} clube${total === 1 ? '' : 's'} · Entrar` : 'Escolher'}
                           <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                         </>
                       )}

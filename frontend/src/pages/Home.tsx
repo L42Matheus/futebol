@@ -164,7 +164,7 @@ export default function Home() {
       setRachas(list)
       setSelectedIndex(savedIndex >= 0 ? savedIndex : 0)
     } catch (error) {
-      console.error('Erro ao carregar rachas:', error)
+      console.error('Erro ao carregar clubes:', error)
       setErro(true)
     } finally {
       setLoading(false)
@@ -448,12 +448,12 @@ export default function Home() {
             {EsporteAtualIcone ? <EsporteAtualIcone size={40} className="text-gray-500" /> : <Users size={40} className="text-gray-600" />}
           </div>
           <h2 className="mb-2 text-center text-xl font-bold text-white">
-            {esporteAtual ? `Nenhum racha de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum racha ainda'}
+            {esporteAtual ? `Nenhum clube de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum clube ainda'}
           </h2>
           <p className="mb-6 max-w-xs text-center text-sm text-gray-500">
             {isAdmin
-              ? 'Crie o racha para começar a organizar jogos e atletas.'
-              : 'Peça o link de convite ao organizador do racha.'}
+              ? 'Crie o clube para começar a organizar jogos e atletas.'
+              : 'Peça o link de convite ao organizador do clube.'}
           </p>
           {isAdmin && (
             <button
@@ -462,14 +462,14 @@ export default function Home() {
               className={`flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 font-semibold text-branco transition-colors hover:bg-emerald-700 ${FOCO}`}
             >
               <Plus size={20} />
-              {esporteAtual ? `Criar racha de ${getEsporte(esporteAtual).nome.toLowerCase()}` : 'Criar primeiro racha'}
+              {esporteAtual ? `Criar clube de ${getEsporte(esporteAtual).nome.toLowerCase()}` : 'Criar primeiro clube'}
             </button>
           )}
 
           {/* Tem racha em outro esporte: um toque leva até ele. */}
           {Object.keys(outrosEsportes).length > 0 && (
             <div className="mt-8 w-full max-w-xs space-y-2">
-              <p className="text-center text-xs font-bold uppercase tracking-wider text-gray-500">Seus rachas em outros esportes</p>
+              <p className="text-center text-xs font-bold uppercase tracking-wider text-gray-500">Seus clubes em outros esportes</p>
               {ESPORTES.filter((e) => outrosEsportes[e.id]).map((e) => (
                 <button
                   key={e.id}
@@ -480,7 +480,7 @@ export default function Home() {
                   <e.Icone size={20} className="text-emerald-400" />
                   <span className="flex-1 text-sm font-bold text-white">{e.nome}</span>
                   <span className="text-xs text-gray-500">
-                    {outrosEsportes[e.id]} racha{outrosEsportes[e.id] === 1 ? '' : 's'}
+                    {outrosEsportes[e.id]} clube{outrosEsportes[e.id] === 1 ? '' : 's'}
                   </span>
                   <ChevronRight size={16} className="text-gray-500" />
                 </button>
@@ -526,7 +526,7 @@ export default function Home() {
 
               {rachas.length > 1 && (
                 <select
-                  aria-label="Trocar de racha"
+                  aria-label="Trocar de clube"
                   value={String(currentRacha.id)}
                   onChange={handleSelectRacha}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -756,7 +756,7 @@ export default function Home() {
               </div>
             ) : (
               <p className="rounded-3xl border border-dashed border-gray-800 px-4 py-5 text-center text-sm text-gray-500">
-                Resultados, destaques e novidades do racha aparecem aqui.
+                Resultados, destaques e novidades do clube aparecem aqui.
               </p>
             )}
           </section>

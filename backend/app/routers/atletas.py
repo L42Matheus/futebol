@@ -69,7 +69,7 @@ def criar_atleta(atleta: AtletaCreate, db: Session = Depends(get_db), current_us
     verificar_admin_racha(db, current_user, atleta.racha_id)
     racha = db.query(Racha).filter(Racha.id == atleta.racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     total_atletas = db.query(func.count(Atleta.id)).filter(Atleta.racha_id == atleta.racha_id, Atleta.ativo.is_(True)).scalar()
     if total_atletas >= racha.max_atletas:
         raise HTTPException(status_code=400, detail=f"Limite de {racha.max_atletas} atletas atingido")
@@ -114,7 +114,7 @@ def meu_atleta(racha_id: int, db: Session = Depends(get_db), current_user: User 
         Atleta.racha_id == racha_id, Atleta.user_id == current_user.id, Atleta.ativo.is_(True)
     ).first()
     if not atleta:
-        raise HTTPException(status_code=404, detail="Você ainda não é atleta deste racha")
+        raise HTTPException(status_code=404, detail="Você ainda não é atleta deste clube")
     return atleta
 
 
@@ -236,7 +236,7 @@ def adicionar_cartao(
     if payload.jogo_id:
         jogo = db.query(Jogo).filter(Jogo.id == payload.jogo_id, Jogo.racha_id == atleta.racha_id).first()
         if not jogo:
-            raise HTTPException(status_code=404, detail="Jogo nao encontrado para este racha")
+            raise HTTPException(status_code=404, detail="Jogo nao encontrado para este clube")
     else:
         jogo = db.query(Jogo).filter(Jogo.racha_id == atleta.racha_id).order_by(Jogo.data_hora.desc()).first()
         if not jogo:

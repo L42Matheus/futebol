@@ -259,7 +259,7 @@ export default function AthleteSelfProfile() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Racha selecionado</p>
+                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Clube selecionado</p>
                 <p className="text-xl font-black text-white truncate">
                   {selectedRacha.nome}
                 </p>
@@ -272,7 +272,7 @@ export default function AthleteSelfProfile() {
 
             {rachas.length > 1 && (
               <select
-                aria-label="Selecionar racha"
+                aria-label="Selecionar clube"
                 value={selectedRachaId}
                 onChange={handleSelectRacha}
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -304,7 +304,7 @@ export default function AthleteSelfProfile() {
             <div>
               <p className="text-[10px] text-gray-500 uppercase font-black tracking-wider">Status</p>
               <p className="text-emerald-400 font-bold uppercase tracking-tight">
-                {hasRacha ? 'Ativo no Racha' : 'Aguardando convite'}
+                {hasRacha ? 'Ativo no Clube' : 'Aguardando convite'}
               </p>
             </div>
           </div>
@@ -329,7 +329,7 @@ export default function AthleteSelfProfile() {
                 </button>
               </div>
             ) : (
-              <p className="text-center text-xs text-gray-500">O admin do racha dá as notas da sua carta.</p>
+              <p className="text-center text-xs text-gray-500">O admin do clube dá as notas da sua carta.</p>
             )}
           </section>
         )}
@@ -348,7 +348,7 @@ export default function AthleteSelfProfile() {
             ))}
           </div>
           {!meuAtleta && hasRacha && (
-            <p className="text-xs text-gray-500 mt-4 text-center">Você ainda não é atleta deste racha.</p>
+            <p className="text-xs text-gray-500 mt-4 text-center">Você ainda não é atleta deste clube.</p>
           )}
         </section>
 

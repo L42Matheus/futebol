@@ -127,7 +127,7 @@ async def _assinar_pix_efi(cpf_cnpj: str, db: Session, user: User) -> dict:
         valor_centavos=settings.assinatura_valor,
         cpf_cnpj=cpf_cnpj,
         nome=user.nome,
-        descricao="Assinatura QuemJoga - gestão de racha",
+        descricao="Assinatura QuemJoga - gestão de clube",
     )
     user.cpf_cnpj = cpf_cnpj
     user.subscription_gateway = "efi"
@@ -177,7 +177,7 @@ async def assinar(payload: AssinarRequest, request: Request, db: Session = Depen
         customer_id=customer_id,
         billing_type=payload.billing_type,
         valor_centavos=settings.assinatura_valor,
-        descricao="Assinatura QuemJoga - gestão de racha",
+        descricao="Assinatura QuemJoga - gestão de clube",
         card=payload.card.model_dump() if payload.card else None,
         holder_info=payload.holder_info.model_dump(exclude_none=True) if payload.holder_info else None,
         remote_ip=request.client.host if request.client else None,

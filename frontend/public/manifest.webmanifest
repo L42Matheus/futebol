@@ -2,7 +2,7 @@
   "id": "/app",
   "name": "QuemJoga",
   "short_name": "QuemJoga",
-  "description": "Organize seu racha de futebol, basquete ou vôlei: jogos, atletas, escalação, partida ao vivo e caixa.",
+  "description": "Organize seu clube de futebol, basquete ou vôlei: jogos, atletas, escalação, partida ao vivo e caixa.",
   "lang": "pt-BR",
   "start_url": "/app",
   "scope": "/",

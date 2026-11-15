@@ -290,7 +290,7 @@ export default function AtletaProfile() {
                   value={form.apelido}
                   onChange={(e) => setForm({ ...form, apelido: e.target.value })}
                   className="input"
-                  placeholder="Como e conhecido no racha"
+                  placeholder="Como e conhecido no clube"
                 />
               </div>
               <div>

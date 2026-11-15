@@ -175,12 +175,12 @@ export default function NoRacha() {
       <div className="max-w-3xl mx-auto w-full px-4 pt-8 pb-10 space-y-6">
         <div className="card p-5">
           <h1 className="text-xl font-bold text-white">
-            {hasRacha ? 'Edite seu perfil' : 'Voce ainda nao esta em nenhum racha'}
+            {hasRacha ? 'Edite seu perfil' : 'Voce ainda nao esta em nenhum clube'}
           </h1>
           <p className="text-sm text-gray-400 mt-1">
             {hasRacha
-              ? 'Mantenha seus dados atualizados para facilitar sua identificacao no racha.'
-              : 'Peca ao administrador do racha para enviar um convite e liberar seu acesso.'}
+              ? 'Mantenha seus dados atualizados para facilitar sua identificacao no clube.'
+              : 'Peca ao administrador do clube para enviar um convite e liberar seu acesso.'}
           </p>
         </div>
 

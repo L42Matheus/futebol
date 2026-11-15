@@ -124,7 +124,7 @@ export default function Register() {
 
           {resolvedRole === 'atleta' && !inviteToken && (
             <div className="p-3 rounded-xl bg-blue-500/10 text-sm text-blue-400 border border-blue-500/20">
-              Você poderá entrar em um racha somente após receber um convite.
+              Você poderá entrar em um clube somente após receber um convite.
             </div>
           )}
 

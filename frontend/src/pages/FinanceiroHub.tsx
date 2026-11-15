@@ -36,11 +36,11 @@ export default function FinanceiroHub() {
     return (
       <div className="card text-center py-10 max-w-md mx-auto">
         <h1 className="text-xl font-bold text-white mb-2">
-          {empty ? 'Nenhum racha encontrado' : 'Ops, financeiro indisponível'}
+          {empty ? 'Nenhum clube encontrado' : 'Ops, financeiro indisponível'}
         </h1>
         <p className="text-gray-400 mb-4">
           {empty
-            ? 'Crie ou aceite um convite de racha para acessar o financeiro.'
+            ? 'Crie ou aceite um convite de clube para acessar o financeiro.'
             : error}
         </p>
         <Link to="/app" className="btn-primary inline-flex">

@@ -26,7 +26,7 @@ export default function JogosHub() {
         }
       } catch (e) {
         console.error(e)
-        setError('Não foi possível carregar seus rachas agora. Se você ficou muito tempo logado, entre novamente.')
+        setError('Não foi possível carregar seus clubes agora. Se você ficou muito tempo logado, entre novamente.')
       }
     }
     go()
@@ -36,11 +36,11 @@ export default function JogosHub() {
     return (
       <div className="card text-center py-10 max-w-md mx-auto">
         <h1 className="text-xl font-bold text-white mb-2">
-          {empty ? 'Nenhum racha encontrado' : 'Ops, agenda indisponível'}
+          {empty ? 'Nenhum clube encontrado' : 'Ops, agenda indisponível'}
         </h1>
         <p className="text-gray-400 mb-4">
           {empty
-            ? 'Crie ou aceite um convite de racha para ver os jogos.'
+            ? 'Crie ou aceite um convite de clube para ver os jogos.'
             : error}
         </p>
         <Link to="/app" className="btn-primary inline-flex">

@@ -348,7 +348,7 @@ export default function PartidaAoVivo() {
             <>
               {times.length < 2 ? (
                 <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-300">
-                  O racha precisa de pelo menos dois times. Crie os times e monte a escalação antes de começar.
+                  O clube precisa de pelo menos dois times. Crie os times e monte a escalação antes de começar.
                 </p>
               ) : (
                 <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">

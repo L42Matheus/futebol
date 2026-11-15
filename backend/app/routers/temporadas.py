@@ -59,7 +59,7 @@ def criar(
         if existing_active:
             raise HTTPException(
                 status_code=400,
-                detail="Já existe uma temporada ativa neste racha. Encerre antes de criar outra.",
+                detail="Já existe uma temporada ativa neste clube. Encerre antes de criar outra.",
             )
 
     temporada = Temporada(
@@ -109,7 +109,7 @@ def atualizar(
     if "campeao_team_id" in update_data and update_data["campeao_team_id"] is not None:
         team = db.query(Team).filter(Team.id == update_data["campeao_team_id"]).first()
         if not team or team.racha_id != temporada.racha_id:
-            raise HTTPException(status_code=400, detail="Time campeão não pertence a este racha")
+            raise HTTPException(status_code=400, detail="Time campeão não pertence a este clube")
 
     for field, value in update_data.items():
         setattr(temporada, field, value)

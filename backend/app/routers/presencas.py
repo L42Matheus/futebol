@@ -31,7 +31,7 @@ def criar_presenca(presenca: PresencaCreate, db: Session = Depends(get_db), curr
     if not atleta:
         raise HTTPException(status_code=404, detail="Atleta não encontrado")
     if atleta.racha_id != jogo.racha_id:
-        raise HTTPException(status_code=400, detail="Atleta não pertence a este racha")
+        raise HTTPException(status_code=400, detail="Atleta não pertence a este clube")
     db_presenca = Presenca(**presenca.model_dump())
     db.add(db_presenca)
     db.commit()

@@ -79,7 +79,7 @@ export default function JogoDetail() {
         const teamsRes = await teamsApi.list(jogoRes.data.racha_id)
         setTeams((teamsRes.data ?? []).map((t: { id: number; nome: string }) => ({ id: t.id, nome: t.nome })))
       } catch (e) {
-        console.warn('Não foi possível carregar os times do racha:', e)
+        console.warn('Não foi possível carregar os times do clube:', e)
       }
     } catch (error) {
       console.error('Erro ao carregar jogo:', error)

@@ -115,7 +115,7 @@ export default function Sorteio() {
         jogosApi.get(jogoId),
       ])
       if (!rachaRes.data.is_admin) {
-        setErro('Só o admin do racha pode sortear os times.')
+        setErro('Só o admin do clube pode sortear os times.')
         return
       }
       if (jogoRes.data.iniciado_em) {
@@ -435,7 +435,7 @@ export default function Sorteio() {
         <div className="space-y-2">
           {reaproveitados.length > 0 && (
             <p className="text-center text-xs text-gray-500">
-              {reaproveitados.length === 1 ? `O time ${reaproveitados[0]} do racha será atualizado` : `Os times ${reaproveitados.slice(0, -1).join(', ')} e ${reaproveitados[reaproveitados.length - 1]} do racha serão atualizados`} com este sorteio.
+              {reaproveitados.length === 1 ? `O time ${reaproveitados[0]} do clube será atualizado` : `Os times ${reaproveitados.slice(0, -1).join(', ')} e ${reaproveitados[reaproveitados.length - 1]} do clube serão atualizados`} com este sorteio.
             </p>
           )}
           <button type="button" disabled={salvando} onClick={() => void confirmar()} className="btn-primary h-12 w-full">

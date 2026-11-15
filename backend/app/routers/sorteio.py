@@ -69,7 +69,7 @@ def confirmar_sorteio(
         ).all()
     }
     if len(atletas) != len(ids):
-        raise HTTPException(status_code=400, detail="Algum atleta não faz parte deste racha")
+        raise HTTPException(status_code=400, detail="Algum atleta não faz parte deste clube")
 
     agora = datetime.utcnow()
     # Cada atleta fica em um time só no racha (mesma regra de adicionar membro).

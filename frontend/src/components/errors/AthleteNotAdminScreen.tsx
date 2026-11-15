@@ -28,7 +28,7 @@ export default function AthleteNotAdminScreen({
           <div className="flex items-start gap-3">
             <Users className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-gray-300">
-              <p className="font-medium text-blue-400 mb-1">Quer criar seu próprio racha?</p>
+              <p className="font-medium text-blue-400 mb-1">Quer criar seu próprio clube?</p>
               <p>
                 Para ser administrador, você precisa criar uma nova conta com outro email
                 ou pedir para um admin existente te promover.
@@ -55,7 +55,7 @@ export default function AthleteNotAdminScreen({
         </div>
 
         <p className="text-xs text-gray-500 text-center mt-6">
-          Se você deveria ser admin, entre em contato com o organizador do racha.
+          Se você deveria ser admin, entre em contato com o organizador do clube.
         </p>
       </div>
     </div>

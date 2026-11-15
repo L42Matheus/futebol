@@ -104,9 +104,9 @@ def gerar_mensalidade(racha_id: int, referencia: str, db: Session = Depends(get_
     from app.models import Racha
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     if racha.valor_mensalidade <= 0:
-        raise HTTPException(status_code=400, detail="Racha não possui mensalidade configurada")
+        raise HTTPException(status_code=400, detail="Clube não possui mensalidade configurada")
     atletas = db.query(Atleta).filter(Atleta.racha_id == racha_id, Atleta.ativo.is_(True)).all()
     criados = 0
     for atleta in atletas:

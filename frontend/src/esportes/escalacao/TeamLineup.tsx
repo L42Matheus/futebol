@@ -404,7 +404,7 @@ export default function TeamLineup() {
           <Users size={18} className="shrink-0 text-amber-300" />
           <p className="min-w-0 flex-1 text-sm text-white/80">
             {teams.length === 0
-              ? 'Crie os times do racha para montar a escalação.'
+              ? 'Crie os times do clube para montar a escalação.'
               : 'Você só tem um time. Crie outro para montar o confronto.'}
           </p>
           <span className="flex shrink-0 items-center gap-0.5 text-sm font-bold text-amber-300">
@@ -746,7 +746,7 @@ export default function TeamLineup() {
         title="Tirar do time"
         description={
           editingMember
-            ? `${editingMember.member.atleta.apelido || editingMember.member.atleta.nome} sai do ${editingMember.team.nome}. Continua no racha e pode voltar depois.`
+            ? `${editingMember.member.atleta.apelido || editingMember.member.atleta.nome} sai do ${editingMember.team.nome}. Continua no clube e pode voltar depois.`
             : ''
         }
         confirmLabel="Tirar do time"

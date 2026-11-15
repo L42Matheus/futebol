@@ -207,7 +207,7 @@ def iniciar_partida(
             continue
         team = db.query(Team).filter(Team.id == novo_id, Team.racha_id == jogo.racha_id).first()
         if not team:
-            raise HTTPException(status_code=400, detail="Time selecionado não pertence a este racha")
+            raise HTTPException(status_code=400, detail="Time selecionado não pertence a este clube")
         setattr(jogo, campo_id, team.id)
         setattr(jogo, campo_nome, team.nome)
 
