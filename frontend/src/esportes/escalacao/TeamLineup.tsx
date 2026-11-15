@@ -289,6 +289,10 @@ export default function TeamLineup() {
     if (selectedTeamB) {
       selectedTeamB.membros.forEach(m => membersInTeams.add(m.atleta_id))
     }
+    // Na quadra dividida todos os times estão na tela: quem já está em algum não é "disponível".
+    if (escalacao?.quadraDividida) {
+      teams.forEach((t) => t.membros.forEach((m) => membersInTeams.add(m.atleta_id)))
+    }
     return atletas.filter(a => !membersInTeams.has(a.id))
   }
 
@@ -303,6 +307,18 @@ export default function TeamLineup() {
   }
 
   const availableAtletas = getAvailableAtletas()
+  // Quadra dividida: a primeira é o confronto escolhido no painel; os outros times formam pares na ordem.
+  const quadras = useMemo(() => {
+    const lista: { baixo: Team; cima: Team | null; principal: boolean }[] = []
+    if (selectedTeamA) lista.push({ baixo: selectedTeamA, cima: selectedTeamB, principal: true })
+    else if (selectedTeamB) lista.push({ baixo: selectedTeamB, cima: null, principal: true })
+    const outros = teams.filter((t) => t.id !== selectedTeamA?.id && t.id !== selectedTeamB?.id)
+    for (let i = 0; i < outros.length; i += 2) {
+      lista.push({ baixo: outros[i], cima: outros[i + 1] ?? null, principal: false })
+    }
+    return lista
+  }, [teams, selectedTeamA, selectedTeamB])
+
   const teamAOptions = teams.filter(team => team.id !== selectedTeamB?.id)
   const teamBOptions = teams.filter(team => team.id !== selectedTeamA?.id)
   const formationOptions = escalacao?.formacoes(tipo, escalacaoSize) ?? []
@@ -379,6 +395,24 @@ export default function TeamLineup() {
         </section>
       )}
 
+      {/* Com menos de dois times não dá para montar o confronto: o aviso leva direto para Times. */}
+      {isAdmin && teams.length < 2 && (
+        <Link
+          to={`/racha/${rachaId}/times`}
+          className="flex items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3"
+        >
+          <Users size={18} className="shrink-0 text-amber-300" />
+          <p className="min-w-0 flex-1 text-sm text-white/80">
+            {teams.length === 0
+              ? 'Crie os times do racha para montar a escalação.'
+              : 'Você só tem um time. Crie outro para montar o confronto.'}
+          </p>
+          <span className="flex shrink-0 items-center gap-0.5 text-sm font-bold text-amber-300">
+            Times <ChevronRight size={16} />
+          </span>
+        </Link>
+      )}
+
       {partida ? (
         <Link
           to={`/racha/${rachaId}/jogo/${partida.jogo_id}/partida`}
@@ -405,69 +439,120 @@ export default function TeamLineup() {
         )
       )}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div>
-          {isAdmin && selectedTeamA && (
-            <p className="mb-2 flex items-center gap-2 px-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" /> Time A · {selectedTeamA.nome}
-            </p>
-          )}
-          {selectedTeamA && formationA && escalacao ? (
-            <PainelTime
-              Fundo={escalacao.Fundo}
-              tipo={tipo}
-              local={escalacao.local}
-              teamName={selectedTeamA.nome}
-              members={selectedTeamA.membros}
-              formation={formationA}
-              color="green"
-              side="left"
-              onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamA, slot, member) : undefined}
-              showMeta={!isAdmin}
-              gols={gols}
-              IconePonto={partida ? esporteDaModalidade(tipo).Icone : undefined}
-            />
-          ) : (
-            <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-              <div className="space-y-2 px-6">
-                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/35">Time A</p>
-                <p className="text-lg font-bold text-white/75">Selecione um time para montar a escalação</p>
+      {escalacao?.quadraDividida && formationA && formationB ? (
+        // Quadra com rede: cada confronto divide o mesmo desenho; os demais times vêm em pares, logo abaixo.
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          {quadras.map(({ baixo, cima, principal }, i) => (
+            <section key={baixo.id} className="space-y-2">
+              <div className="flex items-baseline justify-between gap-3 px-1">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Quadra {i + 1}</h2>
+                <p className="min-w-0 truncate text-sm font-bold text-white">
+                  {baixo.nome} <span className="font-medium text-gray-500">x</span> {cima ? cima.nome : 'a definir'}
+                </p>
               </div>
+              <PainelTime
+                Fundo={escalacao.Fundo}
+                tipo={tipo}
+                local={escalacao.local}
+                teamName={baixo.nome}
+                members={baixo.membros}
+                formation={principal ? formationA : formationB}
+                color="green"
+                onSlotClick={isAdmin ? (slot, member) => handleSlotClick(baixo, slot, member) : undefined}
+                showMeta={false}
+                gols={principal ? gols : {}}
+                IconePonto={principal && partida ? esporteDaModalidade(tipo).Icone : undefined}
+                rival={
+                  cima
+                    ? {
+                        teamName: cima.nome,
+                        members: cima.membros,
+                        formation: formationB,
+                        color: 'blue',
+                        onSlotClick: isAdmin ? (slot, member) => handleSlotClick(cima, slot, member) : undefined,
+                      }
+                    : null
+                }
+              />
+            </section>
+          ))}
+          {quadras.length === 0 && (
+            <div className="flex aspect-[5/8] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center">
+              <p className="px-6 text-lg font-bold text-white/75">
+                {isAdmin ? 'Crie os times para montar a escalação' : 'Escalação ainda não definida'}
+              </p>
             </div>
           )}
         </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div>
+            {isAdmin && selectedTeamA && (
+              <p className="mb-2 flex items-center gap-2 px-1 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" /> Time A · {selectedTeamA.nome}
+              </p>
+            )}
+            {selectedTeamA && formationA && escalacao ? (
+              <PainelTime
+                Fundo={escalacao.Fundo}
+                tipo={tipo}
+                local={escalacao.local}
+                teamName={selectedTeamA.nome}
+                members={selectedTeamA.membros}
+                formation={formationA}
+                color="green"
+                side="left"
+                onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamA, slot, member) : undefined}
+                showMeta={!isAdmin}
+                gols={gols}
+                IconePonto={partida ? esporteDaModalidade(tipo).Icone : undefined}
+              />
+            ) : (
+              <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+                <div className="space-y-2 px-6">
+                  <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/35">Time A</p>
+                  <p className="text-lg font-bold text-white/75">
+                    {isAdmin ? 'Escolha um time no painel acima' : 'Escalação ainda não definida'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
-        <div>
-          {isAdmin && selectedTeamB && (
-            <p className="mb-2 flex items-center gap-2 px-1 text-[11px] font-black uppercase tracking-[0.22em] text-sky-400">
-              <span className="h-2 w-2 rounded-full bg-sky-400" /> Time B · {selectedTeamB.nome}
-            </p>
-          )}
-          {selectedTeamB && formationB && escalacao ? (
-            <PainelTime
-              Fundo={escalacao.Fundo}
-              tipo={tipo}
-              local={escalacao.local}
-              teamName={selectedTeamB.nome}
-              members={selectedTeamB.membros}
-              formation={formationB}
-              color="blue"
-              side="right"
-              onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamB, slot, member) : undefined}
-              showMeta={!isAdmin}
-              gols={gols}
-              IconePonto={partida ? esporteDaModalidade(tipo).Icone : undefined}
-            />
-          ) : (
-            <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-              <div className="space-y-2 px-6">
-                <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/35">Time B</p>
-                <p className="text-lg font-bold text-white/75">Selecione um time para montar a escalação</p>
+          <div>
+            {isAdmin && selectedTeamB && (
+              <p className="mb-2 flex items-center gap-2 px-1 text-[11px] font-black uppercase tracking-[0.22em] text-sky-400">
+                <span className="h-2 w-2 rounded-full bg-sky-400" /> Time B · {selectedTeamB.nome}
+              </p>
+            )}
+            {selectedTeamB && formationB && escalacao ? (
+              <PainelTime
+                Fundo={escalacao.Fundo}
+                tipo={tipo}
+                local={escalacao.local}
+                teamName={selectedTeamB.nome}
+                members={selectedTeamB.membros}
+                formation={formationB}
+                color="blue"
+                side="right"
+                onSlotClick={isAdmin ? (slot, member) => handleSlotClick(selectedTeamB, slot, member) : undefined}
+                showMeta={!isAdmin}
+                gols={gols}
+                IconePonto={partida ? esporteDaModalidade(tipo).Icone : undefined}
+              />
+            ) : (
+              <div className="flex aspect-[3/4] items-center justify-center rounded-[2rem] border border-dashed border-white/10 bg-painel text-center shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+                <div className="space-y-2 px-6">
+                  <p className="text-[11px] font-black uppercase tracking-[0.35em] text-white/35">Time B</p>
+                  <p className="text-lg font-bold text-white/75">
+                    {isAdmin ? 'Escolha um time no painel acima' : 'Escalação ainda não definida'}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {isAdmin && availableAtletas.length > 0 && (
         <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-painel shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
@@ -813,7 +898,7 @@ function SeletorEquipe({
           aria-label={`${rotulo}: time`}
           className={`h-11 w-full appearance-none truncate rounded-xl border border-white/10 bg-painel-2 pl-3 pr-8 text-sm font-bold text-white outline-none ${foco}`}
         >
-          <option value="">Escolha</option>
+          <option value="">Escolher</option>
           {opcoes.map((t) => (
             <option key={t.id} value={t.id}>{t.nome}</option>
           ))}
@@ -825,7 +910,8 @@ function SeletorEquipe({
           value={formacao?.id || ''}
           onChange={(e) => onFormacao(e.target.value)}
           aria-label={`${rotulo}: formação`}
-          className={`h-9 w-full appearance-none truncate rounded-xl border border-white/10 bg-white/[0.03] pl-3 pr-8 text-xs text-white/80 outline-none ${foco}`}
+          disabled={!time}
+          className={`h-9 w-full appearance-none truncate rounded-xl border border-white/10 bg-white/[0.03] pl-3 pr-8 text-xs text-white/80 outline-none disabled:opacity-40 ${foco}`}
         >
           {formacoes.map((f) => (
             <option key={f.id} value={f.id}>{f.name}</option>
@@ -834,7 +920,7 @@ function SeletorEquipe({
         <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/45" size={14} />
       </div>
       <p className="px-1 text-[11px] font-semibold text-white/50">
-        {titulares} titulares · {banco} no banco
+        {time ? `${titulares} titulares · ${banco} no banco` : 'Sem time'}
       </p>
     </div>
   )

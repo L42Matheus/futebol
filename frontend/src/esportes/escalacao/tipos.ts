@@ -20,6 +20,8 @@ export interface EscalacaoEsporte {
   jogadoresPorTime: (tipo: string, tamanho?: number | null) => number
   // Desenho do campo/quadra; ocupa o quadro inteiro (viewBox 0 0 100 130, sem manter proporção).
   Fundo: ComponentType<{ tipo: string }>
+  // Quadra com rede no meio (vôlei): os dois times aparecem no mesmo desenho, um de cada lado.
+  quadraDividida?: boolean
   // "campo" ou "quadra", usado nos textos ("5 em quadra").
   local: string
   descricao: (tipo: string) => string

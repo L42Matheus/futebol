@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
-import type { PointerEvent } from 'react'
-import { Star } from 'lucide-react'
+import { useState } from 'react'
+import type { ComponentType } from 'react'
+import { RotateCw, Star } from 'lucide-react'
 import { urlFoto } from './Avatar'
-import JogadorCarta from './JogadorCarta'
+import { AnimacaoAtiva } from '../esportes/cena'
 import { CORES_NIVEL, estrelas, nivel } from '../utils/carta'
 
 interface CartaAtletaProps {
@@ -11,8 +11,10 @@ interface CartaAtletaProps {
   // Sigla curta da posição, ex.: ATA, GOL, LEV.
   posicao?: string
   nota?: number | null
-  // Número da camisa, estampado no peito do jogador.
+  // Número da camisa, mostrado no verso.
   numero?: number | null
+  // Cena animada do esporte (chute, cortada, enterrada) para o verso; sem ela a carta não vira.
+  Cena?: ComponentType
   atributos?: Record<string, number> | null
   // Atributos do esporte na ordem da carta.
   lista: { sigla: string; nome: string }[]
@@ -22,56 +24,19 @@ function iniciais(nome: string) {
   return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase() || '?'
 }
 
-const limitar = (n: number) => Math.max(-1, Math.min(1, n))
-
-// Inclinação da carta: o dedo (ou o mouse) grava --rx e --ry, de -1 a 1, e o CSS (.carta-3d em index.css)
-// transforma isso em giro, brilho e paralaxe. Parada, a carta balança sozinha; ao soltar, volta ao centro.
-function useInclinacao() {
-  const ref = useRef<HTMLDivElement>(null)
-  const volta = useRef<number>()
-
-  useEffect(() => () => window.clearTimeout(volta.current), [])
-
-  function mover(evento: PointerEvent<HTMLDivElement>) {
-    const el = ref.current
-    if (!el) return
-    const caixa = el.getBoundingClientRect()
-    window.clearTimeout(volta.current)
-    el.dataset.estado = 'ativo'
-    el.style.setProperty('--rx', limitar(((evento.clientX - caixa.left) / caixa.width) * 2 - 1).toFixed(3))
-    el.style.setProperty('--ry', limitar(((evento.clientY - caixa.top) / caixa.height) * 2 - 1).toFixed(3))
-  }
-
-  function soltar() {
-    const el = ref.current
-    if (!el || el.dataset.estado !== 'ativo') return
-    el.dataset.estado = 'voltando'
-    el.style.setProperty('--rx', '0')
-    el.style.setProperty('--ry', '0')
-    volta.current = window.setTimeout(() => {
-      delete el.dataset.estado
-      el.style.removeProperty('--rx')
-      el.style.removeProperty('--ry')
-    }, 450)
-  }
-
-  return { ref, onPointerMove: mover, onPointerLeave: soltar, onPointerUp: soltar, onPointerCancel: soltar }
-}
-
 // Carta do atleta: sempre escura, como a do jogo, com a moldura na cor do nível (bronze, prata, ouro).
-// O jogador de corpo inteiro fica no meio e a carta inclina em 3D com o toque.
-export default function CartaAtleta({ nome, fotoUrl, posicao, nota, numero, atributos, lista }: CartaAtletaProps) {
+// A frente tem a foto e as notas; tocar vira a carta e o verso mostra o lance do esporte, animado.
+export default function CartaAtleta({ nome, fotoUrl, posicao, nota, numero, atributos, lista, Cena }: CartaAtletaProps) {
   const cores = CORES_NIVEL[nivel(nota)]
   const total = estrelas(nota)
-  const inclinacao = useInclinacao()
+  const [virada, setVirada] = useState(false)
+  // Quem pediu "reduzir movimento" no sistema vê o verso parado.
+  const [animar] = useState(() => !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+  const moldura = 'tema-escuro overflow-hidden rounded-[2rem] border-[3px] bg-gradient-to-b from-emerald-900 via-emerald-950 to-slate-950 shadow-2xl shadow-black/30'
 
-  return (
-    <div className="carta-3d mx-auto w-full max-w-[300px]" {...inclinacao}>
-    <div
-      className="carta-3d-face tema-escuro relative overflow-hidden rounded-[2rem] border-[3px] bg-gradient-to-b from-emerald-900 via-emerald-950 to-slate-950 px-5 pb-6 pt-5 text-center"
-      style={{ borderColor: cores.moldura }}
-    >
-      <div className="carta-3d-fundo pointer-events-none absolute -right-16 -top-16 h-48 w-48 rotate-12 bg-white/5" aria-hidden="true" />
+  const frente = (
+    <div className={`carta-face relative px-5 pb-6 pt-5 text-center ${moldura}`} style={{ borderColor: cores.moldura }}>
+      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rotate-12 bg-white/5" aria-hidden="true" />
       <div className="relative flex items-start justify-between">
         <div className="text-left leading-none">
           <p className="text-5xl font-black tabular-nums" style={{ color: cores.destaque }}>{nota ?? '–'}</p>
@@ -82,20 +47,16 @@ export default function CartaAtleta({ nome, fotoUrl, posicao, nota, numero, atri
         </span>
       </div>
 
-      <div className="carta-3d-palco relative mx-auto -mt-8 h-64">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-6 mx-auto h-40 w-40 rounded-full blur-2xl"
-          style={{ backgroundColor: `${cores.moldura}40` }}
-          aria-hidden="true"
-        />
-        <div className="carta-3d-jogador relative h-full">
-          <JogadorCarta fotoUrl={fotoUrl ? urlFoto(fotoUrl) : null} iniciais={iniciais(nome)} numero={numero} cor={cores.moldura} />
-        </div>
+      <div
+        className="relative mx-auto -mt-2 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-[3px] bg-emerald-800 text-3xl font-black text-white"
+        style={{ borderColor: `${cores.moldura}aa` }}
+      >
+        {fotoUrl ? <img src={urlFoto(fotoUrl)} alt="" className="h-full w-full object-cover" /> : iniciais(nome)}
       </div>
 
       {/* Nome comprido diminui antes de cortar com reticências. */}
       <p
-        className={`relative mt-1 truncate font-black uppercase tracking-wide text-white ${
+        className={`relative mt-4 truncate font-black uppercase tracking-wide text-white ${
           nome.length > 18 ? 'text-base' : nome.length > 13 ? 'text-xl' : 'text-2xl'
         }`}
       >
@@ -122,10 +83,48 @@ export default function CartaAtleta({ nome, fotoUrl, posicao, nota, numero, atri
         ))}
       </div>
 
-      {/* reflexo que corre pela carta conforme ela inclina */}
-      <div className="carta-3d-brilho pointer-events-none absolute inset-0" aria-hidden="true" />
+      {Cena && (
+        <p className="relative mt-4 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-white/50">
+          <RotateCw size={12} /> Toque para ver o lance
+        </p>
+      )}
     </div>
-    </div>
+  )
+
+  if (!Cena) return <div className="mx-auto w-full max-w-[300px]">{frente}</div>
+
+  return (
+    <button
+      type="button"
+      onClick={() => setVirada((v) => !v)}
+      aria-pressed={virada}
+      aria-label={virada ? `Carta de ${nome}: voltar para as notas` : `Carta de ${nome}: ver o lance`}
+      className="carta-virar mx-auto block w-full max-w-[300px] rounded-[2rem] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+    >
+      <div className={`carta-virar-miolo relative ${virada ? 'carta-virada' : ''}`}>
+        {frente}
+
+        {/* Verso: o atleta em ação. A cena só é montada com a carta virada, para a animação começar do início. */}
+        <div className={`carta-face carta-verso absolute inset-0 ${moldura}`} style={{ borderColor: cores.moldura }}>
+          <div className="absolute inset-x-0 top-0 aspect-square">
+            {virada && (
+              <AnimacaoAtiva.Provider value={animar}>
+                <Cena />
+              </AnimacaoAtiva.Provider>
+            )}
+          </div>
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent px-5 pb-5 pt-12 text-center">
+            <p className="truncate text-xl font-black uppercase tracking-wide text-white">{nome}</p>
+            <p className="mt-0.5 text-xs font-bold uppercase tracking-widest" style={{ color: cores.destaque }}>
+              {[typeof numero === 'number' ? `Camisa ${numero}` : null, posicao].filter(Boolean).join(' · ') || 'Em ação'}
+            </p>
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-white/50">
+              <RotateCw size={12} /> Toque para voltar
+            </p>
+          </div>
+        </div>
+      </div>
+    </button>
   )
 }
 

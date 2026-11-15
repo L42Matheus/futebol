@@ -62,6 +62,7 @@ export const escalacaoVolei: EscalacaoEsporte = {
   formacoes,
   jogadoresPorTime: (tipo) => formacoes(tipo)[0].positions.length,
   Fundo: QuadraVolei,
+  quadraDividida: true,
   local: 'quadra',
   descricao: (tipo) =>
     tipo === 'volei_areia' ? 'Quatro na areia, cobrindo a quadra inteira.' : 'Seis em quadra, nas posições de rodízio.',

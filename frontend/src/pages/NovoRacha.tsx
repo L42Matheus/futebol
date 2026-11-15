@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, CalendarDays } from 'lucide-react'
+import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, CalendarDays, Share2 } from 'lucide-react'
+import { compartilharLink, copiarTexto } from '../utils/compartilhar'
 import { rachasApi, authApi, temporadasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -139,6 +140,41 @@ export default function NovoRacha() {
 
   const modalidadeAtual = getModalidade(form.tipo)
 
+  const convites = inviteLinks
+    ? [
+        {
+          titulo: 'Atletas',
+          descricao: 'Para quem vai jogar no racha',
+          link: inviteLinks.atleta,
+          icone: <Users size={20} />,
+          cor: 'text-emerald-400',
+          fundo: 'bg-emerald-500/10',
+          botao: 'bg-emerald-600 hover:bg-emerald-700',
+        },
+        {
+          titulo: 'Administradores',
+          descricao: 'Para quem ajuda a organizar',
+          link: inviteLinks.admin,
+          icone: <ClipboardList size={20} />,
+          cor: 'text-amber-400',
+          fundo: 'bg-amber-500/10',
+          botao: 'bg-amber-600 hover:bg-amber-700',
+        },
+      ]
+    : []
+
+  async function copiarConvite(link: string) {
+    const copiou = await copiarTexto(link)
+    toast(copiou ? 'Link copiado!' : 'Não consegui copiar o link.', copiou ? 'success' : 'error')
+  }
+
+  async function enviarConvite(link: string, titulo: string) {
+    const papel = titulo === 'Atletas' ? 'jogar' : 'ajudar a organizar'
+    const resultado = await compartilharLink(link, `Entra no ${form.nome || 'nosso racha'} no QuemJoga para ${papel}:`)
+    if (resultado === 'copiado') toast('Link copiado! Cole no grupo da galera.', 'success')
+    if (resultado === 'falhou') toast('Não consegui compartilhar o link.', 'error')
+  }
+
   if (user && !isAdmin) {
     return (
       <div className="card text-center py-10">
@@ -150,7 +186,8 @@ export default function NovoRacha() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Novo Racha</h1>
+      {/* No celular o título já está no cabeçalho do app. */}
+      <h1 className="hidden text-2xl font-bold text-white md:block">Novo Racha</h1>
 
       {!inviteLinks ? (
         <form onSubmit={handleSubmit} className="card space-y-4">
@@ -311,85 +348,62 @@ export default function NovoRacha() {
           </button>
         </form>
       ) : (
-        <div className="space-y-6">
-          {/* Header de Sucesso */}
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <CheckCircle className="w-10 h-10 text-emerald-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Racha criado!</h2>
-            <p className="text-gray-400">
-              Compartilhe os convites para sua galera entrar.
-            </p>
-          </div>
-
-          {/* Cards de Convite */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Card Atleta */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/40">
-              {/* Imagem/Gradiente de fundo */}
-              <div className="h-36 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-                <esporte.Icone className="w-20 h-20 text-white/90" />
-              </div>
-
-              {/* Conteúdo */}
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <Users className="w-5 h-5 text-emerald-400" />
-                  <h3 className="font-bold text-white text-lg">Atletas</h3>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">Para quem vai jogar no racha</p>
-
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(inviteLinks.atleta)
-                    toast('Link de atleta copiado!', 'success')
-                  }}
-                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-branco font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <Copy size={18} />
-                  Copiar Link
-                </button>
-              </div>
-            </div>
-
-            {/* Card Admin */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/40">
-              {/* Imagem/Gradiente de fundo */}
-              <div className="h-36 bg-gradient-to-br from-amber-600 via-orange-500 to-yellow-400 flex items-center justify-center relative">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzMiAyIDIgNC0yIDQtMiA0LTItMi0yLTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-                <ClipboardList className="w-20 h-20 text-white/90" strokeWidth={1.5} />
-              </div>
-
-              {/* Conteúdo */}
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <ClipboardList className="w-5 h-5 text-amber-400" />
-                  <h3 className="font-bold text-white text-lg">Administradores</h3>
-                </div>
-                <p className="text-sm text-gray-400 mb-4">Para quem organiza o racha</p>
-
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(inviteLinks.admin)
-                    toast('Link de admin copiado!', 'success')
-                  }}
-                  className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-branco font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <Copy size={18} />
-                  Copiar Link
-                </button>
-              </div>
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 rounded-3xl border border-emerald-500/25 bg-emerald-500/10 p-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+              <CheckCircle className="h-6 w-6 text-emerald-400" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-bold text-white">{form.nome || 'Racha'} criado!</h2>
+              <p className="text-sm text-gray-400">Agora chame a galera pelo link de convite.</p>
             </div>
           </div>
 
-          {/* Botão Ir para Racha */}
+          {/* Convites: uma linha por tipo, com enviar (folha de compartilhamento) e copiar. */}
+          <div className="divide-y divide-gray-800 rounded-3xl border border-gray-800 bg-gray-900/40">
+            {convites.map((convite) => (
+              <div key={convite.titulo} className="space-y-3 p-4">
+                <div className="flex items-center gap-3">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${convite.fundo} ${convite.cor}`}>
+                    {convite.icone}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-white">{convite.titulo}</h3>
+                    <p className="text-sm text-gray-400">{convite.descricao}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void enviarConvite(convite.link, convite.titulo)}
+                    className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl text-sm font-semibold text-branco transition-colors ${convite.botao}`}
+                  >
+                    <Share2 size={16} />
+                    Enviar convite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void copiarConvite(convite.link)}
+                    className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gray-700 text-sm font-semibold text-gray-200 transition-colors hover:bg-gray-800"
+                  >
+                    <Copy size={16} />
+                    Copiar link
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="px-1 text-xs text-gray-500">
+            Cuidado com o link de administrador: quem entrar por ele pode gerenciar o racha.
+          </p>
+
           <button
+            type="button"
             className="btn-primary w-full flex items-center justify-center gap-2 py-4"
             onClick={() => createdRachaId && navigate(`/racha/${createdRachaId}`)}
           >
-            Ir para o Racha
+            Ir para o racha
             <ArrowRight size={20} />
           </button>
         </div>
