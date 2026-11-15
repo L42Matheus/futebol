@@ -46,7 +46,7 @@ const recursos = [
   },
   {
     titulo: 'Ranking',
-    texto: 'Artilharia e estatísticas de cada atleta saem direto dos lances da partida.',
+    texto: 'Gols, cestas, pontos e estatísticas de cada atleta saem direto dos lances da partida.',
     icone: <Trophy size={22} />,
     cor: 'bg-amber-500/10 text-amber-400',
   },
@@ -58,14 +58,14 @@ const recursos = [
   },
   {
     titulo: 'Times e atletas',
-    texto: 'Perfil de cada atleta, times do racha e convite por um único link.',
+    texto: 'Perfil de cada atleta, times do clube e convite por um único link.',
     icone: <Users size={22} />,
     cor: 'bg-rose-500/10 text-rose-400',
   },
 ]
 
 const passos = [
-  { titulo: 'Crie o racha', texto: 'Futebol, basquete ou vôlei, com a modalidade certa.' },
+  { titulo: 'Crie o clube', texto: 'Futebol, basquete ou vôlei, com a modalidade certa.' },
   { titulo: 'Convide pelo link', texto: 'Mande no grupo e a galera entra sozinha.' },
   { titulo: 'Marque o jogo', texto: 'Dia, horário, local e lista de presença.' },
   { titulo: 'Comande ao vivo', texto: 'Placar, lances e substituições na hora.' },
@@ -144,7 +144,7 @@ export default function Landing() {
             </div>
 
             <h1 className="mx-auto mt-6 max-w-xl text-[2.5rem] font-black leading-[1.02] tracking-tight text-white sm:text-6xl lg:mx-0">
-              Seu racha organizado, do convite ao placar ao vivo.
+              Seu clube organizado, do convite ao placar ao vivo.
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base font-medium leading-7 text-gray-400 sm:text-lg lg:mx-0">
@@ -230,7 +230,7 @@ export default function Landing() {
                 {[
                   ['Atletas', '18'],
                   ['Caixa', 'R$ 420'],
-                  ['Artilheiro', 'João'],
+                  ['Destaque', 'João'],
                 ].map(([rotulo, valor]) => (
                   <div key={rotulo} className="rounded-2xl bg-white/[0.04] px-2 py-2.5 text-center">
                     <p className="text-[9px] font-black uppercase tracking-wider text-white/45">{rotulo}</p>
@@ -278,7 +278,7 @@ export default function Landing() {
 
         <section className="py-10">
           <div className="mb-6 text-center">
-            <h2 className="text-2xl font-black sm:text-3xl">Tudo que o racha precisa</h2>
+            <h2 className="text-2xl font-black sm:text-3xl">Tudo que o clube precisa</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">Do grupo bagunçado ao jogo comandado pelo celular.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -41,15 +41,15 @@ export default function ExcluirConta() {
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             <li>Seu login (e-mail, telefone e senha)</li>
             <li>Seu perfil e sua foto</li>
-            <li>Seu acesso de admin aos rachas</li>
+            <li>Seu acesso de admin aos clubes</li>
             <li>Os avisos enviados para o seu celular</li>
           </ul>
         </div>
         <div className="rounded-2xl border border-gray-800 bg-gray-900/40 p-4">
-          <p className="font-black text-white">O que fica no racha</p>
+          <p className="font-black text-white">O que fica no clube</p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             <li>Seu nome no histórico de jogos, presença e caixa, sem ligação com nenhuma conta</li>
-            <li>Racha que ficar sem nenhum admin é desativado</li>
+            <li>Clube que ficar sem nenhum admin é desativado</li>
           </ul>
         </div>
       </section>

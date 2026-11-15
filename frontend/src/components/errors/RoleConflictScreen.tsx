@@ -30,7 +30,7 @@ export default function RoleConflictScreen({
             <div className="text-sm text-gray-300">
               <p className="font-medium text-amber-400 mb-1">Você é um Admin!</p>
               <p>
-                Administradores têm acesso completo para gerenciar rachas, atletas e
+                Administradores têm acesso completo para gerenciar clubes, atletas e
                 finanças.
               </p>
             </div>

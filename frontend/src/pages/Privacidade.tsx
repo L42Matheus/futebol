@@ -19,7 +19,7 @@ export default function Privacidade() {
       <p className="text-sm text-gray-500">Atualizada em {ATUALIZADA_EM}.</p>
 
       <p>
-        O QuemJoga ajuda a organizar rachas de futebol, basquete e vôlei: jogos, presença, times, escalação,
+        O QuemJoga ajuda a organizar clubes de futebol, basquete e vôlei: jogos, presença, times, escalação,
         partida ao vivo e caixa. Esta página explica quais dados usamos, para quê e como você pode apagá-los,
         seguindo a Lei Geral de Proteção de Dados (LGPD).
       </p>
@@ -28,7 +28,7 @@ export default function Privacidade() {
         <ul className="list-disc space-y-1 pl-5">
           <li><strong className="text-white">Conta:</strong> nome, e-mail e/ou telefone e senha (guardada só como código, nunca em texto).</li>
           <li><strong className="text-white">Perfil de atleta:</strong> apelido, posição, perna boa, número da camisa e foto, se você enviar.</li>
-          <li><strong className="text-white">Uso no racha:</strong> presença nos jogos, times, escalação, lances da partida (gols, cestas, pontos, cartões) e registros do caixa, como mensalidades e multas.</li>
+          <li><strong className="text-white">Uso no clube:</strong> presença nos jogos, times, escalação, lances da partida (gols, cestas, pontos, cartões) e registros do caixa, como mensalidades e multas.</li>
           <li><strong className="text-white">Login com Google:</strong> nome e e-mail da sua conta Google, só para entrar.</li>
         </ul>
         <p>Não coletamos localização, contatos do celular nem dados de cartão.</p>
@@ -36,8 +36,8 @@ export default function Privacidade() {
 
       <Secao titulo="Para que usamos">
         <ul className="list-disc space-y-1 pl-5">
-          <li>Fazer o app funcionar: entrar, participar dos rachas e mostrar jogos, placar e caixa.</li>
-          <li>Mostrar seus dados para os outros membros do mesmo racha (nome, foto, posição, presença e estatísticas).</li>
+          <li>Fazer o app funcionar: entrar, participar dos clubes e mostrar jogos, placar e caixa.</li>
+          <li>Mostrar seus dados para os outros membros do mesmo clube (nome, foto, posição, presença e estatísticas).</li>
           <li>Enviar e-mails necessários, como a redefinição de senha.</li>
           <li>Responder o que você mandar pelo suporte (guardamos a mensagem, o e-mail e a tela de onde veio).</li>
         </ul>
@@ -56,8 +56,8 @@ export default function Privacidade() {
       <Secao titulo="Por quanto tempo guardamos">
         <p>
           Enquanto sua conta existir. Quando você exclui a conta, apagamos login, perfil, foto e acesso de admin na hora.
-          Seu nome continua no histórico do racha (jogos, presença e caixa), sem ligação com nenhuma conta, porque esses
-          registros pertencem ao racha e ao seu organizador.
+          Seu nome continua no histórico do clube (jogos, presença e caixa), sem ligação com nenhuma conta, porque esses
+          registros pertencem ao clube e ao seu organizador.
         </p>
       </Secao>
 
@@ -75,7 +75,7 @@ export default function Privacidade() {
 
       <Secao titulo="Segurança">
         <p>
-          A conexão com o app é criptografada (HTTPS), as senhas são guardadas só como código e cada racha só é visto por
+          A conexão com o app é criptografada (HTTPS), as senhas são guardadas só como código e cada clube só é visto por
           quem participa dele.
         </p>
       </Secao>

@@ -46,7 +46,7 @@ function buildWhatsAppUrl(atleta: Atleta, referencia: string) {
   if (!phone) return null
 
   const message = encodeURIComponent(
-    `Oi, ${atleta.apelido || atleta.nome}! Passando para lembrar da mensalidade do racha referente a ${referencia}.`,
+    `Oi, ${atleta.apelido || atleta.nome}! Passando para lembrar da mensalidade do clube referente a ${referencia}.`,
   )
   return `https://wa.me/55${phone}?text=${message}`
 }
@@ -236,7 +236,7 @@ export default function Financeiro() {
               <p className="mt-1 text-sm text-gray-400">
                 {totalAtletasFinanceiro > 0
                   ? `Nenhum atleta pendente em ${referenciaAtual}.`
-                  : 'Adicione atletas ao racha para controlar quem pagou.'}
+                  : 'Adicione atletas ao clube para controlar quem pagou.'}
               </p>
             </div>
           ) : (
@@ -365,7 +365,7 @@ export default function Financeiro() {
       <InputDialog
         open={pedindoValorDe !== null}
         title="Valor pago"
-        description="Este racha não tem mensalidade definida. Quanto o atleta pagou?"
+        description="Este clube não tem mensalidade definida. Quanto o atleta pagou?"
         label="Valor (R$)"
         placeholder="Ex: 35,00"
         confirmLabel="Confirmar pagamento"

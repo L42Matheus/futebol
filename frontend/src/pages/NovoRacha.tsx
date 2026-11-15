@@ -100,19 +100,19 @@ export default function NovoRacha() {
           admin: `${base}/register?invite=${inviteAdmin.data.token}`,
         })
       } catch (inviteError) {
-        console.error('Racha criado, mas os convites falharam:', inviteError)
-        toast('Racha criado. A geração de convites será ajustada na próxima etapa.', 'success')
+        console.error('Clube criado, mas os convites falharam:', inviteError)
+        toast('Clube criado. A geração de convites será ajustada na próxima etapa.', 'success')
         navigate(`/racha/${response.data.id}`)
       }
     } catch (error) {
       const details = error as { message?: string; details?: string; hint?: string; code?: string }
-      console.error('Erro ao criar racha:', {
+      console.error('Erro ao criar clube:', {
         message: details?.message,
         code: details?.code,
         details: details?.details,
         hint: details?.hint,
       })
-      toast(details?.message || 'Erro ao criar racha. Tente novamente.', 'error')
+      toast(details?.message || 'Erro ao criar clube. Tente novamente.', 'error')
     } finally {
       setLoading(false)
     }
@@ -154,7 +154,7 @@ export default function NovoRacha() {
     ? [
         {
           titulo: 'Atletas',
-          descricao: 'Para quem vai jogar no racha',
+          descricao: 'Para quem vai jogar no clube',
           link: inviteLinks.atleta,
           icone: <Users size={20} />,
           cor: 'text-emerald-400',
@@ -180,7 +180,7 @@ export default function NovoRacha() {
 
   async function enviarConvite(link: string, titulo: string) {
     const papel = titulo === 'Atletas' ? 'jogar' : 'ajudar a organizar'
-    const resultado = await compartilharLink(link, `Entra no ${form.nome || 'nosso racha'} no QuemJoga para ${papel}:`)
+    const resultado = await compartilharLink(link, `Entra no ${form.nome || 'nosso clube'} no QuemJoga para ${papel}:`)
     if (resultado === 'copiado') toast('Link copiado! Cole no grupo da galera.', 'success')
     if (resultado === 'falhou') toast('Não consegui compartilhar o link.', 'error')
   }
@@ -189,7 +189,7 @@ export default function NovoRacha() {
     return (
       <div className="card text-center py-10">
         <h1 className="text-xl font-semibold text-white mb-2">Acesso restrito</h1>
-        <p className="text-gray-400">Apenas administradores podem criar rachas.</p>
+        <p className="text-gray-400">Apenas administradores podem criar clubes.</p>
       </div>
     )
   }
@@ -197,24 +197,24 @@ export default function NovoRacha() {
   return (
     <div className="space-y-6">
       {/* No celular o título já está no cabeçalho do app. */}
-      <h1 className="hidden text-2xl font-bold text-white md:block">Novo Racha</h1>
+      <h1 className="hidden text-2xl font-bold text-white md:block">Novo Clube</h1>
 
       {!inviteLinks ? (
         <form onSubmit={handleSubmit} className="card space-y-4">
-          <FormField label="Nome do Racha">
+          <FormField label="Nome do Clube">
             <Input
               type="text"
               name="nome"
               value={form.nome}
               onChange={handleChange}
-              placeholder="Ex: Racha do Sábado"
+              placeholder="Ex: Clube do Sábado"
               required
             />
           </FormField>
           {esporteFixo ? (
             <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
               <esporte.Icone size={24} className="text-emerald-400" />
-              <p className="flex-1 font-bold text-white">Racha de {esporte.nome.toLowerCase()}</p>
+              <p className="flex-1 font-bold text-white">Clube de {esporte.nome.toLowerCase()}</p>
               <Link to="/esporte" className="text-sm font-bold text-emerald-400">Trocar</Link>
             </div>
           ) : (
@@ -312,7 +312,7 @@ export default function NovoRacha() {
                   Criar temporada inicial
                 </span>
                 <span className="block text-sm text-gray-400 mt-1">
-                  Ideal para rachas mensais com times fixos, tabela e campeão do mês.
+                  Ideal para clubes mensais com times fixos, tabela e campeão do mês.
                 </span>
               </span>
             </label>
@@ -362,7 +362,7 @@ export default function NovoRacha() {
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Criando...' : form.criar_temporada ? 'Criar Racha e Temporada' : 'Criar Racha'}
+            {loading ? 'Criando...' : form.criar_temporada ? 'Criar Clube e Temporada' : 'Criar Clube'}
           </button>
         </form>
       ) : (
@@ -372,7 +372,7 @@ export default function NovoRacha() {
               <CheckCircle className="h-6 w-6 text-emerald-400" />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-bold text-white">{form.nome || 'Racha'} criado!</h2>
+              <h2 className="truncate text-lg font-bold text-white">{form.nome || 'Clube'} criado!</h2>
               <p className="text-sm text-gray-400">Agora chame a galera pelo link de convite.</p>
             </div>
           </div>
@@ -413,7 +413,7 @@ export default function NovoRacha() {
           </div>
 
           <p className="px-1 text-xs text-gray-500">
-            Cuidado com o link de administrador: quem entrar por ele pode gerenciar o racha.
+            Cuidado com o link de administrador: quem entrar por ele pode gerenciar o clube.
           </p>
 
           <button
@@ -421,7 +421,7 @@ export default function NovoRacha() {
             className="btn-primary w-full flex items-center justify-center gap-2 py-4"
             onClick={() => createdRachaId && navigate(`/racha/${createdRachaId}`)}
           >
-            Ir para o racha
+            Ir para o clube
             <ArrowRight size={20} />
           </button>
         </div>

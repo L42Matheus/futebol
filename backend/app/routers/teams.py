@@ -21,7 +21,7 @@ def criar_time(payload: TeamCreate, db: Session = Depends(get_db), current_user:
     verificar_admin_racha(db, current_user, payload.racha_id)
     racha = db.query(Racha).filter(Racha.id == payload.racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     team = Team(racha_id=payload.racha_id, nome=payload.nome, ativo=True)
     db.add(team)
     db.commit()

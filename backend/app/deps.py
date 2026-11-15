@@ -47,14 +47,14 @@ def exigir_assinatura(user: User) -> None:
     if not assinatura_ativa(user):
         raise HTTPException(
             status_code=402,
-            detail="Assinatura necessária para gerenciar o racha",
+            detail="Assinatura necessária para gerenciar o clube",
         )
 
 
 def esporte_do_racha(db: Session, racha_id: int) -> Esporte:
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     return esporte_da_modalidade(racha.tipo)
 
 
@@ -91,7 +91,7 @@ def verificar_acesso_racha(db: Session, user: User, racha_id: int):
     if atleta:
         return {"tipo": "atleta", "obj": atleta}
 
-    raise HTTPException(status_code=403, detail="Sem acesso a este racha")
+    raise HTTPException(status_code=403, detail="Sem acesso a este clube")
 
 
 def verificar_admin_racha(db: Session, user: User, racha_id: int):

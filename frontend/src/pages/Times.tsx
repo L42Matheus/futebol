@@ -175,7 +175,7 @@ export default function Times() {
       const link = `${window.location.origin}/register?invite=${res.data.token}`
       setInviteLink(link)
       // No celular abre o compartilhamento (WhatsApp etc.); no computador copia o link.
-      const resultado = await compartilharLink(link, 'Entra no nosso racha no QuemJoga:')
+      const resultado = await compartilharLink(link, 'Entra no nosso clube no QuemJoga:')
       if (resultado === 'copiado') toast('Link de convite copiado!', 'success')
       if (resultado === 'falhou') toast('Link gerado. Copie pelo campo abaixo.', 'info')
     } catch {
@@ -270,7 +270,7 @@ export default function Times() {
         <div className="card space-y-4">
           <div>
             <p className="font-bold text-white">Como montar os times</p>
-            <p className="mt-1 text-sm text-gray-400">Seu racha ainda não tem atletas nem times.</p>
+            <p className="mt-1 text-sm text-gray-400">Seu clube ainda não tem atletas nem times.</p>
           </div>
           <ol className="space-y-3">
             {[
@@ -296,7 +296,7 @@ export default function Times() {
       ) : atletas.length === 0 ? (
         <div className="card flex items-center gap-3 py-4">
           <Users size={22} className="shrink-0 text-gray-500" />
-          <p className="text-sm text-gray-400">Ainda não há atletas no racha. Convide a galera para distribuir nos times.</p>
+          <p className="text-sm text-gray-400">Ainda não há atletas no clube. Convide a galera para distribuir nos times.</p>
         </div>
       ) : atletasSemTime.length > 0 && (
         <section className="card space-y-1">

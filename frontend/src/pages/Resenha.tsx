@@ -133,7 +133,7 @@ export default function Resenha() {
           </span>
           <p className="font-bold text-white">A Resenha ainda está vazia</p>
           <p className="mt-1 max-w-xs text-sm text-gray-500">
-            Resultados, destaques, marcas e novos atletas aparecem aqui sozinhos conforme o racha joga.
+            Resultados, destaques, marcas e novos atletas aparecem aqui sozinhos conforme o clube joga.
           </p>
         </div>
       ) : (
@@ -147,7 +147,7 @@ export default function Resenha() {
       <ConfirmDialog
         open={Boolean(apagar)}
         title="Apagar da Resenha"
-        description={apagar ? `"${apagar.titulo}" sai da Resenha para todo o racha.` : ''}
+        description={apagar ? `"${apagar.titulo}" sai da Resenha para todo o clube.` : ''}
         confirmLabel="Apagar"
         danger
         onConfirm={() => void confirmarApagar()}

@@ -21,8 +21,8 @@ const TITLES: Array<{ test: RegExp; title: string }> = [
   { test: /\/ranking$/, title: 'Ranking' },
   { test: /\/atleta\/\d+$/, title: 'Atleta' },
   { test: /^\/tempo$/, title: 'Tempo' },
-  { test: /^\/novo$/, title: 'Novo Racha' },
-  { test: /\/racha\/\d+$/, title: 'Racha' },
+  { test: /^\/novo$/, title: 'Novo Clube' },
+  { test: /\/racha\/\d+$/, title: 'Clube' },
   { test: /\/atletas/, title: 'Atletas' },
   { test: /\/jogos/, title: 'Jogos' },
   { test: /\/novo-jogo/, title: 'Novo Jogo' },
@@ -134,7 +134,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           {/* Nav contextual do racha */}
           {showRachaNav && (
             <div className="mt-6 pt-4 border-t border-gray-800">
-              <p className="px-4 mb-2 text-[10px] uppercase font-black text-gray-600 tracking-widest">Este Racha</p>
+              <p className="px-4 mb-2 text-[10px] uppercase font-black text-gray-600 tracking-widest">Este Clube</p>
               {RACHA_NAV_ITEMS.map((item) => {
                 const active = location.pathname === item.path
                 return (
@@ -162,7 +162,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
               className="flex items-center gap-3 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-branco font-semibold rounded-xl transition-colors mt-4"
             >
               {NAV_ITEMS.find(item => item.isFab)?.icon}
-              Criar Racha
+              Criar Clube
             </Link>
           )}
 
@@ -308,7 +308,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
                   <div key={item.path} className="relative -top-6">
                     <Link
                       to={item.path}
-                      aria-label="Criar racha"
+                      aria-label="Criar clube"
                       className="w-14 h-14 bg-emerald-600 text-branco rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/40 border-4 border-fundo active:scale-95 transition-transform"
                     >
                       {item.icon}

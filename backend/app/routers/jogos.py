@@ -21,7 +21,7 @@ def _resolve_team(db: Session, racha_id: int, team_id: Optional[int]):
         return None
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team or team.racha_id != racha_id:
-        raise HTTPException(status_code=400, detail="Time selecionado não pertence a este racha")
+        raise HTTPException(status_code=400, detail="Time selecionado não pertence a este clube")
     return team
 
 
@@ -30,7 +30,7 @@ def criar_jogo(jogo: JogoCreate, db: Session = Depends(get_db), current_user: Us
     verificar_admin_racha(db, current_user, jogo.racha_id)
     racha = db.query(Racha).filter(Racha.id == jogo.racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     data = jogo.model_dump()
     if data.get("valor_campo") is None:
         data["valor_campo"] = 0

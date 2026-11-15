@@ -60,7 +60,7 @@ export default function RachaDetail() {
   }
 
   if (!racha) {
-    return <div className="text-center py-12 text-gray-400">Racha não encontrado</div>
+    return <div className="text-center py-12 text-gray-400">Clube não encontrado</div>
   }
 
   return (
@@ -73,7 +73,7 @@ export default function RachaDetail() {
         </p>
         {saldo && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mt-4">
-            <p className="text-sm text-emerald-400">Saldo do Racha</p>
+            <p className="text-sm text-emerald-400">Saldo do Clube</p>
             <p className="text-2xl font-bold text-white">{saldo.saldo_formatado}</p>
             {saldo.pendente > 0 && (
               <p className="text-sm text-amber-400 mt-1">{saldo.pendente_formatado} pendente</p>

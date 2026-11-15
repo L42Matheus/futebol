@@ -144,7 +144,7 @@ def _select_column(
 @router.post("/", response_model=RachaResponse, status_code=status.HTTP_201_CREATED)
 def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Apenas administradores podem criar racha")
+        raise HTTPException(status_code=403, detail="Apenas administradores podem criar clube")
     exigir_assinatura(current_user)
     tipo = _normalize_tipo(racha.tipo)
     tipo_db = _resolve_tipo_db_label(db, tipo)
@@ -181,7 +181,7 @@ def criar_racha(racha: RachaCreate, db: Session = Depends(get_db), current_user:
     ).mappings().first()
     if not row:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Não foi possível criar o racha")
+        raise HTTPException(status_code=500, detail="Não foi possível criar o clube")
 
     db.execute(
         text(
@@ -357,7 +357,7 @@ def obter_racha(racha_id: int, db: Session = Depends(get_db), current_user: User
         {"racha_id": racha_id, "user_id": current_user.id},
     ).mappings().first()
     if not row:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     return _racha_response_from_mapping(
         row,
         total_atletas=row.get("total_atletas") or 0,
@@ -370,12 +370,12 @@ def atualizar_racha(racha_id: int, racha_update: RachaUpdate, db: Session = Depe
     verificar_admin_racha(db, current_user, racha_id)
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     update_data = racha_update.model_dump(exclude_unset=True)
     if "tipo" in update_data:
         # Trocar de esporte deixaria posições e estatísticas dos atletas sem sentido.
         if esporte_da_modalidade(update_data["tipo"]).id != esporte_da_modalidade(racha.tipo).id:
-            raise HTTPException(status_code=400, detail="Não é possível trocar o esporte de um racha")
+            raise HTTPException(status_code=400, detail="Não é possível trocar o esporte de um clube")
         update_data["max_atletas"] = get_max_atletas(update_data["tipo"])
     for field, value in update_data.items():
         setattr(racha, field, value)
@@ -390,7 +390,7 @@ def deletar_racha(racha_id: int, db: Session = Depends(get_db), current_user: Us
     verificar_admin_racha(db, current_user, racha_id)
     racha = db.query(Racha).filter(Racha.id == racha_id).first()
     if not racha:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     racha.ativo = False
     db.commit()
 
@@ -404,7 +404,7 @@ def obter_saldo(racha_id: int, db: Session = Depends(get_db), current_user: User
         {"racha_id": racha_id},
     ).first()
     if not exists:
-        raise HTTPException(status_code=404, detail="Racha não encontrado")
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
     total_recebido = db.query(func.sum(Pagamento.valor)).join(Atleta).filter(
         Atleta.racha_id == racha_id, Pagamento.status == StatusPagamento.APROVADO).scalar() or 0
     total_pendente = db.query(func.sum(Pagamento.valor)).join(Atleta).filter(

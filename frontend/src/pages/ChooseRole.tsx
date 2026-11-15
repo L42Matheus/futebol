@@ -75,7 +75,7 @@ export default function ChooseRole() {
             </div>
             <h1 className="text-2xl font-bold text-white">QuemJoga</h1>
           </Link>
-          <p className="text-gray-400 mt-1">Organize seu racha sem estresse</p>
+          <p className="text-gray-400 mt-1">Organize seu clube sem estresse</p>
         </div>
       )}
 
@@ -98,7 +98,7 @@ export default function ChooseRole() {
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Atleta</h2>
                 <p className="text-sm text-gray-400 mt-1">
-                  Recebi um convite para participar de um racha
+                  Recebi um convite para participar de um clube
                 </p>
                 <ul className="mt-3 space-y-1">
                   <li className="text-xs text-gray-500 flex items-center gap-2">
@@ -126,7 +126,7 @@ export default function ChooseRole() {
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Administrador</h2>
                 <p className="text-sm text-gray-400 mt-1">
-                  Quero criar e gerenciar meu próprio racha
+                  Quero criar e gerenciar meu próprio clube
                 </p>
                 <ul className="mt-3 space-y-1">
                   <li className="text-xs text-gray-500 flex items-center gap-2">
