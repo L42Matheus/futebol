@@ -103,7 +103,7 @@ export default function CenarioCartao({ esporte }: { esporte: EsporteId }) {
   return (
     <svg
       viewBox="0 0 400 160"
-      preserveAspectRatio="xMaxYMax slice"
+      preserveAspectRatio="xMaxYMax meet"
       className="pointer-events-none absolute inset-0 h-full w-full"
       aria-hidden="true"
     >
