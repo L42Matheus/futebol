@@ -5,7 +5,6 @@ import {
   CalendarCheck,
   DollarSign,
   LayoutGrid,
-  Link2,
   Moon,
   Radio,
   Sun,
@@ -151,6 +150,15 @@ export default function Landing() {
               Agenda, presença, escalação, partida ao vivo, ranking e caixa num app só, para quem quer jogar e não
               perder tempo organizando.
             </p>
+
+            {/* Mascote do QuemJoga: o apito com a prancheta, dando o sinal de positivo. */}
+            <img
+              src="/mascote/mascote.webp"
+              alt="Mascote do QuemJoga, um apito sorridente de uniforme verde com uma prancheta"
+              width={649}
+              height={719}
+              className="mascote-flutuar mx-auto mt-6 h-52 w-auto drop-shadow-[0_18px_30px_rgba(34,169,87,0.25)] lg:mx-0"
+            />
 
             <div className="mx-auto mt-8 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
               <Link
@@ -298,9 +306,7 @@ export default function Landing() {
 
         <section className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-5 sm:p-8">
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
-              <Link2 size={22} />
-            </div>
+            <img src="/mascote/mascote.webp" alt="" width={649} height={719} className="mx-auto mb-2 h-28 w-auto" loading="lazy" />
             <h2 className="text-2xl font-black sm:text-3xl">Do convite ao placar, em quatro passos</h2>
           </div>
 

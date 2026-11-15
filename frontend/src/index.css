@@ -233,3 +233,28 @@ body {
     animation: none !important;
   }
 }
+
+/* Mascote (Landing e tela inicial vazia): flutua devagar, como se estivesse quicando no lugar. */
+@keyframes mascote-flutuar {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+.mascote-flutuar {
+  animation: mascote-flutuar 3.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascote-flutuar {
+    animation: none;
+  }
+}
+
+/* Mascote em busto (cortado embaixo): esmaece o pé para o corte não ficar à vista. */
+.mascote-busto {
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Trophy, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import authService from '../services/auth'
 import { aceitarConvite } from '../services/convite'
@@ -195,9 +195,7 @@ export default function Login() {
       </div>
 
       <div className="pt-8 pb-6 px-6 text-center">
-        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-600 text-branco flex items-center justify-center shadow-lg">
-          <Trophy size={28} />
-        </div>
+        <img src="/icons/icon-192.png" alt="QuemJoga" className="mx-auto mb-3 h-16 w-16 rounded-2xl shadow-lg shadow-emerald-950/30" />
         <h1 className="text-2xl font-bold text-white">Entrar</h1>
         <p className="text-gray-400 mt-1">Use e-mail ou telefone</p>
       </div>

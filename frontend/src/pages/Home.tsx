@@ -29,6 +29,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { ESPORTES, esporteDaModalidade, getEsporte, getModalidade, temRecurso } from '../esportes'
 import type { EsporteId } from '../esportes'
+import { MASCOTE_ADMIN, mascoteDoAtleta } from '../esportes/mascotes'
 import type { Jogo, Noticia, Racha, Saldo } from '../types'
 import { differenceInCalendarDays, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -384,6 +385,8 @@ export default function Home() {
   const EsporteIcone = currentRacha ? esporteDaModalidade(currentRacha.tipo).Icone : null
 
   const EsporteAtualIcone = esporteAtual ? getEsporte(esporteAtual).Icone : null
+  // Tela vazia: admin vê o mascote de crachá; atleta, o do esporte em que está.
+  const mascoteVazio = isAdmin ? MASCOTE_ADMIN : mascoteDoAtleta(esporteAtual)
 
   function trocarEsporte(id: EsporteId) {
     definirEsporteAtual(id)
@@ -444,9 +447,14 @@ export default function Home() {
       {/* Estado vazio: nenhum racha neste esporte */}
       {rachas.length === 0 && (
         <div className="flex flex-col items-center justify-center px-6 py-12">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-800/50">
-            {EsporteAtualIcone ? <EsporteAtualIcone size={40} className="text-gray-500" /> : <Users size={40} className="text-gray-600" />}
-          </div>
+          {/* Clube vazio: o mascote recebe a pessoa no lugar de um ícone apagado. */}
+          <img
+            src={mascoteVazio.src}
+            alt=""
+            width={mascoteVazio.largura}
+            height={mascoteVazio.altura}
+            className={`mascote-flutuar mb-4 h-40 w-auto ${mascoteVazio.busto ? 'mascote-busto' : ''}`}
+          />
           <h2 className="mb-2 text-center text-xl font-bold text-white">
             {esporteAtual ? `Nenhum clube de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum clube ainda'}
           </h2>
@@ -590,7 +598,7 @@ export default function Home() {
               aria-label="Próximo jogo"
               className="relative overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-500/10 shadow-lg shadow-black/10"
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.20),transparent_35%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,169,87,0.20),transparent_35%)]" />
 
               {/* O topo abre o jogo (antes abria a agenda inteira). */}
               <Link
