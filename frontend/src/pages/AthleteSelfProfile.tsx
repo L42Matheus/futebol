@@ -317,6 +317,7 @@ export default function AthleteSelfProfile() {
               fotoUrl={meuAtleta.foto_url}
               posicao={siglaPosicao(labelPosicao(meuAtleta.posicao))}
               nota={meuAtleta.nota}
+              numero={meuAtleta.numero_camisa}
               atributos={meuAtleta.atributos}
               lista={esporteDaModalidade(selectedRacha?.tipo).atributos}
             />
