@@ -100,9 +100,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-fundo border-r border-gray-800 flex-col p-5 z-40">
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-branco font-bold">
-            QJ
-          </div>
+          <img src="/icons/icon-192.png" alt="" className="h-10 w-10 rounded-xl shadow-lg shadow-emerald-950/30" />
           <span className="text-xl font-bold text-white">QuemJoga</span>
         </div>
 
@@ -232,6 +230,8 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
               <ChevronLeft size={24} />
             </button>
           )}
+          {/* Nas telas principais (sem voltar), o selo do mascote abre o cabeçalho. */}
+          {!resolvedShowBack && <img src="/icons/icon-192.png" alt="" className="h-8 w-8 shrink-0 rounded-lg" />}
           <h1 className="text-lg font-bold text-white truncate">{resolvedTitle}</h1>
         </div>
         <div className="flex items-center gap-2">

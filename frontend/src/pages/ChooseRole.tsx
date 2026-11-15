@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { ShieldCheck, UserCircle2, Trophy, ArrowLeftRight } from 'lucide-react'
+import { ShieldCheck, UserCircle2, ArrowLeftRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getEsporte } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
@@ -30,9 +30,7 @@ export default function ChooseRole() {
         <div className="px-4 pt-6">
           <div className="mx-auto max-w-md">
             <Link to="/" aria-label="Ir para a página inicial" className="inline-flex items-center gap-2 text-white">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-branco">
-                <Trophy size={16} />
-              </span>
+              <img src="/icons/icon-192.png" alt="" className="h-9 w-9 rounded-xl" />
               <span className="text-lg font-black">QuemJoga</span>
             </Link>
 
@@ -70,9 +68,7 @@ export default function ChooseRole() {
       ) : (
         <div className="pt-12 pb-8 px-6 text-center">
           <Link to="/" aria-label="Ir para a página inicial" className="inline-block">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-600 text-branco flex items-center justify-center shadow-lg">
-              <Trophy size={32} />
-            </div>
+            <img src="/icons/icon-192.png" alt="" className="mx-auto mb-4 h-20 w-20 rounded-2xl shadow-lg shadow-emerald-950/30" />
             <h1 className="text-2xl font-bold text-white">QuemJoga</h1>
           </Link>
           <p className="text-gray-400 mt-1">Organize seu clube sem estresse</p>

@@ -1,6 +1,7 @@
 // Service worker do QuemJoga: deixa o app instalável e mostra uma tela amigável sem internet.
 // Não guarda respostas da API: placar, presença e caixa precisam vir sempre do servidor.
-const CACHE = 'quemjogafc-v1'
+// v2: ícones novos com o mascote (troque a versão sempre que os ícones mudarem).
+const CACHE = 'quemjogafc-v2'
 const OFFLINE = '/offline.html'
 
 self.addEventListener('install', (event) => {

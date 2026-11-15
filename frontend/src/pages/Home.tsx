@@ -444,9 +444,8 @@ export default function Home() {
       {/* Estado vazio: nenhum racha neste esporte */}
       {rachas.length === 0 && (
         <div className="flex flex-col items-center justify-center px-6 py-12">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-800/50">
-            {EsporteAtualIcone ? <EsporteAtualIcone size={40} className="text-gray-500" /> : <Users size={40} className="text-gray-600" />}
-          </div>
+          {/* Clube vazio: o mascote recebe a pessoa no lugar de um ícone apagado. */}
+          <img src="/mascote/mascote.webp" alt="" width={649} height={719} className="mascote-flutuar mb-4 h-36 w-auto" />
           <h2 className="mb-2 text-center text-xl font-bold text-white">
             {esporteAtual ? `Nenhum clube de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum clube ainda'}
           </h2>
