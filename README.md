@@ -1,4 +1,4 @@
-# QuemJogaFC - Gestão de Rachas de Futebol
+# QuemJoga - Gestão de rachas de futebol, basquete e vôlei
 
 Sistema para gestão de rachas/peladas de futebol. Controle de atletas, presenças, financeiro e escalação.
 

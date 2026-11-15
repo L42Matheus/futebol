@@ -1,4 +1,4 @@
-// Service worker do QuemJogaFC: deixa o app instalável e mostra uma tela amigável sem internet.
+// Service worker do QuemJoga: deixa o app instalável e mostra uma tela amigável sem internet.
 // Não guarda respostas da API: placar, presença e caixa precisam vir sempre do servidor.
 const CACHE = 'quemjogafc-v1'
 const OFFLINE = '/offline.html'

@@ -149,7 +149,7 @@ export async function gerarImagemCarta(dados: DadosCarta): Promise<Blob> {
   // Rodapé
   ctx.fillStyle = 'rgba(255,255,255,0.6)'
   ctx.font = `700 34px ${fonte}`
-  ctx.fillText(dados.racha ? `${dados.racha} · QuemJogaFC` : 'QuemJogaFC', cx, ALTURA - 70)
+  ctx.fillText(dados.racha ? `${dados.racha} · QuemJoga` : 'QuemJoga', cx, ALTURA - 70)
 
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Falha ao gerar a imagem'))), 'image/png'),

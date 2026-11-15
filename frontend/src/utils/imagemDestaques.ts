@@ -93,7 +93,7 @@ export async function gerarImagemDestaques(dados: {
 
   ctx.fillStyle = 'rgba(255,255,255,0.6)'
   ctx.font = `700 34px ${fonte}`
-  ctx.fillText(dados.racha ? `${dados.racha} · QuemJogaFC` : 'QuemJogaFC', LARGURA / 2, ALTURA - 70)
+  ctx.fillText(dados.racha ? `${dados.racha} · QuemJoga` : 'QuemJoga', LARGURA / 2, ALTURA - 70)
 
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Falha ao gerar a imagem'))), 'image/png'),

@@ -96,7 +96,7 @@ export default function Landing() {
         <Link to="/" className="flex min-w-0 items-center gap-2.5">
           <img src="/icons/icon-192.png" alt="" className="h-10 w-10 shrink-0 rounded-xl shadow-lg shadow-emerald-950/30" />
           <span className="truncate text-lg font-black tracking-tight sm:text-xl">
-            QuemJoga<span className="text-emerald-400">FC</span>
+            QuemJoga
           </span>
         </Link>
 
@@ -315,7 +315,7 @@ export default function Landing() {
       </main>
 
       <footer className="relative mx-auto flex max-w-6xl flex-col items-center gap-3 border-t border-gray-800 px-5 py-6 text-sm text-gray-500 sm:flex-row sm:justify-between">
-        <span>© {new Date().getFullYear()} QuemJogaFC</span>
+        <span>© {new Date().getFullYear()} QuemJoga</span>
         <nav className="flex gap-5">
           <Link to="/privacidade" className="hover:text-white">Privacidade</Link>
           <Link to="/excluir-conta" className="hover:text-white">Excluir conta</Link>
