@@ -353,6 +353,7 @@ export default function AtletaProfile() {
             fotoUrl={atleta.foto_url}
             posicao={siglaPosicao(labelPosicao(atleta.posicao))}
             nota={atleta.nota}
+            numero={atleta.numero_camisa}
             atributos={atleta.atributos}
             lista={esporte?.atributos ?? []}
           />

@@ -128,3 +128,83 @@ body {
     animation: none;
   }
 }
+
+/*
+ * Carta do atleta em 3D (CartaAtleta.tsx). --rx e --ry vão de -1 a 1: parada, a carta balança
+ * sozinha pela animação; com o dedo em cima, o componente grava os valores direto no elemento.
+ */
+@property --rx {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --ry {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@keyframes carta-balanco {
+  0%,
+  100% {
+    --rx: 0;
+    --ry: 0;
+  }
+  25% {
+    --rx: 0.45;
+    --ry: -0.15;
+  }
+  75% {
+    --rx: -0.45;
+    --ry: 0.15;
+  }
+}
+.carta-3d {
+  perspective: 900px;
+  touch-action: pan-y;
+  animation: carta-balanco 7s ease-in-out infinite;
+}
+.carta-3d[data-estado] {
+  animation: none;
+}
+.carta-3d-face {
+  transform: rotateY(calc(var(--rx) * 14deg)) rotateX(calc(var(--ry) * -9deg));
+  box-shadow: calc(var(--rx) * -16px) calc(22px + var(--ry) * -8px) 44px rgb(0 0 0 / 0.42);
+  will-change: transform;
+}
+/* O jogador gira um pouco mais que a carta e desliza na frente do fundo: é o que dá a profundidade. */
+.carta-3d-palco {
+  perspective: 500px;
+}
+.carta-3d-jogador {
+  transform: translateX(calc(var(--rx) * 7px)) rotateY(calc(var(--rx) * 20deg));
+  filter: drop-shadow(calc(var(--rx) * -6px) 6px 6px rgb(0 0 0 / 0.35));
+}
+.carta-3d-fundo {
+  translate: calc(var(--rx) * -12px) calc(var(--ry) * -8px);
+}
+.carta-3d-brilho {
+  background:
+    linear-gradient(
+      105deg,
+      transparent 36%,
+      rgb(255 255 255 / 0.2) 47%,
+      rgb(255 255 255 / 0.04) 54%,
+      transparent 64%
+    ),
+    linear-gradient(120deg, rgb(52 211 153 / 0.1), rgb(56 189 248 / 0.1) 35%, rgb(250 204 21 / 0.1) 65%, rgb(244 114 182 / 0.1));
+  background-size: 260% 100%, 200% 200%;
+  background-position: calc(50% - var(--rx) * 45%) 0, calc(50% + var(--rx) * 40%) calc(50% + var(--ry) * 40%);
+  mix-blend-mode: screen;
+}
+.carta-3d[data-estado='voltando'] :is(.carta-3d-face, .carta-3d-jogador, .carta-3d-fundo, .carta-3d-brilho) {
+  transition: all 0.4s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .carta-3d {
+    animation: none;
+  }
+  .carta-3d-face,
+  .carta-3d-jogador {
+    transform: none;
+  }
+}
