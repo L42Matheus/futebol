@@ -24,6 +24,7 @@ import ItemResenha from '../components/ItemResenha'
 import { SELECTED_RACHA_KEY } from '../services/convite'
 import EscudoTime from '../components/EscudoTime'
 import { parseDataJogo } from '../utils/dataJogo'
+import { lerEsporteEscolhido, limparEsporteEscolhido } from '../utils/esporteEscolhido'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
@@ -136,13 +137,21 @@ export default function Home() {
 
       setRachas(list)
       setSelectedIndex(savedIndex >= 0 ? savedIndex : 0)
+
+      // Acabou de se cadastrar pela landing escolhendo um esporte: segue direto para criar o racha.
+      // A escolha vai no link e sai do armazenamento, para voltar à tela inicial não repetir o desvio.
+      const escolhido = lerEsporteEscolhido()
+      if (list.length === 0 && escolhido && user?.role === 'admin') {
+        limparEsporteEscolhido()
+        navigate(`/novo?esporte=${escolhido}`, { replace: true })
+      }
     } catch (error) {
       console.error('Erro ao carregar rachas:', error)
       setErro(true)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [navigate, user?.role])
 
   useEffect(() => {
     loadRachas()

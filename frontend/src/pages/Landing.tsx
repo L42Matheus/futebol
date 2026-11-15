@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -13,7 +14,8 @@ import {
   Users,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { ESPORTES, getEsporte } from '../esportes'
+import { ESPORTES, getEsporte, type EsporteId } from '../esportes'
+import { lerEsporteEscolhido, salvarEsporteEscolhido } from '../utils/esporteEscolhido'
 import { AnimacaoAtiva } from '../esportes/cena'
 import { useTema } from '../hooks/useTema'
 import EscudoTime from '../components/EscudoTime'
@@ -64,25 +66,87 @@ const recursos = [
 ]
 
 const passos = [
-  { titulo: 'Crie o racha', texto: 'Futebol, basquete ou vôlei, com a modalidade certa.' },
+  { titulo: 'Crie o racha', texto: 'Escolha o esporte e a modalidade: society, quadra, areia, 3x3.' },
   { titulo: 'Convide pelo link', texto: 'Mande no grupo e a galera entra sozinha.' },
   { titulo: 'Marque o jogo', texto: 'Dia, horário, local e lista de presença.' },
   { titulo: 'Comande ao vivo', texto: 'Placar, lances e substituições na hora.' },
 ]
 
-// Exemplo de lances no celular da landing: o que o admin registra durante o jogo.
-const lancesExemplo = [
-  { minuto: "18'", tipo: 'gol', texto: 'Gol de João', detalhe: 'assist. Pedro' },
-  { minuto: "15'", tipo: 'troca', texto: 'Entrou Lucas', detalhe: 'saiu Davi' },
-  { minuto: "9'", tipo: 'cartao', texto: 'Cartão amarelo', detalhe: 'Caio' },
-] as const
+// Celular de exemplo da landing, um por esporte: o que o admin vê durante o jogo.
+type Lance = { minuto: string; tipo: 'ponto' | 'troca' | 'cartao'; texto: string; detalhe: string }
+
+const EXEMPLO: Record<EsporteId, {
+  placar: [number, number]
+  relogio: string
+  times: [string, string]
+  lances: Lance[]
+  resumo: [string, string][]
+}> = {
+  futebol: {
+    placar: [2, 1],
+    relogio: '32:14',
+    times: ['Verde', 'Azul'],
+    lances: [
+      { minuto: "18'", tipo: 'ponto', texto: 'Gol de João', detalhe: 'assist. Pedro' },
+      { minuto: "15'", tipo: 'troca', texto: 'Entrou Lucas', detalhe: 'saiu Davi' },
+      { minuto: "9'", tipo: 'cartao', texto: 'Cartão amarelo', detalhe: 'Caio' },
+    ],
+    resumo: [['Atletas', '18'], ['Caixa', 'R$ 420'], ['Artilheiro', 'João']],
+  },
+  basquete: {
+    placar: [48, 45],
+    relogio: '3º Q',
+    times: ['Fúria', 'Preto'],
+    lances: [
+      { minuto: '3º', tipo: 'ponto', texto: 'Cesta de 3 de Rafa', detalhe: 'assist. Léo' },
+      { minuto: '3º', tipo: 'troca', texto: 'Entrou Bia', detalhe: 'saiu Tito' },
+      { minuto: '2º', tipo: 'ponto', texto: 'Cesta de 2 de Duda', detalhe: 'contra-ataque' },
+    ],
+    resumo: [['Atletas', '12'], ['Caixa', 'R$ 260'], ['Cestinha', 'Rafa']],
+  },
+  volei: {
+    placar: [2, 1],
+    relogio: '4º set',
+    times: ['Azul', 'Branco'],
+    lances: [
+      { minuto: '18', tipo: 'ponto', texto: 'Ponto de Ana', detalhe: 'ataque' },
+      { minuto: '17', tipo: 'ponto', texto: 'Ponto de Gabi', detalhe: 'bloqueio' },
+      { minuto: '15', tipo: 'troca', texto: 'Entrou Mari', detalhe: 'saiu Nina' },
+    ],
+    resumo: [['Atletas', '14'], ['Caixa', 'R$ 310'], ['Destaque', 'Ana']],
+  },
+}
+
+// "futebol", "basquete", "vôlei" para usar no meio da frase.
+const nomeNaFrase = (id: EsporteId) => getEsporte(id).nome.toLowerCase()
 
 export default function Landing() {
   const { isAuthenticated } = useAuth()
   const appPath = isAuthenticated ? '/app' : '/perfil'
   const { claro, alternar: alternarTema } = useTema()
   const prefereMenosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const BolaFutebol = getEsporte('futebol').Icone
+  const navigate = useNavigate()
+  // O esporte escolhido muda o título, o celular de exemplo e o botão, e segue até o Novo Racha.
+  const [esporteId, setEsporteId] = useState<EsporteId>(() => lerEsporteEscolhido() ?? 'futebol')
+  const esporte = getEsporte(esporteId)
+  const exemplo = EXEMPLO[esporteId]
+  const IconeLance = esporte.Icone
+
+  function criarRacha() {
+    salvarEsporteEscolhido(esporteId)
+    // Criar racha é coisa de quem organiza: vai direto para entrar/cadastrar como admin.
+    navigate(isAuthenticated ? `/novo?esporte=${esporteId}` : '/login?fromRole=admin')
+  }
+
+  const botaoCriar = (
+    <button
+      type="button"
+      onClick={criarRacha}
+      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
+    >
+      Criar racha de {nomeNaFrase(esporteId)} <ArrowRight size={19} />
+    </button>
+  )
 
   return (
     <div className="min-h-screen overflow-hidden bg-fundo text-white">
@@ -128,20 +192,31 @@ export default function Landing() {
       <main className="relative mx-auto max-w-6xl px-4 pb-10 sm:px-5">
         <section className="grid items-center gap-10 pb-10 pt-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-16">
           <div className="text-center lg:text-left">
-            <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
-              {ESPORTES.map(({ id, nome, Icone }) => (
-                <span
-                  key={id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300"
-                >
-                  <Icone size={14} />
-                  {nome}
-                </span>
-              ))}
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">Qual é o seu esporte?</p>
+            <div className="mx-auto mt-3 grid max-w-sm grid-cols-3 gap-2 lg:mx-0" role="group" aria-label="Escolha o esporte">
+              {ESPORTES.map(({ id, nome, Icone }) => {
+                const ativo = id === esporteId
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setEsporteId(id)}
+                    aria-pressed={ativo}
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3 text-sm font-black transition-all active:scale-[0.97] ${
+                      ativo
+                        ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300 shadow-lg shadow-emerald-950/20'
+                        : 'border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-600 hover:text-white'
+                    }`}
+                  >
+                    <Icone size={26} />
+                    {nome}
+                  </button>
+                )
+              })}
             </div>
 
             <h1 className="mx-auto mt-6 max-w-xl text-[2.5rem] font-black leading-[1.02] tracking-tight text-white sm:text-6xl lg:mx-0">
-              Seu racha organizado, do convite ao placar ao vivo.
+              Seu racha de {nomeNaFrase(esporteId)} organizado, do convite ao placar ao vivo.
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base font-medium leading-7 text-gray-400 sm:text-lg lg:mx-0">
@@ -150,12 +225,7 @@ export default function Landing() {
             </p>
 
             <div className="mx-auto mt-8 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
-              <Link
-                to={appPath}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
-              >
-                Criar meu racha <ArrowRight size={19} />
-              </Link>
+              {botaoCriar}
               <Link
                 to="/perfil"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/60 px-6 py-4 text-base font-black text-gray-100 transition-colors hover:border-emerald-500/40"
@@ -186,25 +256,25 @@ export default function Landing() {
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Ao vivo
                   </span>
-                  <span className="text-sm font-black tabular-nums text-white/80">32:14</span>
+                  <span className="text-sm font-black tabular-nums text-white/80">{exemplo.relogio}</span>
                 </div>
                 <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  <EscudoTime nome="Verde" cor="emerald" />
+                  <EscudoTime nome={exemplo.times[0]} cor="emerald" />
                   <p className="text-5xl font-black leading-none tabular-nums text-white">
-                    2<span className="mx-2 align-middle text-2xl text-white/40">x</span>1
+                    {exemplo.placar[0]}<span className="mx-2 align-middle text-2xl text-white/40">x</span>{exemplo.placar[1]}
                   </p>
-                  <EscudoTime nome="Azul" cor="sky" />
+                  <EscudoTime nome={exemplo.times[1]} cor="sky" />
                 </div>
               </div>
 
               <p className="mb-2 mt-4 px-1 text-[10px] font-black uppercase tracking-[0.22em] text-white/50">Lances</p>
               <ul className="space-y-2">
-                {lancesExemplo.map((lance) => (
-                  <li key={lance.minuto} className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
+                {exemplo.lances.map((lance) => (
+                  <li key={`${lance.minuto}-${lance.texto}`} className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
                     <span className="w-7 text-xs font-black tabular-nums text-white/50">{lance.minuto}</span>
-                    {lance.tipo === 'gol' && (
+                    {lance.tipo === 'ponto' && (
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
-                        <BolaFutebol size={15} />
+                        <IconeLance size={15} />
                       </span>
                     )}
                     {lance.tipo === 'troca' && (
@@ -224,11 +294,7 @@ export default function Landing() {
               </ul>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {[
-                  ['Atletas', '18'],
-                  ['Caixa', 'R$ 420'],
-                  ['Artilheiro', 'João'],
-                ].map(([rotulo, valor]) => (
+                {exemplo.resumo.map(([rotulo, valor]) => (
                   <div key={rotulo} className="rounded-2xl bg-white/[0.04] px-2 py-2.5 text-center">
                     <p className="text-[9px] font-black uppercase tracking-wider text-white/45">{rotulo}</p>
                     <p className="mt-0.5 truncate text-sm font-black text-white">{valor}</p>
@@ -243,21 +309,37 @@ export default function Landing() {
           <div className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-3 sm:rounded-[2.5rem] sm:p-6">
             <div className="mb-4 px-2 text-center sm:mb-6 sm:flex sm:items-end sm:justify-between sm:text-left">
               <h2 className="text-2xl font-black sm:text-3xl">Uma arena, três quadras.</h2>
-              <p className="mt-1 text-sm font-medium text-gray-400">Racha de futebol, basquete ou vôlei no mesmo app.</p>
+              <p className="mt-1 text-sm font-medium text-gray-400">Toque no seu esporte: o app se adapta a ele.</p>
             </div>
             <AnimacaoAtiva.Provider value={!prefereMenosMovimento}>
               <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                {ESPORTES.map(({ id, nome, Icone, Cena }) => (
-                  <figure key={id} className="overflow-hidden rounded-[1.25rem] border border-gray-800 bg-fundo sm:rounded-[2rem]">
-                    <div className="aspect-square">
-                      <Cena />
-                    </div>
-                    <figcaption className="flex items-center justify-center gap-1.5 border-t border-gray-800/80 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] text-gray-300 sm:py-3 sm:text-xs sm:tracking-[0.18em]">
-                      <Icone size={15} />
-                      {nome}
-                    </figcaption>
-                  </figure>
-                ))}
+                {ESPORTES.map(({ id, nome, Icone, Cena }) => {
+                  const ativo = id === esporteId
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setEsporteId(id)}
+                      aria-pressed={ativo}
+                      aria-label={`Escolher ${nome}`}
+                      className={`overflow-hidden rounded-[1.25rem] border-2 bg-fundo text-left transition-colors sm:rounded-[2rem] ${
+                        ativo ? 'border-emerald-500' : 'border-gray-800 hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="aspect-square">
+                        <Cena />
+                      </div>
+                      <span
+                        className={`flex items-center justify-center gap-1.5 border-t border-gray-800/80 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] sm:py-3 sm:text-xs sm:tracking-[0.18em] ${
+                          ativo ? 'bg-emerald-500/15 text-emerald-300' : 'text-gray-300'
+                        }`}
+                      >
+                        <Icone size={15} />
+                        {nome}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </AnimacaoAtiva.Provider>
           </div>
@@ -305,12 +387,7 @@ export default function Landing() {
             ))}
           </ol>
 
-          <Link
-            to={appPath}
-            className="mx-auto mt-6 flex w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
-          >
-            Criar meu racha <ArrowRight size={19} />
-          </Link>
+          <div className="mx-auto mt-6 flex w-full max-w-sm flex-col">{botaoCriar}</div>
         </section>
       </main>
 

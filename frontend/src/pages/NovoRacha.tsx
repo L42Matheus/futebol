@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, CalendarDays, Share2 } from 'lucide-react'
 import { compartilharLink, copiarTexto } from '../utils/compartilhar'
 import { rachasApi, authApi, temporadasApi } from '../services/api'
@@ -9,6 +9,7 @@ import FormField from '../components/FormField'
 import { Input, Select } from '../components/Input'
 import { ESPORTES, getEsporte, getModalidade, type EsporteId } from '../esportes'
 import type { TipoRacha } from '../types'
+import { ehEsporte, lerEsporteEscolhido, limparEsporteEscolhido } from '../utils/esporteEscolhido'
 
 const SELECTED_RACHA_KEY = 'quemjogafc:selected_racha_id'
 
@@ -36,7 +37,12 @@ export default function NovoRacha() {
   const [loading, setLoading] = useState(false)
   const [inviteLinks, setInviteLinks] = useState<InviteLinks | null>(null)
   const [createdRachaId, setCreatedRachaId] = useState<number | null>(null)
-  const [esporteId, setEsporteId] = useState<EsporteId>('futebol')
+  const [searchParams] = useSearchParams()
+  // Abre no esporte escolhido na landing (?esporte=volei ou o que ficou guardado no cadastro).
+  const [esporteId, setEsporteId] = useState<EsporteId>(() => {
+    const doLink = searchParams.get('esporte')
+    return ehEsporte(doLink) ? doLink : lerEsporteEscolhido() ?? 'futebol'
+  })
   const esporte = getEsporte(esporteId)
   const [form, setForm] = useState<RachaForm>({
     nome: '',
@@ -66,6 +72,7 @@ export default function NovoRacha() {
         ...rachaPayload
       } = form
       const response = await rachasApi.create(rachaPayload)
+      limparEsporteEscolhido()
       setCreatedRachaId(response.data.id)
       localStorage.setItem(SELECTED_RACHA_KEY, String(response.data.id))
 
