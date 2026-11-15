@@ -252,3 +252,9 @@ body {
     animation: none;
   }
 }
+
+/* Mascote em busto (cortado embaixo): esmaece o pé para o corte não ficar à vista. */
+.mascote-busto {
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}

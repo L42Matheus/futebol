@@ -29,6 +29,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { ESPORTES, esporteDaModalidade, getEsporte, getModalidade, temRecurso } from '../esportes'
 import type { EsporteId } from '../esportes'
+import { MASCOTE_ADMIN, mascoteDoAtleta } from '../esportes/mascotes'
 import type { Jogo, Noticia, Racha, Saldo } from '../types'
 import { differenceInCalendarDays, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -384,6 +385,8 @@ export default function Home() {
   const EsporteIcone = currentRacha ? esporteDaModalidade(currentRacha.tipo).Icone : null
 
   const EsporteAtualIcone = esporteAtual ? getEsporte(esporteAtual).Icone : null
+  // Tela vazia: admin vê o mascote de crachá; atleta, o do esporte em que está.
+  const mascoteVazio = isAdmin ? MASCOTE_ADMIN : mascoteDoAtleta(esporteAtual)
 
   function trocarEsporte(id: EsporteId) {
     definirEsporteAtual(id)
@@ -446,11 +449,11 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center px-6 py-12">
           {/* Clube vazio: o mascote recebe a pessoa no lugar de um ícone apagado. */}
           <img
-            src={isAdmin ? '/mascote/mascote-admin.webp' : '/mascote/mascote.webp'}
+            src={mascoteVazio.src}
             alt=""
-            width={isAdmin ? 719 : 649}
-            height={isAdmin ? 720 : 719}
-            className="mascote-flutuar mb-4 h-40 w-auto"
+            width={mascoteVazio.largura}
+            height={mascoteVazio.altura}
+            className={`mascote-flutuar mb-4 h-40 w-auto ${mascoteVazio.busto ? 'mascote-busto' : ''}`}
           />
           <h2 className="mb-2 text-center text-xl font-bold text-white">
             {esporteAtual ? `Nenhum clube de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum clube ainda'}

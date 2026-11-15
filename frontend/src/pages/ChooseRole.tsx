@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { getEsporte } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
 import { COR_DO_ESPORTE } from '../esportes/cores'
+import { MASCOTE_ADMIN, mascoteDoAtleta } from '../esportes/mascotes'
 import { lerEsporteAtual } from '../utils/esporteEscolhido'
 
 export default function ChooseRole() {
@@ -12,6 +13,7 @@ export default function ChooseRole() {
   const { isAuthenticated, loading } = useAuth()
   const escolhido = lerEsporteAtual()
   const esporte = escolhido ? getEsporte(escolhido) : null
+  const mascoteAtleta = mascoteDoAtleta(escolhido)
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -88,7 +90,14 @@ export default function ChooseRole() {
             onClick={() => handleChoose('atleta')}
           >
             <div className="flex items-start gap-4">
-              <img src="/mascote/mascote.webp" alt="" width={649} height={719} className="h-20 w-20 shrink-0 object-contain" />
+              {/* Atleta do esporte escolhido (no futebol, o garoto com a bola); sem um próprio, o apito. */}
+              <img
+                src={mascoteAtleta.src}
+                alt=""
+                width={mascoteAtleta.largura}
+                height={mascoteAtleta.altura}
+                className={`h-20 w-20 shrink-0 object-contain ${mascoteAtleta.busto ? 'mascote-busto' : ''}`}
+              />
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Atleta</h2>
                 <p className="text-sm text-gray-400 mt-1">
@@ -115,7 +124,7 @@ export default function ChooseRole() {
           >
             <div className="flex items-start gap-4">
               {/* Mascote de crachá ADM e notebook: o organizador do clube. */}
-              <img src="/mascote/mascote-admin.webp" alt="" width={719} height={720} className="h-20 w-20 shrink-0 object-contain" />
+              <img src={MASCOTE_ADMIN.src} alt="" width={MASCOTE_ADMIN.largura} height={MASCOTE_ADMIN.altura} className="h-20 w-20 shrink-0 object-contain" />
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Administrador</h2>
                 <p className="text-sm text-gray-400 mt-1">
