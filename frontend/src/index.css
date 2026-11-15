@@ -152,3 +152,45 @@ body {
     transition: none;
   }
 }
+
+/*
+ * Página de escolha do esporte (EscolherEsporte.tsx): os painéis entram um a um e,
+ * ao tocar, o escolhido cresce até ocupar a tela enquanto os outros se recolhem.
+ */
+@keyframes painel-entrar {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.esporte-painel {
+  flex: 1 1 0%;
+  animation: painel-entrar 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition: flex-grow 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+.esporte-painel + .esporte-painel {
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+.esporte-painel[data-estado='expandido'] {
+  flex-grow: 12;
+}
+.esporte-painel[data-estado='recolhido'] {
+  flex-grow: 0.0001;
+  opacity: 0;
+}
+.esporte-painel .esporte-cena {
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.esporte-painel[data-estado='expandido'] .esporte-cena {
+  transform: scale(1.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .esporte-painel {
+    animation: none;
+    transition: none;
+  }
+}
