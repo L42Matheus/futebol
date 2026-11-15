@@ -598,7 +598,7 @@ export default function Home() {
               aria-label="Próximo jogo"
               className="relative overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-500/10 shadow-lg shadow-black/10"
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.20),transparent_35%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,169,87,0.20),transparent_35%)]" />
 
               {/* O topo abre o jogo (antes abria a agenda inteira). */}
               <Link

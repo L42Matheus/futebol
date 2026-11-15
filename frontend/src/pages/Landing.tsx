@@ -157,7 +157,7 @@ export default function Landing() {
               alt="Mascote do QuemJoga, um apito sorridente de uniforme verde com uma prancheta"
               width={649}
               height={719}
-              className="mascote-flutuar mx-auto mt-6 h-52 w-auto drop-shadow-[0_18px_30px_rgba(16,185,129,0.25)] lg:mx-0"
+              className="mascote-flutuar mx-auto mt-6 h-52 w-auto drop-shadow-[0_18px_30px_rgba(34,169,87,0.25)] lg:mx-0"
             />
 
             <div className="mx-auto mt-8 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center lg:justify-start">
