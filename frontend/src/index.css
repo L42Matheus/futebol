@@ -172,9 +172,6 @@ body {
   animation: painel-entrar 0.6s var(--mola) both;
   transition: flex-grow 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
-.esporte-painel + .esporte-painel {
-  border-top: 1px solid rgb(255 255 255 / 0.06);
-}
 .esporte-painel[data-estado='expandido'] {
   flex-grow: 12;
 }
@@ -212,7 +209,8 @@ body {
 /* Transição de tela (utils/transicao.ts): o painel do esporte vira o cartão da próxima tela.
    A cena vai junto, dentro do cartão; o nome tem grupo próprio para escalar sem distorcer. */
 ::view-transition-group(esporte-cartao),
-::view-transition-group(esporte-nome) {
+::view-transition-group(esporte-nome),
+::view-transition-group(esporte-mascote) {
   animation-duration: 0.6s;
   animation-timing-function: var(--mola);
 }
@@ -257,4 +255,39 @@ body {
 .mascote-busto {
   -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
   mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}
+
+/*
+ * Movimento dos atletas (CartaoEsporte): a imagem é uma só, então o corpo inteiro se mexe
+ * no ritmo do esporte. Futebol prepara e chuta, basquete quica no drible, vôlei agacha e salta.
+ */
+.mascote-mov {
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+@keyframes mov-futebol {
+  0%, 100% { transform: none; }
+  25% { transform: translateX(-3px) rotate(-5deg); }
+  40% { transform: translate(5px, -5px) rotate(6deg); }
+  55% { transform: translateX(2px) rotate(1deg); }
+  70% { transform: none; }
+}
+@keyframes mov-basquete {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  45% { transform: translateY(6px) scaleY(0.97); }
+  60% { transform: translateY(5px) scaleY(0.98); }
+}
+@keyframes mov-volei {
+  0%, 100% { transform: none; }
+  18% { transform: translateY(5px) scale(1.02, 0.94); }
+  38% { transform: translateY(-16px) scale(0.98, 1.04); }
+  55% { transform: translateY(-14px) rotate(-3deg); }
+  72% { transform: translateY(3px) scale(1.02, 0.96); }
+  84% { transform: none; }
+}
+.mascote-mov-futebol { animation: mov-futebol 2.6s var(--mola) infinite; }
+.mascote-mov-basquete { animation: mov-basquete 0.75s ease-in-out infinite; }
+.mascote-mov-volei { animation: mov-volei 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mascote-mov { animation: none !important; }
 }
