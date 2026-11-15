@@ -175,7 +175,7 @@ export default function Times() {
       const link = `${window.location.origin}/register?invite=${res.data.token}`
       setInviteLink(link)
       // No celular abre o compartilhamento (WhatsApp etc.); no computador copia o link.
-      const resultado = await compartilharLink(link, 'Entra no nosso clube no QuemJoga:')
+      const resultado = await compartilharLink(link, 'Entra no nosso time no QuemJoga:')
       if (resultado === 'copiado') toast('Link de convite copiado!', 'success')
       if (resultado === 'falhou') toast('Link gerado. Copie pelo campo abaixo.', 'info')
     } catch {
