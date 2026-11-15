@@ -4,15 +4,10 @@ import { ArrowLeft, Check, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ESPORTES, type EsporteId } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
+import { COR_DO_ESPORTE } from '../esportes/cores'
 import { rachasApi } from '../services/api'
 import { definirEsporteAtual, lerEsporteAtual } from '../utils/esporteEscolhido'
-
-// Fundo de cada painel: a mesma cor do topo da cena animada, para a cena emendar no painel.
-const COR_DO_ESPORTE: Record<EsporteId, string> = {
-  futebol: '#0a1f1a',
-  basquete: '#1e1033',
-  volei: '#0c1a33',
-}
+import { comTransicao, suportaTransicao } from '../utils/transicao'
 
 // Tempo da expansão do painel tocado antes de seguir (igual ao .esporte-painel em index.css).
 const EXPANSAO_MS = 450
@@ -52,6 +47,13 @@ export default function EscolherEsporte() {
     const destino = isAuthenticated ? '/app' : '/perfil'
     if (prefereMenosMovimento) {
       navigate(destino)
+      return
+    }
+    // Navegador com View Transitions: o painel tocado se transforma no cartão do esporte da
+    // próxima tela (mesmo view-transition-name). Sem suporte, o painel cresce e então navega.
+    if (suportaTransicao()) {
+      setEscolhido(id)
+      comTransicao(() => navigate(destino))
       return
     }
     setEscolhido(id)
@@ -99,7 +101,7 @@ export default function EscolherEsporte() {
                   disabled={escolhido !== null}
                   aria-label={`${nome}: ${modalidades.map((m) => m.nome).join(', ')}`}
                   className="group relative flex w-full flex-1 overflow-hidden text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
-                  style={{ backgroundColor: cor }}
+                  style={{ backgroundColor: cor, viewTransitionName: escolhido === id ? 'esporte-cartao' : undefined }}
                 >
                   {/* Cena grande à direita, com a borda esquerda esmaecida na cor do painel. */}
                   <div className="esporte-cena absolute inset-y-0 -right-6 aspect-square" aria-hidden="true">
@@ -115,7 +117,10 @@ export default function EscolherEsporte() {
                   {ativo && <span className="absolute inset-y-0 left-0 w-1.5 bg-emerald-400" aria-hidden="true" />}
 
                   <div className="relative z-10 flex flex-1 flex-col justify-end p-5 pb-6">
-                    <p className="flex items-center gap-2 text-4xl font-black tracking-tight text-white">
+                    <p
+                      className="flex items-center gap-2 self-start text-4xl font-black tracking-tight text-white"
+                      style={{ viewTransitionName: escolhido === id ? 'esporte-nome' : undefined }}
+                    >
                       <Icone size={30} className="text-emerald-300" />
                       {nome}
                     </p>

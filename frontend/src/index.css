@@ -169,7 +169,7 @@ body {
 }
 .esporte-painel {
   flex: 1 1 0%;
-  animation: painel-entrar 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: painel-entrar 0.6s var(--mola) both;
   transition: flex-grow 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
 .esporte-painel + .esporte-painel {
@@ -192,5 +192,44 @@ body {
   .esporte-painel {
     animation: none;
     transition: none;
+  }
+}
+
+/*
+ * Movimento de mola: passa um pouco do ponto e volta, como algo físico.
+ * linear() ainda não existe em todo navegador; sem ele vale a curva comum.
+ */
+:root {
+  --mola: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --mola: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%,
+        0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001);
+  }
+}
+
+/* Transição de tela (utils/transicao.ts): o painel do esporte vira o cartão da próxima tela.
+   A cena vai junto, dentro do cartão; o nome tem grupo próprio para escalar sem distorcer. */
+::view-transition-group(esporte-cartao),
+::view-transition-group(esporte-nome) {
+  animation-duration: 0.6s;
+  animation-timing-function: var(--mola);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
+}
+/* O nome muda de tamanho: escala inteiro em vez de esticar. */
+::view-transition-old(esporte-nome),
+::view-transition-new(esporte-nome) {
+  height: 100%;
+  width: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
