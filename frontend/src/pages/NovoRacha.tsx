@@ -250,11 +250,7 @@ export default function NovoRacha() {
             </Select>
           </FormField>
           {modalidadeAtual.tamanhos && (
-            {/* Futebol de campo e society jogam "em campo"; futsal, basquete e vôlei, "em quadra". */}
-            <FormField
-              label="Atletas por time"
-              hint={`Quantos jogadores entram ${esporte.id === 'futebol' && form.tipo !== 'futsal' ? 'em campo' : 'em quadra'} por time`}
-            >
+            <FormField label="Atletas por time" hint="Quantos jogadores entram em campo por time">
               <Select
                 name="escalacao_size"
                 value={form.escalacao_size}
