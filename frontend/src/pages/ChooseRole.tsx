@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { ArrowLeftRight } from 'lucide-react'
+import { ArrowLeftRight, CalendarPlus, CheckCircle2, SquareUser, Layers, Radio, Trophy, UserPlus, Wallet } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getEsporte } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
@@ -8,12 +9,47 @@ import { COR_DO_ESPORTE } from '../esportes/cores'
 import { MASCOTE_ADMIN, mascoteDoAtleta } from '../esportes/mascotes'
 import { lerEsporteAtual } from '../utils/esporteEscolhido'
 
+type Recurso = { icone: ReactNode; texto: string }
+
+// O que cada papel faz no app, com ícone. Os do atleta usam os termos do esporte escolhido.
+function ListaRecursos({ itens }: { itens: Recurso[] }) {
+  return (
+    <ul className="mt-3 space-y-1.5">
+      {itens.map(({ icone, texto }) => (
+        <li key={texto} className="flex items-start gap-2 text-[13px] leading-snug text-gray-400">
+          <span className="mt-0.5 shrink-0 text-emerald-500">{icone}</span>
+          {texto}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+const RECURSOS_ADMIN: Recurso[] = [
+  { icone: <UserPlus size={14} />, texto: 'Convidar a galera por link' },
+  { icone: <CalendarPlus size={14} />, texto: 'Marcar jogos e presença' },
+  { icone: <Layers size={14} />, texto: 'Montar times e escalação' },
+  { icone: <Radio size={14} />, texto: 'Comandar a partida ao vivo' },
+  { icone: <Wallet size={14} />, texto: 'Controlar o caixa' },
+]
+
 export default function ChooseRole() {
   const navigate = useNavigate()
   const { isAuthenticated, loading } = useAuth()
   const escolhido = lerEsporteAtual()
   const esporte = escolhido ? getEsporte(escolhido) : null
   const mascoteAtleta = mascoteDoAtleta(escolhido)
+  // "Seus gols", "Suas cestas", "Seus pontos"; sem esporte escolhido, os três.
+  const pontuacao = esporte
+    ? `${esporte.id === 'basquete' ? 'Suas' : 'Seus'} ${esporte.pontuacao.toLowerCase()} no ranking`
+    : 'Gols, cestas e pontos no ranking'
+  const recursosAtleta: Recurso[] = [
+    { icone: <CheckCircle2 size={14} />, texto: 'Confirmar presença nos jogos' },
+    { icone: <SquareUser size={14} />, texto: 'Sua carta com foto e notas' },
+    { icone: <Trophy size={14} />, texto: pontuacao },
+    { icone: <Radio size={14} />, texto: 'Placar e lances ao vivo' },
+    { icone: <Wallet size={14} />, texto: 'Mensalidades em dia' },
+  ]
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -103,16 +139,7 @@ export default function ChooseRole() {
                 <p className="text-sm text-gray-400 mt-1">
                   Recebi um convite para participar de um clube
                 </p>
-                <ul className="mt-3 space-y-1">
-                  <li className="text-xs text-gray-500 flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                    Confirmar presença nos jogos
-                  </li>
-                  <li className="text-xs text-gray-500 flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                    Ver calendário e estatísticas
-                  </li>
-                </ul>
+                <ListaRecursos itens={recursosAtleta} />
               </div>
             </div>
           </button>
@@ -130,16 +157,7 @@ export default function ChooseRole() {
                 <p className="text-sm text-gray-400 mt-1">
                   Quero criar e gerenciar meu próprio clube
                 </p>
-                <ul className="mt-3 space-y-1">
-                  <li className="text-xs text-gray-500 flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                    Convidar atletas
-                  </li>
-                  <li className="text-xs text-gray-500 flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                    Gerenciar pagamentos e times
-                  </li>
-                </ul>
+                <ListaRecursos itens={RECURSOS_ADMIN} />
               </div>
             </div>
           </button>
@@ -149,7 +167,7 @@ export default function ChooseRole() {
       {/* Footer */}
       <div className="pb-8 px-4 text-center">
         <p className="text-xs text-gray-500">
-          Você pode alterar isso depois nas configurações
+          A mesma conta pode ser atleta num clube e administrador em outro.
         </p>
       </div>
     </div>
