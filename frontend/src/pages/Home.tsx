@@ -1,28 +1,43 @@
-﻿import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+﻿import { useCallback, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Calendar,
-  AlertCircle,
+  CalendarPlus,
+  Check,
+  ChevronDown,
+  ChevronRight,
   Layers,
   Layout as LayoutIcon,
-  Users,
-  Plus,
-  Trophy,
-  ChevronRight,
   MapPin,
-  ChevronDown,
+  Plus,
   Radio,
+  RefreshCw,
+  Trophy,
+  Users,
+  Wallet,
+  WifiOff,
+  X,
 } from 'lucide-react'
-import { rachasApi, jogosApi, rankingApi, resenhaApi } from '../services/api'
+import { rachasApi, jogosApi, rankingApi, resenhaApi, presencasApi } from '../services/api'
 import ItemResenha from '../components/ItemResenha'
 import { SELECTED_RACHA_KEY } from '../services/convite'
 import EscudoTime from '../components/EscudoTime'
 import { parseDataJogo } from '../utils/dataJogo'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
 import type { Jogo, Noticia, Racha, Saldo } from '../types'
-import { format } from 'date-fns'
+import { differenceInCalendarDays, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+
+type StatusPresenca = 'confirmado' | 'recusado' | 'pendente'
+
+// A presença de quem está logado no próximo jogo; null quando a pessoa não está na lista.
+interface MinhaPresenca {
+  atletaId: number
+  status: StatusPresenca
+}
 
 function tempoDecorrido(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -41,53 +56,133 @@ function nomePeriodoAoVivo(tipo: string, periodo: number) {
   return `${periodo}º ${placar.periodo.nome}`
 }
 
-// Classes completas para o Tailwind encontrar; a quantidade de cards muda com o esporte.
-const GRID_COLS: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
+function maiuscula(texto: string) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
+// "Hoje", "Amanhã" ou o dia da semana quando o jogo é nos próximos dias; a data completa vai embaixo.
+function rotuloDoJogo(data: Date) {
+  const dias = differenceInCalendarDays(data, new Date())
+  const hora = format(data, 'HH:mm')
+  const dataCompleta = maiuscula(format(data, "EEEE, d 'de' MMMM", { locale: ptBR }))
+  if (dias === 0) return { titulo: `Hoje, ${hora}`, detalhe: dataCompleta }
+  if (dias === 1) return { titulo: `Amanhã, ${hora}`, detalhe: dataCompleta }
+  if (dias > 1 && dias < 7) {
+    return {
+      titulo: `${maiuscula(format(data, 'EEEE', { locale: ptBR }))}, ${hora}`,
+      detalhe: maiuscula(format(data, "d 'de' MMMM", { locale: ptBR })),
+    }
+  }
+  return { titulo: `${format(data, "d 'de' MMM", { locale: ptBR })}, ${hora}`, detalhe: dataCompleta }
+}
+
+function saudacao() {
+  const hora = new Date().getHours()
+  if (hora < 12) return 'Bom dia'
+  if (hora < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+// Classes completas para o Tailwind encontrar; a quantidade de cards muda com o esporte e o papel.
+const GRID_COLS: Record<number, string> = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
+
+const FOCO = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70'
+
+function TituloSecao({ children, acao }: { children: ReactNode; acao?: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between px-1">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">{children}</h2>
+      {acao}
+    </div>
+  )
+}
+
+function Esqueleto({ className }: { className: string }) {
+  return <div aria-hidden className={`animate-pulse rounded-3xl bg-gray-800/60 ${className}`} />
+}
 
 export default function Home() {
   const [rachas, setRachas] = useState<Racha[]>([])
   const [loading, setLoading] = useState(true)
+  // Falha ao buscar os rachas: sem isto, um erro de rede parecia "Nenhum racha ainda".
+  const [erro, setErro] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
+  // Enquanto os dados do racha chegam aparecem esqueletos, e não "Sem jogo" ou "R$ 0,00" por engano.
+  const [carregandoRacha, setCarregandoRacha] = useState(true)
   const [nextGame, setNextGame] = useState<Jogo | null>(null)
   // Partida ao vivo do racha: quando existe, aparece no lugar do próximo jogo.
   const [liveGame, setLiveGame] = useState<Jogo | null>(null)
+  const [minhaPresenca, setMinhaPresenca] = useState<MinhaPresenca | null>(null)
+  const [salvandoPresenca, setSalvandoPresenca] = useState(false)
   // Líder da categoria principal do ranking (gols, pontos...), para o card do resumo.
   const [lider, setLider] = useState<{ nome: string; valor: string; categoria: string } | null>(null)
   const [saldo, setSaldo] = useState<Saldo | null>(null)
   // As 3 últimas da Resenha; a lista completa fica na tela da Resenha.
   const [noticias, setNoticias] = useState<Noticia[]>([])
   const { user } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    loadRachas()
+  const loadRachas = useCallback(async () => {
+    setLoading(true)
+    setErro(false)
+    try {
+      const response = await rachasApi.list()
+      const list = response.data || []
+      const savedRachaId = localStorage.getItem(SELECTED_RACHA_KEY)
+      const savedIndex = savedRachaId
+        ? list.findIndex((racha) => String(racha.id) === savedRachaId)
+        : -1
+
+      setRachas(list)
+      setSelectedIndex(savedIndex >= 0 ? savedIndex : 0)
+    } catch (error) {
+      console.error('Erro ao carregar rachas:', error)
+      setErro(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    async function loadExtras() {
-      const current = rachas[selectedIndex]
-      if (!current) return
-      try {
-        const [jogosRes, saldoRes] = await Promise.all([
-          jogosApi.list(current.id, true),
-          rachasApi.getSaldo(current.id)
-        ])
-        const lista = jogosRes.data || []
+    loadRachas()
+  }, [loadRachas])
+
+  const currentRacha = rachas[selectedIndex]
+  const rachaId = currentRacha?.id
+  const userId = user?.id
+
+  useEffect(() => {
+    if (!rachaId) return
+    // Trocar de racha no meio da busca não pode deixar os dados do anterior na tela.
+    let cancelado = false
+    setCarregandoRacha(true)
+    setNextGame(null)
+    setLiveGame(null)
+    setMinhaPresenca(null)
+    setSaldo(null)
+    setLider(null)
+    setNoticias([])
+
+    const jogos = jogosApi
+      .list(rachaId, true)
+      .then(({ data }) => {
+        if (cancelado) return
+        const lista = data || []
         setLiveGame(lista.find((jogo) => jogo.iniciado_em && !jogo.finalizado) || null)
         setNextGame(lista.find((jogo) => !jogo.iniciado_em) || null)
-        setSaldo(saldoRes.data || null)
-      } catch (e) {
-        console.error(e)
-        setLiveGame(null)
-        setNextGame(null)
-        setSaldo(null)
-      }
-      resenhaApi
-        .listar(current.id, 3)
-        .then(({ data }) => setNoticias(data))
-        .catch(() => setNoticias([]))
-      try {
-        const { data } = await rankingApi.get(current.id)
+      })
+      .catch((e) => console.error(e))
+
+    const caixa = rachasApi
+      .getSaldo(rachaId)
+      .then(({ data }) => !cancelado && setSaldo(data || null))
+      .catch(() => undefined)
+
+    const ranking = rankingApi
+      .get(rachaId)
+      .then(({ data }) => {
+        if (cancelado) return
         const principal = data.categorias[0]
         const melhor = [...data.atletas].sort((a, b) => (b.valores[principal.id] ?? 0) - (a.valores[principal.id] ?? 0))[0]
         const valor = melhor?.valores[principal.id] ?? 0
@@ -96,12 +191,61 @@ export default function Home() {
             ? { nome: melhor.apelido || melhor.nome.split(' ')[0], valor: `${valor} ${principal.nome.toLowerCase()}`, categoria: principal.nome }
             : { nome: '', valor: '', categoria: principal.nome },
         )
-      } catch {
-        setLider(null)
-      }
+      })
+      .catch(() => undefined)
+
+    resenhaApi
+      .listar(rachaId, 3)
+      .then(({ data }) => !cancelado && setNoticias(data))
+      .catch(() => undefined)
+
+    Promise.all([jogos, caixa, ranking]).then(() => !cancelado && setCarregandoRacha(false))
+
+    return () => {
+      cancelado = true
     }
-    loadExtras()
-  }, [rachas, selectedIndex])
+  }, [rachaId])
+
+  // Minha presença no próximo jogo, para confirmar direto da tela inicial.
+  const nextGameId = nextGame?.id
+  const carregarPresenca = useCallback(async () => {
+    if (!nextGameId || !userId) return
+    try {
+      const { data } = await jogosApi.getLista(nextGameId)
+      const achar = (itens: Array<{ atleta_id: number; user_id?: number | null }>) =>
+        itens.find((item) => item.user_id === userId)
+      const confirmado = achar(data.confirmados)
+      const recusado = achar(data.recusados)
+      const pendente = achar(data.pendentes)
+      const eu = confirmado ?? recusado ?? pendente
+      setMinhaPresenca(
+        eu ? { atletaId: eu.atleta_id, status: confirmado ? 'confirmado' : recusado ? 'recusado' : 'pendente' } : null,
+      )
+      setNextGame((jogo) => (jogo && jogo.id === nextGameId ? { ...jogo, total_confirmados: data.confirmados.length } : jogo))
+    } catch {
+      setMinhaPresenca(null)
+    }
+  }, [nextGameId, userId])
+
+  useEffect(() => {
+    setMinhaPresenca(null)
+    carregarPresenca()
+  }, [carregarPresenca])
+
+  async function responderPresenca(vou: boolean) {
+    if (!nextGame || !minhaPresenca || salvandoPresenca) return
+    setSalvandoPresenca(true)
+    try {
+      if (vou) await presencasApi.confirmar(nextGame.id, minhaPresenca.atletaId)
+      else await presencasApi.recusar(nextGame.id, minhaPresenca.atletaId)
+      await carregarPresenca()
+      toast(vou ? 'Presença confirmada!' : 'Ausência registrada.', 'success')
+    } catch {
+      toast('Não foi possível salvar sua presença. Tente novamente.', 'error')
+    } finally {
+      setSalvandoPresenca(false)
+    }
+  }
 
   // Relógio da partida ao vivo no card da tela inicial.
   const [agora, setAgora] = useState(Date.now())
@@ -126,189 +270,209 @@ export default function Home() {
     return () => window.clearInterval(intervalo)
   }, [liveGame?.id])
 
-
-
-  async function loadRachas() {
-    try {
-      const response = await rachasApi.list()
-      const list = response.data || []
-      const savedRachaId = localStorage.getItem(SELECTED_RACHA_KEY)
-      const savedIndex = savedRachaId
-        ? list.findIndex((racha) => String(racha.id) === savedRachaId)
-        : -1
-
-      setRachas(list)
-      setSelectedIndex(savedIndex >= 0 ? savedIndex : 0)
-    } catch (error) {
-      console.error('Erro ao carregar rachas:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   function handleSelectRacha(event: React.ChangeEvent<HTMLSelectElement>) {
-    const rachaId = event.target.value
-    const nextIndex = rachas.findIndex((racha) => String(racha.id) === rachaId)
+    const novoId = event.target.value
+    const nextIndex = rachas.findIndex((racha) => String(racha.id) === novoId)
     if (nextIndex < 0) return
 
-    localStorage.setItem(SELECTED_RACHA_KEY, rachaId)
+    localStorage.setItem(SELECTED_RACHA_KEY, novoId)
     setSelectedIndex(nextIndex)
   }
 
-  const currentRacha = rachas[selectedIndex]
   // Com um racha aberto vale o papel nele: a mesma conta pode ser admin de um e atleta de outro.
   const isAdmin = currentRacha ? Boolean(currentRacha.is_admin) : user?.role === 'admin'
   const nextGameDate = nextGame ? parseDataJogo(nextGame.data_hora) : null
+  const rotulo = nextGameDate ? rotuloDoJogo(nextGameDate) : null
   const periodoAoVivo = liveGame && currentRacha ? nomePeriodoAoVivo(currentRacha.tipo, liveGame.periodo ?? 1) : null
+  const primeiroNome = user?.nome?.trim().split(/\s+/)[0]
+
   const summaryCards = currentRacha ? [
     {
       label: 'Atletas',
-      value: currentRacha.total_atletas || 0,
-      hint: 'Ver lista',
-      icon: <Users size={20} />,
+      value: String(currentRacha.total_atletas || 0),
+      hint: 'Ver elenco',
+      icon: <Users size={18} />,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       path: `/racha/${currentRacha.id}/atletas`,
-      disabled: false,
-    },
-    {
-      label: 'Caixa',
-      value: saldo?.pendente_formatado || 'R$ 0,00',
-      hint: isAdmin ? 'Ver detalhes' : 'Admin',
-      icon: <AlertCircle size={20} />,
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/10',
-      path: `/racha/${currentRacha.id}/financeiro`,
-      disabled: !isAdmin,
+      visivel: true,
     },
     {
       label: 'Ranking',
-      value: lider?.nome || 'Ver',
-      hint: lider?.valor || (lider ? `${lider.categoria} e mais` : 'Ver ranking'),
-      icon: <Trophy size={20} />,
+      value: lider?.nome || '—',
+      hint: lider?.valor || (lider?.nome === '' ? 'Sem líder ainda' : 'Ver ranking'),
+      icon: <Trophy size={18} />,
       color: 'text-yellow-400',
       bg: 'bg-yellow-500/10',
       path: `/racha/${currentRacha.id}/ranking`,
-      disabled: false,
+      visivel: true,
     },
-  ] : []
+    {
+      // Só o admin vê o caixa; antes o atleta via um card desabilitado escrito "Admin".
+      label: 'A receber',
+      value: saldo?.pendente_formatado || 'R$ 0,00',
+      hint: 'Abrir caixa',
+      icon: <Wallet size={18} />,
+      color: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+      path: `/racha/${currentRacha.id}/financeiro`,
+      visivel: isAdmin,
+    },
+  ].filter((card) => card.visivel) : []
+
   const quickActions = currentRacha ? [
     {
-      label: isAdmin ? 'Novo jogo' : 'Jogos',
-      icon: <Calendar size={24} />,
-      color: 'text-blue-500',
+      label: 'Novo jogo',
+      icon: <CalendarPlus size={22} />,
+      color: 'text-blue-400',
       bg: 'bg-blue-500/10',
-      path: isAdmin ? `/racha/${currentRacha.id}/novo-jogo` : `/racha/${currentRacha.id}/jogos`,
+      path: `/racha/${currentRacha.id}/novo-jogo`,
+      visivel: isAdmin,
     },
     {
-      label: isAdmin ? 'Novo atleta' : 'Atletas',
-      icon: <Users size={24} />,
-      color: 'text-emerald-500',
+      label: 'Agenda',
+      icon: <Calendar size={22} />,
+      color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
-      path: `/racha/${currentRacha.id}/atletas`,
-    },
-    {
-      label: 'Escalação',
-      icon: <LayoutIcon size={24} />,
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-500/10',
-      path: `/racha/${currentRacha.id}/escalacao`,
-      recurso: 'escalacao' as const,
+      path: `/racha/${currentRacha.id}/jogos`,
+      visivel: true,
     },
     {
       label: 'Times',
-      icon: <Layers size={24} />,
+      icon: <Layers size={22} />,
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
       path: `/racha/${currentRacha.id}/times`,
+      visivel: true,
     },
-  ].filter((acao) => !acao.recurso || temRecurso(currentRacha.tipo, acao.recurso)) : []
+    {
+      label: 'Escalação',
+      icon: <LayoutIcon size={22} />,
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-500/10',
+      path: `/racha/${currentRacha.id}/escalacao`,
+      visivel: temRecurso(currentRacha.tipo, 'escalacao'),
+    },
+  ].filter((acao) => acao.visivel) : []
   const EsporteIcone = currentRacha ? esporteDaModalidade(currentRacha.tipo).Icone : null
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fundo flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+      <div className="space-y-6" role="status" aria-label="Carregando">
+        <Esqueleto className="h-20" />
+        <Esqueleto className="h-52" />
+        <Esqueleto className="h-28" />
+      </div>
+    )
+  }
+
+  if (erro) {
+    return (
+      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-800/50">
+          <WifiOff size={36} className="text-gray-500" />
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-white">Não deu para carregar</h2>
+        <p className="mb-6 max-w-xs text-sm text-gray-500">Verifique sua conexão e tente de novo.</p>
+        <button
+          type="button"
+          onClick={loadRachas}
+          className={`flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 font-semibold text-branco transition-colors hover:bg-emerald-700 ${FOCO}`}
+        >
+          <RefreshCw size={18} />
+          Tentar novamente
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8 overflow-x-hidden">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Estado vazio - Nenhum racha */}
       {rachas.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 px-6">
-          <div className="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-6">
+        <div className="flex flex-col items-center justify-center px-6 py-16">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-800/50">
             <Users size={40} className="text-gray-600" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">Nenhum racha ainda</h3>
-          <p className="text-gray-500 text-sm text-center mb-6 max-w-xs">
+          <h2 className="mb-2 text-xl font-bold text-white">Nenhum racha ainda</h2>
+          <p className="mb-6 max-w-xs text-center text-sm text-gray-500">
             {isAdmin
               ? 'Crie seu primeiro racha para começar a organizar seus jogos e atletas.'
-              : 'Você ainda não participa de nenhum racha. Peça para um admin te adicionar.'}
+              : 'Você ainda não participa de nenhum racha. Peça o link de convite ao organizador.'}
           </p>
           {isAdmin && (
             <button
+              type="button"
               onClick={() => navigate('/novo')}
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-branco font-semibold rounded-2xl transition-colors"
+              className={`flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 font-semibold text-branco transition-colors hover:bg-emerald-700 ${FOCO}`}
             >
               <Plus size={20} />
-              Criar Primeiro Racha
+              Criar primeiro racha
             </button>
           )}
         </div>
       )}
 
       {currentRacha && (
-        <div className="space-y-6">
-          <div className={`relative rounded-[2rem] border border-gray-800 bg-gray-900/40 p-4 transition-colors ${rachas.length > 1 ? 'cursor-pointer hover:border-emerald-500/40' : ''}`}>
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-inner shadow-emerald-950/30">
-                {EsporteIcone && <EsporteIcone className="h-6 w-6 text-emerald-300" />}
-              </div>
+        <>
+          <div className="space-y-3">
+            {primeiroNome && (
+              <p className="px-1 text-sm text-gray-400">
+                {saudacao()}, <span className="font-semibold text-white">{primeiroNome}</span>
+              </p>
+            )}
 
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">
-                  {esporteDaModalidade(currentRacha.tipo).nome} · {getModalidade(currentRacha.tipo).nome}
-                </p>
-                <p className="text-xl font-black text-white truncate">
-                  {currentRacha.nome}
-                </p>
+            <div className={`relative rounded-3xl border border-gray-800 bg-gray-900/40 p-4 transition-colors ${rachas.length > 1 ? 'hover:border-emerald-500/40 focus-within:border-emerald-500/60' : ''}`}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10">
+                  {EsporteIcone && <EsporteIcone className="h-6 w-6 text-emerald-300" />}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xl font-bold text-white">{currentRacha.nome}</p>
+                  <p className="truncate text-xs font-medium text-gray-400">
+                    {esporteDaModalidade(currentRacha.tipo).nome} · {getModalidade(currentRacha.tipo).nome}
+                  </p>
+                </div>
+
+                {rachas.length > 1 && (
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800 text-gray-300">
+                    <ChevronDown size={18} />
+                  </span>
+                )}
               </div>
 
               {rachas.length > 1 && (
-                <ChevronDown size={24} className="shrink-0 text-gray-400" />
+                <select
+                  aria-label="Trocar de racha"
+                  value={String(currentRacha.id)}
+                  onChange={handleSelectRacha}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                >
+                  {rachas.map((racha) => (
+                    <option key={racha.id} value={String(racha.id)}>
+                      {racha.nome}
+                    </option>
+                  ))}
+                </select>
               )}
             </div>
-
-            {rachas.length > 1 && (
-              <select
-                aria-label="Selecionar racha"
-                value={String(currentRacha.id)}
-                onChange={handleSelectRacha}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              >
-                {rachas.map((racha) => (
-                  <option key={racha.id} value={String(racha.id)}>
-                    {racha.nome}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
 
-          {liveGame ? (
+          {carregandoRacha ? (
+            <Esqueleto className="h-52" />
+          ) : liveGame ? (
             <button
               type="button"
               onClick={() => navigate(`/racha/${currentRacha.id}/jogo/${liveGame.id}/partida`)}
-              className="tema-escuro w-full overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-sky-900 via-slate-900 to-emerald-800 px-5 py-5 text-center shadow-lg shadow-black/10"
+              className={`tema-escuro w-full overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-sky-900 via-slate-900 to-emerald-800 px-5 py-5 text-center shadow-lg shadow-black/10 ${FOCO}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                   <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
                   Ao vivo
                 </span>
-                <span className="text-sm font-black tabular-nums text-white/80">
+                <span className="text-sm font-bold tabular-nums text-white/80">
                   {liveGame.iniciado_em ? tempoDecorrido(agora - Date.parse(liveGame.iniciado_em)) : ''}
                 </span>
               </div>
@@ -322,7 +486,7 @@ export default function Home() {
                     {liveGame.placar_time_b ?? 0}
                   </p>
                   {periodoAoVivo && (
-                    <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/70">{periodoAoVivo}</p>
+                    <p className="mt-2 text-[11px] font-bold uppercase tracking-wider text-white/70">{periodoAoVivo}</p>
                   )}
                 </div>
                 <EscudoTime nome={liveGame.time_b_nome || 'Time B'} cor="sky" />
@@ -339,79 +503,173 @@ export default function Home() {
                 </span>
               </span>
             </button>
+          ) : nextGame && rotulo ? (
+            <section
+              aria-label="Próximo jogo"
+              className="relative overflow-hidden rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-500/10 shadow-lg shadow-black/10"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.20),transparent_35%)]" />
+
+              {/* O topo abre o jogo (antes abria a agenda inteira). */}
+              <Link
+                to={`/racha/${currentRacha.id}/jogo/${nextGame.id}`}
+                className={`relative block space-y-3 rounded-t-3xl p-5 ${FOCO}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                    <Calendar size={14} />
+                    Próximo jogo
+                  </span>
+                  <span className="flex items-center gap-0.5 text-xs font-semibold text-gray-400">
+                    Detalhes <ChevronRight size={14} />
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-3xl font-black leading-tight text-white">{rotulo.titulo}</p>
+                  <p className="mt-1 text-sm text-gray-400">{rotulo.detalhe}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-300">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <MapPin size={16} className="shrink-0 text-gray-500" />
+                    <span className="truncate">{nextGame.local || 'Local a definir'}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Users size={16} className="shrink-0 text-gray-500" />
+                    <span>
+                      <span className="font-bold text-emerald-400">{nextGame.total_confirmados || 0}</span>{' '}
+                      {nextGame.total_confirmados === 1 ? 'confirmado' : 'confirmados'}
+                    </span>
+                  </span>
+                </div>
+              </Link>
+
+              {/* Confirmar presença sem sair da tela inicial: é o que o atleta mais faz no app. */}
+              {minhaPresenca && (
+                <div className="relative border-t border-gray-800 bg-gray-900/40 p-4">
+                  <p className="mb-3 text-sm font-semibold text-white" aria-live="polite">
+                    {minhaPresenca.status === 'confirmado'
+                      ? 'Você está confirmado'
+                      : minhaPresenca.status === 'recusado'
+                        ? 'Você avisou que não vai'
+                        : 'Você vai jogar?'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      disabled={salvandoPresenca}
+                      aria-pressed={minhaPresenca.status === 'confirmado'}
+                      onClick={() => responderPresenca(true)}
+                      className={`flex min-h-[48px] items-center justify-center gap-2 rounded-2xl text-sm font-bold transition-colors disabled:opacity-60 ${FOCO} ${
+                        minhaPresenca.status === 'confirmado'
+                          ? 'bg-emerald-500 text-branco'
+                          : 'border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10'
+                      }`}
+                    >
+                      <Check size={18} />
+                      Vou
+                    </button>
+                    <button
+                      type="button"
+                      disabled={salvandoPresenca}
+                      aria-pressed={minhaPresenca.status === 'recusado'}
+                      onClick={() => responderPresenca(false)}
+                      className={`flex min-h-[48px] items-center justify-center gap-2 rounded-2xl text-sm font-bold transition-colors disabled:opacity-60 ${FOCO} ${
+                        minhaPresenca.status === 'recusado'
+                          ? 'bg-red-500 text-branco'
+                          : 'border border-gray-700 text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      <X size={18} />
+                      Não vou
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
           ) : (
-          <button
-            type="button"
-            onClick={() => navigate(`/racha/${currentRacha.id}/jogos`)}
-            className="relative overflow-hidden w-full rounded-[2rem] border border-emerald-500/25 bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-500/10 p-5 text-left shadow-lg shadow-black/10"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.20),transparent_35%)]" />
-            <div className="relative space-y-5">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-emerald-400" />
-                <p className="text-[10px] uppercase font-black tracking-[0.22em] text-emerald-400">Próximo jogo</p>
+            <section className="rounded-3xl border border-dashed border-gray-700 bg-gray-900/40 p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-800 text-gray-400">
+                <Calendar size={22} />
               </div>
-
-              <div className="space-y-2">
-                <p className="text-3xl font-black text-white">
-                  {nextGameDate
-                    ? format(nextGameDate, "EEEE, HH:mm", { locale: ptBR })
-                    : 'Sem jogo marcado'}
-                </p>
-                <div className="flex items-center gap-2 text-gray-400">
-                  <MapPin size={18} />
-                  <span className="text-sm font-medium">{nextGame?.local || 'Local ainda não definido'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-gray-400">
-                  <span className="font-black text-emerald-400">{nextGame?.total_confirmados || 0}</span>{' '}
-                  confirmados
-                </div>
-                <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-branco">
-                  Ver agenda <ChevronRight size={18} />
-                </span>
-              </div>
-            </div>
-          </button>
+              <p className="text-lg font-bold text-white">Nenhum jogo marcado</p>
+              <p className="mt-1 text-sm text-gray-500">
+                {isAdmin ? 'Marque o próximo jogo para a galera confirmar presença.' : 'Quando o organizador marcar, o jogo aparece aqui.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate(isAdmin ? `/racha/${currentRacha.id}/novo-jogo` : `/racha/${currentRacha.id}/jogos`)}
+                className={`mt-4 inline-flex min-h-[48px] items-center gap-2 rounded-2xl px-5 text-sm font-bold transition-colors ${FOCO} ${
+                  isAdmin ? 'bg-emerald-600 text-branco hover:bg-emerald-700' : 'border border-gray-700 text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                {isAdmin ? <><Plus size={18} /> Marcar jogo</> : 'Ver jogos anteriores'}
+              </button>
+            </section>
           )}
 
-          <div className="space-y-3">
-            <p className="px-1 text-[10px] uppercase font-black text-gray-500 tracking-widest">Ações rápidas</p>
+          <section className="space-y-3">
+            <TituloSecao>Resumo</TituloSecao>
+            {carregandoRacha ? (
+              <Esqueleto className="h-28" />
+            ) : (
+              <div className={`grid gap-3 ${GRID_COLS[summaryCards.length]}`}>
+                {summaryCards.map((card) => (
+                  <button
+                    key={card.label}
+                    type="button"
+                    onClick={() => navigate(card.path)}
+                    className={`min-w-0 rounded-3xl border border-gray-800 bg-gray-900/40 p-3 text-left transition-colors hover:border-gray-700 active:scale-[0.98] ${FOCO}`}
+                  >
+                    <span className={`mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl ${card.bg} ${card.color}`}>
+                      {card.icon}
+                    </span>
+                    <p className="truncate text-xs font-semibold text-gray-400">{card.label}</p>
+                    <p className="mt-0.5 truncate text-base font-bold text-white">{card.value}</p>
+                    <p className="mt-0.5 truncate text-xs text-gray-500">{card.hint}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <TituloSecao>Atalhos</TituloSecao>
             <div className={`grid gap-3 ${GRID_COLS[quickActions.length]}`}>
               {quickActions.map((action) => (
                 <button
                   key={action.label}
                   type="button"
                   onClick={() => navigate(action.path)}
-                  className="flex flex-col items-center gap-2.5 rounded-3xl border border-gray-800 bg-gray-900/40 px-2 pb-3 pt-4 text-center transition-all active:scale-[0.98]"
+                  className={`flex flex-col items-center gap-2 rounded-3xl border border-gray-800 bg-gray-900/40 px-2 pb-3 pt-4 text-center transition-all hover:border-gray-700 active:scale-[0.98] ${FOCO}`}
                 >
-                  <div className={`w-11 h-11 ${action.bg} ${action.color} rounded-2xl flex items-center justify-center`}>
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${action.bg} ${action.color}`}>
                     {action.icon}
-                  </div>
-                  {/* Altura fixa de duas linhas: os ícones ficam alinhados mesmo com nomes de tamanhos diferentes. */}
-                  <p className="flex min-h-[2rem] items-center text-xs font-bold leading-tight text-gray-200">{action.label}</p>
+                  </span>
+                  <span className="text-xs font-semibold leading-tight text-gray-200">{action.label}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Resenha</p>
-              <button
-                type="button"
-                onClick={() => navigate(`/racha/${rachas[selectedIndex].id}/resenha`)}
-                className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-400"
-              >
-                Ver tudo <ChevronRight size={14} />
-              </button>
-            </div>
+          <section className="space-y-3">
+            <TituloSecao
+              acao={
+                <Link
+                  to={`/racha/${currentRacha.id}/resenha`}
+                  className={`inline-flex items-center gap-0.5 rounded-lg text-xs font-bold text-emerald-400 ${FOCO}`}
+                >
+                  Ver tudo <ChevronRight size={14} />
+                </Link>
+              }
+            >
+              Resenha
+            </TituloSecao>
             {noticias.length > 0 ? (
               <div className="divide-y divide-gray-800 rounded-3xl border border-gray-800 bg-gray-900/40">
                 {noticias.map((n) => (
-                  <ItemResenha key={n.id} noticia={n} rachaId={rachas[selectedIndex].id} />
+                  <ItemResenha key={n.id} noticia={n} rachaId={currentRacha.id} />
                 ))}
               </div>
             ) : (
@@ -419,30 +677,8 @@ export default function Home() {
                 Resultados, destaques e novidades do racha aparecem aqui.
               </p>
             )}
-          </div>
-
-          <div className="space-y-3">
-            <p className="px-1 text-[10px] uppercase font-black text-gray-500 tracking-widest">Resumo do racha</p>
-            <div className={`grid gap-3 ${GRID_COLS[summaryCards.length]}`}>
-              {summaryCards.map((card) => (
-                <button
-                  key={card.label}
-                  type="button"
-                  disabled={card.disabled}
-                  onClick={() => navigate(card.path)}
-                  className="rounded-3xl border border-gray-800 bg-gray-900/40 p-3 text-left min-h-[112px] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <div className={`w-10 h-10 ${card.bg} ${card.color} rounded-2xl flex items-center justify-center mb-3`}>
-                    {card.icon}
-                  </div>
-                  <p className="text-[10px] uppercase font-black tracking-wider text-gray-500">{card.label}</p>
-                  <p className="mt-1 text-lg font-black text-white truncate">{card.value}</p>
-                  <p className="mt-2 text-xs text-gray-400 truncate">{card.hint}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+          </section>
+        </>
       )}
     </div>
   )

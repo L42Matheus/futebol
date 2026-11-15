@@ -228,7 +228,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
       <header className="md:hidden sticky top-0 bg-fundo/80 backdrop-blur-md border-b border-gray-800 z-30 px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 overflow-hidden">
           {resolvedShowBack && (
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400">
+            <button type="button" aria-label="Voltar" onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400">
               <ChevronLeft size={24} />
             </button>
           )}
@@ -246,7 +246,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           </button>
           <button
             type="button"
-            aria-label="Cronometro"
+            aria-label="Cronômetro"
             onClick={handleTimerClick}
             className={`p-2 -mr-1 rounded-full transition-colors ${
               location.pathname === '/tempo' || timer.status === 'running'
@@ -269,7 +269,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
               <CreditCard size={20} />
             </Link>
           )}
-          <Link to="/perfil-atleta">
+          <Link to="/perfil-atleta" aria-label="Meu perfil">
             <Avatar
               src={avatarSrc}
               name={avatarName}
@@ -308,6 +308,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
                   <div key={item.path} className="relative -top-6">
                     <Link
                       to={item.path}
+                      aria-label="Criar racha"
                       className="w-14 h-14 bg-emerald-600 text-branco rounded-full flex items-center justify-center shadow-xl shadow-emerald-900/40 border-4 border-fundo active:scale-95 transition-transform"
                     >
                       {item.icon}
@@ -320,7 +321,8 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex flex-col items-center gap-1 transition-colors ${
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex min-w-[48px] flex-col items-center gap-1 transition-colors ${
                     active ? 'text-emerald-500' : 'text-gray-500'
                   }`}
                 >
