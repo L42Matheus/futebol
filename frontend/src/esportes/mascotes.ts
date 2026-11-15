@@ -15,6 +15,7 @@ export const MASCOTE_ADMIN: Mascote = { src: '/mascote/mascote-admin.webp', larg
 
 const ATLETA_POR_ESPORTE: Partial<Record<EsporteId, Mascote>> = {
   futebol: { src: '/mascote/atleta-futebol.webp', largura: 648, altura: 720, busto: true },
+  basquete: { src: '/mascote/atleta-basquete.webp', largura: 640, altura: 720, busto: true },
 }
 
 export function mascoteDoAtleta(esporte: EsporteId | null | undefined): Mascote {
