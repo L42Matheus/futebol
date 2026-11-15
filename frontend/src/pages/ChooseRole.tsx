@@ -132,9 +132,9 @@ export default function ChooseRole() {
               </div>
             </div>
             {/* O cartão inteiro é clicável; o botão deixa isso claro. */}
-            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-branco shadow-md shadow-emerald-950/20 transition-colors group-hover:bg-emerald-700">
-              Entrar como atleta
-              <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
+            <span className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 py-2.5 text-sm font-semibold text-emerald-500 transition-colors group-hover:bg-emerald-500/20">
+              Sou atleta
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
             </span>
           </button>
 
@@ -158,9 +158,9 @@ export default function ChooseRole() {
               </div>
             </div>
             {/* O cartão inteiro é clicável; o botão deixa isso claro. */}
-            <span className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-branco shadow-md shadow-emerald-950/20 transition-colors group-hover:bg-emerald-700">
-              Entrar como administrador
-              <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
+            <span className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 py-2.5 text-sm font-semibold text-emerald-500 transition-colors group-hover:bg-emerald-500/20">
+              Sou administrador
+              <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
             </span>
           </button>
         </div>
