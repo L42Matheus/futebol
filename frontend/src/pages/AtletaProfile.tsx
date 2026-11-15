@@ -356,6 +356,7 @@ export default function AtletaProfile() {
             numero={atleta.numero_camisa}
             atributos={atleta.atributos}
             lista={esporte?.atributos ?? []}
+            Cena={esporte?.Cena}
           />
           {atleta.apelido && <p className="text-center text-sm text-gray-500">{atleta.nome}</p>}
 

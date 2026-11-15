@@ -4,6 +4,7 @@ import { Users, Plus, Trash2, CalendarDays, Copy, UserPlus, X, ChevronRight } fr
 import { teamsApi, atletasApi, authApi, temporadasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { compartilharLink } from '../utils/compartilhar'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Avatar from '../components/Avatar'
 import { labelPosicao } from '../esportes'
@@ -173,12 +174,10 @@ export default function Times() {
       })
       const link = `${window.location.origin}/register?invite=${res.data.token}`
       setInviteLink(link)
-      try {
-        await navigator.clipboard.writeText(link)
-        toast('Link de convite copiado!', 'success')
-      } catch {
-        toast('Link gerado. Copie pelo campo abaixo.', 'info')
-      }
+      // No celular abre o compartilhamento (WhatsApp etc.); no computador copia o link.
+      const resultado = await compartilharLink(link, 'Entra no nosso racha no QuemJoga:')
+      if (resultado === 'copiado') toast('Link de convite copiado!', 'success')
+      if (resultado === 'falhou') toast('Link gerado. Copie pelo campo abaixo.', 'info')
     } catch {
       toast('Erro ao gerar convite.', 'error')
     }
@@ -215,7 +214,8 @@ export default function Times() {
     <div className="space-y-5 pb-20">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-white">Times</h1>
+          {/* No celular o título já está no cabeçalho do app. */}
+          <h1 className="hidden text-2xl font-bold text-white md:block">Times</h1>
           <Link
             to={`/racha/${rachaId}/temporadas`}
             className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-400 hover:text-emerald-300"
@@ -225,9 +225,12 @@ export default function Times() {
             <ChevronRight size={15} />
           </Link>
         </div>
-        <button type="button" onClick={handleGenerateInvite} className="btn-secondary flex items-center gap-2 text-sm">
-          <UserPlus size={16} /> Convidar atletas
-        </button>
+        {/* No racha vazio o convite já é o botão principal do passo a passo. */}
+        {(atletas.length > 0 || teams.length > 0) && (
+          <button type="button" onClick={handleGenerateInvite} className="btn-secondary flex items-center gap-2 text-sm">
+            <UserPlus size={16} /> Convidar atletas
+          </button>
+        )}
       </header>
 
       {inviteLink && (
@@ -240,6 +243,9 @@ export default function Times() {
       )}
 
       <form onSubmit={handleCreateTeam} className="space-y-2">
+        <label htmlFor="novo-time" className="block px-1 text-xs font-bold uppercase tracking-wider text-gray-500">
+          Novo time
+        </label>
         <div className="flex gap-2">
           <input
             value={newTeamName}
@@ -247,10 +253,10 @@ export default function Times() {
               setNewTeamName(e.target.value)
               if (newTeamError) setNewTeamError('')
             }}
-            className="input flex-1"
+            id="novo-time"
+            className="input min-w-0 flex-1"
             placeholder={teams.length === 0 ? 'Ex: Time Verde' : 'Nome do próximo time'}
             aria-invalid={Boolean(newTeamError)}
-            aria-label="Nome do time"
           />
           <button className="btn-primary flex shrink-0 items-center justify-center gap-1" type="submit">
             <Plus size={16} /> Criar time
@@ -259,11 +265,38 @@ export default function Times() {
         {newTeamError && <p className="text-sm font-medium text-red-400">{newTeamError}</p>}
       </form>
 
-      {atletas.length === 0 ? (
-        <div className="card py-8 text-center">
-          <Users size={30} className="mx-auto mb-2 text-gray-600" />
-          <p className="text-gray-300">Ainda não há atletas no racha.</p>
-          <p className="mt-1 text-sm text-gray-500">Use “Convidar atletas” e distribua cada um aqui quando entrarem.</p>
+      {/* Racha novo: um passo a passo só, em vez de dois avisos de "vazio" empilhados. */}
+      {atletas.length === 0 && teams.length === 0 ? (
+        <div className="card space-y-4">
+          <div>
+            <p className="font-bold text-white">Como montar os times</p>
+            <p className="mt-1 text-sm text-gray-400">Seu racha ainda não tem atletas nem times.</p>
+          </div>
+          <ol className="space-y-3">
+            {[
+              ['Convide os atletas', 'Envie o link de convite no grupo da galera.'],
+              ['Crie os times', 'Dê um nome a cada time no campo acima.'],
+              ['Distribua os atletas', 'Quem entrar aparece aqui para você colocar em um time.'],
+            ].map(([titulo, texto], i) => (
+              <li key={titulo} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-sm font-bold text-emerald-400">
+                  {i + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white">{titulo}</p>
+                  <p className="text-sm text-gray-500">{texto}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <button type="button" onClick={handleGenerateInvite} className="btn-primary flex w-full items-center justify-center gap-2">
+            <UserPlus size={16} /> Convidar atletas
+          </button>
+        </div>
+      ) : atletas.length === 0 ? (
+        <div className="card flex items-center gap-3 py-4">
+          <Users size={22} className="shrink-0 text-gray-500" />
+          <p className="text-sm text-gray-400">Ainda não há atletas no racha. Convide a galera para distribuir nos times.</p>
         </div>
       ) : atletasSemTime.length > 0 && (
         <section className="card space-y-1">
@@ -318,7 +351,7 @@ export default function Times() {
         </section>
       )}
 
-      {teams.length === 0 ? (
+      {teams.length === 0 && atletas.length === 0 ? null : teams.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-800 py-8 text-center">
           <p className="text-gray-400">Nenhum time criado</p>
           <p className="mt-1 text-sm text-gray-500">Dê um nome acima e clique em “Criar time”.</p>

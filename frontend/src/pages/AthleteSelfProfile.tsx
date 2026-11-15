@@ -320,6 +320,7 @@ export default function AthleteSelfProfile() {
               numero={meuAtleta.numero_camisa}
               atributos={meuAtleta.atributos}
               lista={esporteDaModalidade(selectedRacha?.tipo).atributos}
+              Cena={esporteDaModalidade(selectedRacha?.tipo).Cena}
             />
             {meuAtleta.nota ? (
               <div className="flex justify-center">

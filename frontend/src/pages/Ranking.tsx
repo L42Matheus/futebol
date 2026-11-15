@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Medal, SlidersHorizontal, Trophy } from 'lucide-react'
+import { CalendarDays, ChevronRight, Crown, SlidersHorizontal, Trophy } from 'lucide-react'
 import Avatar from '../components/Avatar'
-import { rachasApi, rankingApi } from '../services/api'
+import { atletasApi, rachasApi, rankingApi } from '../services/api'
 import { getEsporte, labelPosicao } from '../esportes'
 import type { AtletaRanking, CategoriaRanking, Ranking as RankingDados } from '../types'
 
-const CORES_PODIO = ['text-yellow-400', 'text-gray-300', 'text-amber-600']
+// Ouro, prata e bronze: cor do número, do aro da foto e altura do degrau.
+const PODIO = [
+  { cor: 'text-yellow-400', aro: 'ring-yellow-400', degrau: 'h-16', fundo: 'from-yellow-500/25' },
+  { cor: 'text-gray-300', aro: 'ring-gray-300', degrau: 'h-11', fundo: 'from-gray-400/20' },
+  { cor: 'text-amber-600', aro: 'ring-amber-600', degrau: 'h-8', fundo: 'from-amber-600/20' },
+]
 
 function nomeCurto(atleta: AtletaRanking) {
   if (atleta.apelido?.trim()) return atleta.apelido.trim()
@@ -24,6 +29,8 @@ export default function Ranking() {
   const { rachaId } = useParams<{ rachaId: string }>()
   const [dados, setDados] = useState<RankingDados | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  // Atleta de quem está logado neste racha, para destacar a própria linha.
+  const [meuAtletaId, setMeuAtletaId] = useState<number | null>(null)
   const [categoriaId, setCategoriaId] = useState<string>('')
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(false)
@@ -47,6 +54,12 @@ export default function Ranking() {
   useEffect(() => {
     void carregar()
   }, [carregar])
+
+  useEffect(() => {
+    if (!rachaId) return
+    // Admin que não joga não tem atleta no racha: aí ninguém é destacado.
+    atletasApi.meu(rachaId).then(({ data }) => setMeuAtletaId(data.id)).catch(() => setMeuAtletaId(null))
+  }, [rachaId])
 
   const categoria = dados?.categorias.find((c) => c.id === categoriaId) ?? dados?.categorias[0]
 
@@ -87,6 +100,10 @@ export default function Ranking() {
   const podio = comValor.slice(0, 3)
   const resto = ordenados.filter((a) => !podio.includes(a))
   const valor = (a: AtletaRanking) => formatar(a.valores[categoria.id], categoria)
+  const maior = comValor.length > 0 ? (comValor[0].valores[categoria.id] ?? 0) : 0
+  const eu = meuAtletaId ? ordenados.find((a) => a.atleta_id === meuAtletaId) : undefined
+  const minhaPosicao = eu && comValor.includes(eu) ? comValor.indexOf(eu) + 1 : null
+  const perfil = (a: AtletaRanking) => `/racha/${rachaId}/atleta/${a.atleta_id}`
   const usaPartidasEncerradas = ['vitorias', 'aproveitamento', 'media', 'sets'].includes(categoria.id)
 
   return (
@@ -119,7 +136,7 @@ export default function Ranking() {
                 setCategoriaId(c.id)
                 e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
               }}
-              className={`h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-sm font-bold transition-colors ${
+              className={`h-10 shrink-0 whitespace-nowrap rounded-full border px-4 text-sm font-bold transition-colors ${
                 c.id === categoria.id
                   ? 'border-emerald-500 bg-emerald-500 text-branco'
                   : 'border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-700 hover:text-white'
@@ -134,68 +151,127 @@ export default function Ranking() {
         <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-fundo to-transparent" />
       </div>
 
-      {podio.length === 0 ? (
-        <div className="card flex flex-col items-center py-10 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-500/10 text-yellow-400">
-            <Trophy size={24} />
-          </div>
-          <p className="font-bold text-white">Ninguém pontuou em {categoria.nome.toLowerCase()} ainda</p>
-          <p className="mt-1 max-w-xs text-sm text-gray-500">
-            O ranking enche sozinho conforme as partidas ao vivo são jogadas e encerradas.
+      {/* Onde eu estou nesta categoria, sem precisar procurar na lista. */}
+      {eu && podio.length > 0 && (
+        <Link
+          to={perfil(eu)}
+          className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
+        >
+          <Avatar src={eu.foto_url ?? undefined} name={eu.apelido || eu.nome} size="sm" />
+          <p className="min-w-0 flex-1 text-sm text-gray-300">
+            {minhaPosicao ? (
+              <>
+                Você está em <span className="font-black text-white">{minhaPosicao}º</span> em {categoria.nome.toLowerCase()}
+              </>
+            ) : (
+              <>Você ainda não pontuou em {categoria.nome.toLowerCase()}</>
+            )}
           </p>
+          <span className="text-lg font-black tabular-nums text-white">{valor(eu)}</span>
+        </Link>
+      )}
+
+      {podio.length === 0 ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-dashed border-gray-700 bg-gray-900/40 p-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-yellow-500/10 text-yellow-400">
+            <Trophy size={22} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-white">Ninguém pontuou em {categoria.nome.toLowerCase()} ainda</p>
+            <p className="mt-0.5 text-sm text-gray-500">O ranking se preenche quando as partidas ao vivo são encerradas.</p>
+            {isAdmin && (
+              <Link
+                to={`/racha/${rachaId}/jogos`}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-emerald-400"
+              >
+                <CalendarDays size={15} /> Ir para a agenda <ChevronRight size={14} />
+              </Link>
+            )}
+          </div>
         </div>
       ) : (
-        <section className="grid grid-cols-3 items-end gap-2">
+        <section className="grid grid-cols-3 items-end gap-2" aria-label="Pódio">
           {/* Pódio na ordem 2º, 1º, 3º, com o primeiro mais alto no meio. */}
           {[podio[1], podio[0], podio[2]].map((atleta, indice) => {
             if (!atleta) return <div key={`vazio-${indice}`} />
             const posicao = podio.indexOf(atleta)
+            const visual = PODIO[posicao]
             return (
-              <div
-                key={atleta.atleta_id}
-                className={`flex flex-col items-center rounded-[1.5rem] border border-gray-800 bg-gray-900/40 px-2 text-center ${
-                  posicao === 0 ? 'pb-4 pt-5' : 'pb-3 pt-4'
-                }`}
-              >
-                <Medal size={posicao === 0 ? 22 : 18} className={CORES_PODIO[posicao]} />
-                <div className="relative mt-2">
-                  <Avatar src={atleta.foto_url ?? undefined} name={atleta.apelido || atleta.nome} size={posicao === 0 ? 'lg' : 'md'} />
-                  <span className="absolute -bottom-1 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-branco">
-                    {posicao + 1}
-                  </span>
+              <Link key={atleta.atleta_id} to={perfil(atleta)} className="flex min-w-0 flex-col items-center text-center">
+                {posicao === 0 && <Crown size={20} className="mb-1 text-yellow-400" aria-hidden="true" />}
+                <Avatar
+                  src={atleta.foto_url ?? undefined}
+                  name={atleta.apelido || atleta.nome}
+                  size={posicao === 0 ? 'lg' : 'md'}
+                  className={`ring-2 ring-offset-2 ring-offset-fundo ${visual.aro}`}
+                />
+                <p className="mt-2 w-full truncate text-sm font-bold text-white">
+                  {nomeCurto(atleta)}
+                  {atleta.atleta_id === meuAtletaId && <span className="font-medium text-emerald-400"> (você)</span>}
+                </p>
+                <p className={`font-black tabular-nums text-white ${posicao === 0 ? 'text-2xl' : 'text-xl'}`}>
+                  {valor(atleta)}
+                  {categoria.sufixo && categoria.sufixo !== '%' && (
+                    <span className="ml-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">{categoria.sufixo}</span>
+                  )}
+                </p>
+                <div
+                  className={`mt-2 flex w-full items-start justify-center rounded-t-2xl border-x border-t border-gray-800 bg-gradient-to-b to-transparent pt-1.5 ${visual.degrau} ${visual.fundo}`}
+                >
+                  <span className={`text-lg font-black ${visual.cor}`}>{posicao + 1}º</span>
                 </div>
-                <p className="mt-3 w-full truncate text-sm font-black text-white">{nomeCurto(atleta)}</p>
-                <p className={`font-black tabular-nums text-white ${posicao === 0 ? 'text-2xl' : 'text-xl'}`}>{valor(atleta)}</p>
-                {categoria.sufixo && categoria.sufixo !== '%' && (
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{categoria.sufixo}</p>
-                )}
-              </div>
+              </Link>
             )
           })}
         </section>
       )}
 
       {resto.length > 0 && (
-        <section className="card divide-y divide-gray-800 p-0">
-          {resto.map((atleta) => {
-            const posicao = ordenados.indexOf(atleta) + 1
-            const temValor = (atleta.valores[categoria.id] ?? 0) > 0
-            return (
-              <div key={atleta.atleta_id} className="flex items-center gap-3 px-4 py-3">
-                <span className="w-6 text-center text-sm font-black tabular-nums text-gray-500">{temValor ? posicao : '–'}</span>
-                <Avatar src={atleta.foto_url ?? undefined} name={atleta.apelido || atleta.nome} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-white">{nomeCurto(atleta)}</p>
-                  <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                    {labelPosicao(atleta.posicao) || '—'} · {atleta.jogos} jogo{atleta.jogos === 1 ? '' : 's'}
-                  </p>
-                </div>
-                <span className={`text-base font-black tabular-nums ${temValor ? 'text-white' : 'text-gray-600'}`}>
-                  {valor(atleta)}
-                </span>
-              </div>
-            )
-          })}
+        <section className="space-y-2">
+          {podio.length === 0 && (
+            <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-gray-500">
+              Elenco · {resto.length} atleta{resto.length === 1 ? '' : 's'}
+            </h2>
+          )}
+          <div className="card divide-y divide-gray-800 p-0">
+            {resto.map((atleta) => {
+              const posicao = ordenados.indexOf(atleta) + 1
+              const numero = atleta.valores[categoria.id] ?? 0
+              const temValor = numero > 0
+              const souEu = atleta.atleta_id === meuAtletaId
+              return (
+                <Link
+                  key={atleta.atleta_id}
+                  to={perfil(atleta)}
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-800/40 ${souEu ? 'bg-emerald-500/5' : ''}`}
+                >
+                  {/* Sem ninguém pontuando não há posição para mostrar: a coluna some. */}
+                  {podio.length > 0 && (
+                    <span className="w-6 text-center text-sm font-black tabular-nums text-gray-500">{temValor ? posicao : '–'}</span>
+                  )}
+                  <Avatar src={atleta.foto_url ?? undefined} name={atleta.apelido || atleta.nome} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-white">
+                      {nomeCurto(atleta)}
+                      {souEu && <span className="font-medium text-emerald-400"> (você)</span>}
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {labelPosicao(atleta.posicao) || '—'} · {atleta.jogos} jogo{atleta.jogos === 1 ? '' : 's'}
+                    </p>
+                    {/* Barra proporcional ao líder: mostra a distância, não só a ordem. */}
+                    {temValor && maior > 0 && (
+                      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-gray-800" aria-hidden="true">
+                        <div className="h-full rounded-full bg-emerald-500/70" style={{ width: `${Math.max(4, (numero / maior) * 100)}%` }} />
+                      </div>
+                    )}
+                  </div>
+                  <span className={`text-base font-black tabular-nums ${temValor ? 'text-white' : 'text-gray-600'}`}>
+                    {valor(atleta)}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
         </section>
       )}
 
