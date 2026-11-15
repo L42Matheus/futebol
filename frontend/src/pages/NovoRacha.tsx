@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { CheckCircle, Copy, Users, ClipboardList, ArrowRight, CalendarDays, Share2 } from 'lucide-react'
+import { Copy, Users, ClipboardList, ArrowRight, CalendarDays, Share2 } from 'lucide-react'
 import { compartilharLink, copiarTexto } from '../utils/compartilhar'
 import { rachasApi, authApi, temporadasApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -368,9 +368,7 @@ export default function NovoRacha() {
       ) : (
         <div className="space-y-5">
           <div className="flex items-center gap-3 rounded-3xl border border-emerald-500/25 bg-emerald-500/10 p-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
-              <CheckCircle className="h-6 w-6 text-emerald-400" />
-            </span>
+            <img src="/mascote/mascote-admin.webp" alt="" width={719} height={720} className="-my-2 h-20 w-20 shrink-0 object-contain" />
             <div className="min-w-0">
               <h2 className="truncate text-lg font-bold text-white">{form.nome || 'Clube'} criado!</h2>
               <p className="text-sm text-gray-400">Agora chame a galera pelo link de convite.</p>

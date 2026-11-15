@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { ShieldCheck, UserCircle2, ArrowLeftRight } from 'lucide-react'
+import { ArrowLeftRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getEsporte } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
@@ -88,9 +88,7 @@ export default function ChooseRole() {
             onClick={() => handleChoose('atleta')}
           >
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center flex-shrink-0">
-                <UserCircle2 size={32} />
-              </div>
+              <img src="/mascote/mascote.webp" alt="" width={649} height={719} className="h-20 w-20 shrink-0 object-contain" />
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Atleta</h2>
                 <p className="text-sm text-gray-400 mt-1">
@@ -116,9 +114,8 @@ export default function ChooseRole() {
             onClick={() => handleChoose('admin')}
           >
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center flex-shrink-0">
-                <ShieldCheck size={32} />
-              </div>
+              {/* Mascote de crachá ADM e notebook: o organizador do clube. */}
+              <img src="/mascote/mascote-admin.webp" alt="" width={719} height={720} className="h-20 w-20 shrink-0 object-contain" />
               <div className="text-left flex-1">
                 <h2 className="text-lg font-semibold text-white">Sou Administrador</h2>
                 <p className="text-sm text-gray-400 mt-1">

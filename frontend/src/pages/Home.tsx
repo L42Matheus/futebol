@@ -445,7 +445,13 @@ export default function Home() {
       {rachas.length === 0 && (
         <div className="flex flex-col items-center justify-center px-6 py-12">
           {/* Clube vazio: o mascote recebe a pessoa no lugar de um ícone apagado. */}
-          <img src="/mascote/mascote.webp" alt="" width={649} height={719} className="mascote-flutuar mb-4 h-36 w-auto" />
+          <img
+            src={isAdmin ? '/mascote/mascote-admin.webp' : '/mascote/mascote.webp'}
+            alt=""
+            width={isAdmin ? 719 : 649}
+            height={isAdmin ? 720 : 719}
+            className="mascote-flutuar mb-4 h-40 w-auto"
+          />
           <h2 className="mb-2 text-center text-xl font-bold text-white">
             {esporteAtual ? `Nenhum clube de ${getEsporte(esporteAtual).nome.toLowerCase()} ainda` : 'Nenhum clube ainda'}
           </h2>
