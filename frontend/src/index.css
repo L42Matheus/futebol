@@ -272,10 +272,12 @@ body {
   55% { transform: translateX(2px) rotate(1deg); }
   70% { transform: none; }
 }
+/* Basquete: gira a bola no dedo e balança no ritmo, como quem comemora. */
 @keyframes mov-basquete {
-  0%, 100% { transform: translateY(0) scaleY(1); }
-  45% { transform: translateY(6px) scaleY(0.97); }
-  60% { transform: translateY(5px) scaleY(0.98); }
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-2.5deg) translateY(3px); }
+  50% { transform: rotate(0deg) translateY(0); }
+  75% { transform: rotate(2.5deg) translateY(3px); }
 }
 @keyframes mov-volei {
   0%, 100% { transform: none; }
@@ -286,7 +288,7 @@ body {
   84% { transform: none; }
 }
 .mascote-mov-futebol { animation: mov-futebol 2.6s var(--mola) infinite; }
-.mascote-mov-basquete { animation: mov-basquete 0.75s ease-in-out infinite; }
+.mascote-mov-basquete { animation: mov-basquete 1.8s ease-in-out infinite; }
 .mascote-mov-volei { animation: mov-volei 2.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .mascote-mov { animation: none !important; }
