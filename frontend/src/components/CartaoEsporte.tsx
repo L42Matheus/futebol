@@ -81,7 +81,9 @@ export default function CartaoEsporte({
           alt=""
           width={mascote.largura}
           height={mascote.altura}
-          className={`mascote-busto h-full w-auto ${animar ? `mascote-mov mascote-mov-${id}` : ''}`}
+          // O de basquete é mais largo (bola girando no dedo): à direita, um passo a mais para fora,
+          // para a aba do boné não encostar no título.
+          className={`mascote-busto h-full w-auto ${id === 'basquete' && !esquerda ? 'relative left-3' : ''} ${animar ? `mascote-mov mascote-mov-${id}` : ''}`}
         />
       </div>
     </div>

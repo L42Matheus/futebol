@@ -7,7 +7,7 @@ import type { Esporte, EsporteId, Modalidade, Recurso } from './types'
 
 export type { Esporte, EsporteId, Modalidade, Recurso } from './types'
 
-export const ESPORTES: Esporte[] = [futebol, basquete, volei]
+export const ESPORTES: Esporte[] = [futebol, volei, basquete]
 
 const MODALIDADE_PADRAO = 'society'
 

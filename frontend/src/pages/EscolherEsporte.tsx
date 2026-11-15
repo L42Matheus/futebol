@@ -107,13 +107,13 @@ export default function EscolherEsporte() {
                   transicao={escolhido === id}
                   className="h-full w-full"
                   classeMascote="h-[112%]"
-                  // Basquete à esquerda: os cartões alternam de lado e a página fica menos repetitiva.
-                  lado={id === 'basquete' ? 'esquerda' : 'direita'}
+                  // O cartão do meio (vôlei) fica à esquerda: os mascotes alternam de lado em zigue-zague.
+                  lado={indice % 2 === 1 ? 'esquerda' : 'direita'}
                   // Só o futebol lista as modalidades (Society · Campo · Futsal); basquete e vôlei ficam sem
                   // os formatos 5x5, 3x3, 6x6 e 4x4, que se escolhem depois, ao criar o clube.
                   subtitulo={id === 'futebol' ? modalidades.map((m) => m.nome).join(' · ') : undefined}
                 >
-                  <span className={`inline-flex items-center gap-1.5 ${id === 'basquete' ? 'self-end' : 'self-start'} rounded-full bg-white/20 px-3 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors group-hover:bg-white/30`}>
+                  <span className={`inline-flex items-center gap-1.5 ${indice % 2 === 1 ? 'self-end' : 'self-start'} rounded-full bg-white/20 px-3 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-colors group-hover:bg-white/30`}>
                     {ativo ? (
                       <>
                         <Check size={15} strokeWidth={3} />
