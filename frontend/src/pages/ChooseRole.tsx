@@ -2,10 +2,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { ShieldCheck, UserCircle2, Trophy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { getEsporte } from '../esportes'
+import { lerEsporteAtual } from '../utils/esporteEscolhido'
 
 export default function ChooseRole() {
   const navigate = useNavigate()
   const { isAuthenticated, loading } = useAuth()
+  const escolhido = lerEsporteAtual()
+  const esporte = escolhido ? getEsporte(escolhido) : null
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -28,6 +32,16 @@ export default function ChooseRole() {
           <h1 className="text-2xl font-bold text-white">QuemJoga</h1>
         </Link>
         <p className="text-gray-400 mt-1">Organize seu racha sem estresse</p>
+        {esporte && (
+          <Link
+            to="/esporte"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-bold text-emerald-300"
+          >
+            <esporte.Icone size={16} />
+            {esporte.nome}
+            <span className="font-medium text-gray-400">· trocar</span>
+          </Link>
+        )}
       </div>
 
       {/* Cards */}

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext'
 import { ESPORTES, getEsporte } from '../esportes'
 import { AnimacaoAtiva } from '../esportes/cena'
 import { useTema } from '../hooks/useTema'
+import { definirEsporteAtual } from '../utils/esporteEscolhido'
 import EscudoTime from '../components/EscudoTime'
 
 const destaques = [
@@ -79,8 +80,10 @@ const lancesExemplo = [
 
 export default function Landing() {
   const { isAuthenticated } = useAuth()
-  const appPath = isAuthenticated ? '/app' : '/perfil'
+  // Começar sempre passa pela escolha do esporte (logado, serve para trocar).
+  const appPath = '/esporte'
   const { claro, alternar: alternarTema } = useTema()
+  const navigate = useNavigate()
   const prefereMenosMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const BolaFutebol = getEsporte('futebol').Icone
 
@@ -154,7 +157,7 @@ export default function Landing() {
                 to={appPath}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
               >
-                Criar meu racha <ArrowRight size={19} />
+                Começar <ArrowRight size={19} />
               </Link>
               <Link
                 to="/perfil"
@@ -243,12 +246,22 @@ export default function Landing() {
           <div className="rounded-[2rem] border border-gray-800 bg-gray-900/40 p-3 sm:rounded-[2.5rem] sm:p-6">
             <div className="mb-4 px-2 text-center sm:mb-6 sm:flex sm:items-end sm:justify-between sm:text-left">
               <h2 className="text-2xl font-black sm:text-3xl">Uma arena, três quadras.</h2>
-              <p className="mt-1 text-sm font-medium text-gray-400">Racha de futebol, basquete ou vôlei no mesmo app.</p>
+              <p className="mt-1 text-sm font-medium text-gray-400">Escolha o seu e o app mostra só o que é dele.</p>
             </div>
             <AnimacaoAtiva.Provider value={!prefereMenosMovimento}>
               <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {ESPORTES.map(({ id, nome, Icone, Cena }) => (
-                  <figure key={id} className="overflow-hidden rounded-[1.25rem] border border-gray-800 bg-fundo sm:rounded-[2rem]">
+                  <figure key={id} className="relative overflow-hidden rounded-[1.25rem] border border-gray-800 bg-fundo transition-colors hover:border-emerald-500/50 sm:rounded-[2rem]">
+                    {/* A cena inteira escolhe o esporte e segue para entrar no app. */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        definirEsporteAtual(id)
+                        navigate(isAuthenticated ? '/app' : '/perfil')
+                      }}
+                      aria-label={`Entrar no ${nome}`}
+                      className="absolute inset-0 z-10"
+                    />
                     <div className="aspect-square">
                       <Cena />
                     </div>
@@ -309,7 +322,7 @@ export default function Landing() {
             to={appPath}
             className="mx-auto mt-6 flex w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-branco shadow-xl shadow-emerald-950/30 transition-transform active:scale-[0.98]"
           >
-            Criar meu racha <ArrowRight size={19} />
+            Começar <ArrowRight size={19} />
           </Link>
         </section>
       </main>

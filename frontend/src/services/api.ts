@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosResponse } from 'axios'
 import { formatDateBR } from '../utils/formatters'
+import { lerEsporteAtual } from '../utils/esporteEscolhido'
 import type {
   Racha,
   Atleta,
@@ -89,8 +90,21 @@ export function normalizeJogoPayload(data: JogoPayload): Record<string, unknown>
 
 // ─── API modules ──────────────────────────────────────────────────────────────
 
+// O esporte do racha; rachas antigos sem o campo caem pela modalidade.
+const esporteDoRacha = (racha: Racha) =>
+  racha.esporte ?? (racha.tipo?.startsWith('volei') ? 'volei' : racha.tipo?.startsWith('basquete') ? 'basquete' : 'futebol')
+
 export const rachasApi = {
-  list: (): Promise<AxiosResponse<Racha[]>> => api.get('/rachas/'),
+  // Só os rachas do esporte escolhido em /esporte (todos, se nenhum foi escolhido).
+  // Filtrar aqui vale para todas as telas que listam rachas: início, jogos, caixa, perfil.
+  list: async (): Promise<AxiosResponse<Racha[]>> => {
+    const res = await api.get<Racha[]>('/rachas/')
+    const esporte = lerEsporteAtual()
+    if (!esporte || !Array.isArray(res.data)) return res
+    return { ...res, data: res.data.filter((racha) => esporteDoRacha(racha) === esporte) }
+  },
+  // Todos os rachas da conta, de qualquer esporte (página /esporte e avisos da tela inicial).
+  listTodos: (): Promise<AxiosResponse<Racha[]>> => api.get('/rachas/'),
   get: (id: number | string): Promise<AxiosResponse<Racha>> => api.get(`/rachas/${id}`),
   create: (data: Partial<Racha>): Promise<AxiosResponse<Racha>> => api.post('/rachas/', data),
   update: (id: number | string, data: Partial<Racha>): Promise<AxiosResponse<Racha>> =>
