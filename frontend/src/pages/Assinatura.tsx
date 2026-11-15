@@ -38,7 +38,7 @@ export default function Assinatura() {
         <div>
           <h1 className="text-2xl font-bold text-white">Tudo liberado</h1>
           <p className="text-gray-400 mt-2">
-            Todas as funcionalidades do QuemJogaFC estão disponíveis sem cobrança. Aproveite!
+            Todas as funcionalidades do QuemJoga estão disponíveis sem cobrança. Aproveite!
           </p>
         </div>
         <button
@@ -206,7 +206,7 @@ export default function Assinatura() {
       <div>
         <h1 className="text-2xl font-bold text-white">Assinatura</h1>
         <p className="text-gray-400 text-sm mt-1">
-          Plano de gestão do QuemJogaFC — {valor}/mês.
+          Plano de gestão do QuemJoga — {valor}/mês.
         </p>
       </div>
 

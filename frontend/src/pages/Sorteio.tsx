@@ -220,7 +220,7 @@ export default function Sorteio() {
       const banco = time.slice(porTime).map(nomeCurto)
       return `*${NOMES[i]}*: ${titulares}${banco.length ? ` (banco: ${banco.join(', ')})` : ''}`
     })
-    return `Times sorteados no QuemJogaFC\n\n${linhas.join('\n')}`
+    return `Times sorteados no QuemJoga\n\n${linhas.join('\n')}`
   }
 
   async function compartilhar() {

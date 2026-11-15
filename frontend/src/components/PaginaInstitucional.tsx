@@ -9,7 +9,7 @@ export default function PaginaInstitucional({ titulo, children }: { titulo: stri
         <Link to="/" className="flex items-center gap-3">
           <img src="/icons/icon-192.png" alt="" className="h-10 w-10 rounded-xl" />
           <span className="text-lg font-black tracking-tight">
-            QuemJoga<span className="text-emerald-400">FC</span>
+            QuemJoga
           </span>
         </Link>
         <Link to="/app" className="text-sm font-bold text-gray-400 hover:text-white">

@@ -12,7 +12,7 @@ import { useEsporteDoRacha } from '../esportes/useEsporteDoRacha'
 import { useTema } from '../hooks/useTema'
 
 const TITLES: Array<{ test: RegExp; title: string }> = [
-  { test: /^\/app$/, title: 'QuemJogaFC' },
+  { test: /^\/app$/, title: 'QuemJoga' },
   { test: /\/jogo\/\d+\/partida$/, title: 'Partida ao vivo' },
   { test: /\/jogo\/\d+\/sorteio$/, title: 'Sortear times' },
   { test: /\/jogo\/\d+\/destaques$/, title: 'Destaques' },
@@ -54,7 +54,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
   }
 
   const resolvedTitle =
-    title ?? (TITLES.find((t) => t.test.test(location.pathname))?.title ?? 'QuemJogaFC')
+    title ?? (TITLES.find((t) => t.test.test(location.pathname))?.title ?? 'QuemJoga')
   const resolvedShowBack =
     typeof showBack === 'boolean' ? showBack : location.pathname !== '/app'
 
@@ -103,7 +103,7 @@ export default function Layout({ children, title, showBack }: LayoutProps) {
           <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-branco font-bold">
             QJ
           </div>
-          <span className="text-xl font-bold text-white">QuemJogaFC</span>
+          <span className="text-xl font-bold text-white">QuemJoga</span>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto">

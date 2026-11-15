@@ -54,7 +54,7 @@ def _send_via_smtp(settings, to_email: str, subject: str, body: str) -> None:
 
 def send_password_reset_email(to_email: str, reset_link: str) -> None:
     settings = get_settings()
-    subject = "Redefinicao de senha - QuemJogaFC"
+    subject = "Redefinicao de senha - QuemJoga"
     body = (
         "Recebemos um pedido para redefinir sua senha.\n\n"
         f"Acesse este link para criar uma nova senha:\n{reset_link}\n\n"

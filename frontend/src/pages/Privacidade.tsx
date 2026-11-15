@@ -19,7 +19,7 @@ export default function Privacidade() {
       <p className="text-sm text-gray-500">Atualizada em {ATUALIZADA_EM}.</p>
 
       <p>
-        O QuemJogaFC ajuda a organizar rachas de futebol, basquete e vôlei: jogos, presença, times, escalação,
+        O QuemJoga ajuda a organizar rachas de futebol, basquete e vôlei: jogos, presença, times, escalação,
         partida ao vivo e caixa. Esta página explica quais dados usamos, para quê e como você pode apagá-los,
         seguindo a Lei Geral de Proteção de Dados (LGPD).
       </p>
@@ -81,7 +81,7 @@ export default function Privacidade() {
       </Secao>
 
       <Secao titulo="Crianças">
-        <p>O QuemJogaFC não é feito para menores de 13 anos.</p>
+        <p>O QuemJoga não é feito para menores de 13 anos.</p>
       </Secao>
 
       <Secao titulo="Mudanças nesta política">

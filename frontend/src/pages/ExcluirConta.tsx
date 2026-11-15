@@ -32,7 +32,7 @@ export default function ExcluirConta() {
   return (
     <PaginaInstitucional titulo="Excluir conta">
       <p>
-        Você pode excluir sua conta do QuemJogaFC quando quiser. A exclusão é imediata e não tem volta.
+        Você pode excluir sua conta do QuemJoga quando quiser. A exclusão é imediata e não tem volta.
       </p>
 
       <section className="grid gap-3 sm:grid-cols-2">
