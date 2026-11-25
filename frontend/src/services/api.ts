@@ -34,7 +34,11 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401 && typeof localStorage !== 'undefined') {
+    // Só é sessão vencida se o pedido foi com o token. Senha errada no login também volta 401,
+    // e aí a tela de login precisa mostrar o erro em vez de recarregar o app.
+    const headers = error?.config?.headers
+    const foiComToken = Boolean(headers?.Authorization ?? headers?.get?.('Authorization'))
+    if (error?.response?.status === 401 && foiComToken && typeof localStorage !== 'undefined') {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('session_id')
       localStorage.removeItem('cached_user')

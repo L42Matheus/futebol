@@ -364,7 +364,7 @@ export default function AthleteSelfProfile() {
             onClick={handleLogoutAction}
             className="w-full bg-red-600/10 text-red-500 border border-red-500/20 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 hover:text-branco transition-all"
           >
-            <LogOut size={20} /> Encerrar Sessao
+            <LogOut size={20} /> Encerrar sessão
           </button>
           <div className="flex justify-center gap-5 pt-2 text-xs font-semibold text-gray-500">
             <Link to="/suporte?de=/perfil-atleta" className="hover:text-white">Ajuda e suporte</Link>
@@ -379,7 +379,7 @@ export default function AthleteSelfProfile() {
           role="dialog"
           aria-modal="true"
           onClick={() => setPhotoPreviewOpen(false)}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <button
             type="button"

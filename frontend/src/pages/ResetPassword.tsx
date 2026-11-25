@@ -17,11 +17,11 @@ export default function ResetPassword() {
     setError('')
     setMessage('')
     if (!token) {
-      setError('Token invalido')
+      setError('Link inválido ou expirado')
       return
     }
     if (newPassword !== confirmPassword) {
-      setError('As senhas nao conferem')
+      setError('As senhas não conferem')
       return
     }
     setLoading(true)

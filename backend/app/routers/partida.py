@@ -329,7 +329,7 @@ def registrar_evento(
                 palavra = {"basquete": "cestas", "volei": "pontos"}.get(esporte.id, "gols")
                 publicar(
                     db, jogo.racha_id, "marca",
-                    f"{nome_curto(atleta)} chegou a {stat.gols} {palavra} no racha",
+                    f"{nome_curto(atleta)} chegou a {stat.gols} {palavra} no clube",
                     f"Na partida {jogo.time_a_nome or 'Time A'} x {jogo.time_b_nome or 'Time B'}",
                     jogo_id=jogo.id, atleta_id=atleta.id,
                 )

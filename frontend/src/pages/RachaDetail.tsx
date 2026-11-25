@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Users, Calendar, DollarSign, ChevronRight, Layers, Link2, LayoutGrid } from 'lucide-react'
+import { Users, Calendar, DollarSign, ChevronRight, Layers, LayoutGrid, ClipboardList, Copy, Share2 } from 'lucide-react'
 import { rachasApi, jogosApi, authApi } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
+import { compartilharLink, copiarTexto } from '../utils/compartilhar'
 import { esporteDaModalidade, getModalidade, temRecurso } from '../esportes'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -14,9 +16,11 @@ export default function RachaDetail() {
   const [jogos, setJogos] = useState<Jogo[]>([])
   const [saldo, setSaldo] = useState<Saldo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [inviteLink, setInviteLink] = useState('')
+  const [gerando, setGerando] = useState<'atleta' | 'admin' | null>(null)
   const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
+  const { toast } = useToast()
+  // Admin deste clube (a conta pode ser admin de um clube e atleta de outro).
+  const isAdmin = racha?.is_admin ?? user?.role === 'admin'
 
   const loadData = useCallback(async () => {
     if (!rachaId) return
@@ -40,14 +44,26 @@ export default function RachaDetail() {
     loadData()
   }, [loadData])
 
-  async function handleInvite() {
+  // Cada toque gera um link novo; o mesmo link serve para várias pessoas.
+  async function convidar(role: 'atleta' | 'admin', acao: 'enviar' | 'copiar') {
     if (!rachaId) return
+    setGerando(role)
     try {
-      const res = await authApi.createInvite({ racha_id: parseInt(rachaId), role: 'atleta' })
-      const base = window.location.origin
-      setInviteLink(`${base}/register?invite=${res.data.token}`)
-    } catch (error) {
-      console.error('Erro ao gerar convite:', error)
+      const res = await authApi.createInvite({ racha_id: parseInt(rachaId), role })
+      const link = `${window.location.origin}/register?invite=${res.data.token}`
+      if (acao === 'copiar') {
+        const copiou = await copiarTexto(link)
+        toast(copiou ? 'Link copiado!' : 'Não consegui copiar o link.', copiou ? 'success' : 'error')
+      } else {
+        const papel = role === 'atleta' ? 'jogar' : 'ajudar a organizar'
+        const resultado = await compartilharLink(link, `Entra no ${racha?.nome || 'nosso clube'} no QuemJoga para ${papel}:`)
+        if (resultado === 'copiado') toast('Link copiado! Cole no grupo da galera.', 'success')
+        if (resultado === 'falhou') toast('Não consegui compartilhar o link.', 'error')
+      }
+    } catch {
+      toast('Não foi possível gerar o convite.', 'error')
+    } finally {
+      setGerando(null)
     }
   }
 
@@ -129,26 +145,44 @@ export default function RachaDetail() {
         )}
       </div>
 
-      {/* Convite */}
+      {/* Convites: atleta para jogar, administrador para ajudar a organizar. */}
       {isAdmin && (
-        <div className="card space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-white">Convidar atleta</h3>
-              <p className="text-sm text-gray-500">Gere um link para o atleta criar conta</p>
+        <div className="card space-y-4">
+          {([
+            { role: 'atleta', titulo: 'Convidar atleta', descricao: 'Para quem vai jogar no clube', icone: <Users size={20} />, cor: 'bg-emerald-500/10 text-emerald-400', botao: 'bg-emerald-600 hover:bg-emerald-700' },
+            { role: 'admin', titulo: 'Convidar administrador', descricao: 'Para quem ajuda a organizar', icone: <ClipboardList size={20} />, cor: 'bg-amber-500/10 text-amber-400', botao: 'bg-amber-600 hover:bg-amber-700' },
+          ] as const).map((c) => (
+            <div key={c.role} className="space-y-2.5">
+              <div className="flex items-center gap-3">
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${c.cor}`}>{c.icone}</span>
+                <div>
+                  <h3 className="font-semibold text-white">{c.titulo}</h3>
+                  <p className="text-sm text-gray-500">{c.descricao}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={gerando !== null}
+                  onClick={() => void convidar(c.role, 'enviar')}
+                  className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold text-branco disabled:opacity-60 ${c.botao}`}
+                >
+                  <Share2 size={16} /> Enviar convite
+                </button>
+                <button
+                  type="button"
+                  disabled={gerando !== null}
+                  onClick={() => void convidar(c.role, 'copiar')}
+                  className="btn-secondary flex h-11 items-center justify-center gap-2 text-sm"
+                >
+                  <Copy size={16} /> Copiar link
+                </button>
+              </div>
             </div>
-            <button onClick={handleInvite} className="btn-secondary flex items-center gap-2">
-              <Link2 size={16} /> Gerar link
-            </button>
-          </div>
-          {inviteLink && (
-            <input
-              className="input"
-              readOnly
-              value={inviteLink}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-          )}
+          ))}
+          <p className="text-xs text-gray-500">
+            Cuidado com o link de administrador: quem entrar por ele pode gerenciar o clube.
+          </p>
         </div>
       )}
 

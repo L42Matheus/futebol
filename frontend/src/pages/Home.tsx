@@ -216,7 +216,7 @@ export default function Home() {
         const valor = melhor?.valores[principal.id] ?? 0
         setLider(
           melhor && valor > 0
-            ? { nome: melhor.apelido || melhor.nome.split(' ')[0], valor: `${valor} ${principal.nome.toLowerCase()}`, categoria: principal.nome }
+            ? { nome: melhor.apelido || melhor.nome.split(' ')[0], valor: `${valor} ${valor === 1 ? principal.nome.toLowerCase().replace(/s$/, '') : principal.nome.toLowerCase()}`, categoria: principal.nome }
             : { nome: '', valor: '', categoria: principal.nome },
         )
       })

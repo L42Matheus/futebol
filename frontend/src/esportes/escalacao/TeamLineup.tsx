@@ -209,7 +209,7 @@ export default function TeamLineup() {
       setEditingMember({ team, member, slot })
       setMemberForm({
         is_titular: member.is_titular,
-        posicao_escalacao: member.posicao_escalacao || (slot.id === 'bench' ? teamFormation?.positions[0]?.id || '' : slot.id)
+        posicao_escalacao: slot.id !== 'bench' ? slot.id : member.posicao_escalacao || teamFormation?.positions[0]?.id || ''
       })
       return
     }
