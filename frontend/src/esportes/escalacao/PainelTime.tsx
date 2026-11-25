@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { Plus, Shield, Users } from 'lucide-react'
 import Avatar from '../../components/Avatar'
 import type { Formation, PositionSlot } from './tipos'
+import { distribuirNosSlots } from './distribuir'
 
 interface Atleta {
   id: number
@@ -88,28 +89,9 @@ function getShortName(name: string) {
   return name.split(' ')[0]
 }
 
-// Cada titular na sua vaga: primeiro quem já tem posição gravada, depois os demais na ordem.
+// Cada titular na sua vaga: quem já tem vaga escolhida, depois pela posição do atleta, o gol por último.
 function distribuir(members: TeamMember[], formation: Formation) {
-  const playersBySlot: Record<string, TeamMember> = {}
-  members.filter((m) => m.is_titular).forEach((member) => {
-    if (member.posicao_escalacao) {
-      const slot = formation.positions.find(
-        p => p.id === member.posicao_escalacao || p.label === member.posicao_escalacao?.toUpperCase()
-      )
-      if (slot && !playersBySlot[slot.id]) {
-        playersBySlot[slot.id] = member
-        return
-      }
-    }
-
-    for (const slot of formation.positions) {
-      if (!playersBySlot[slot.id]) {
-        playersBySlot[slot.id] = member
-        break
-      }
-    }
-  })
-  return playersBySlot
+  return distribuirNosSlots(members.filter((m) => m.is_titular), formation)
 }
 
 interface VagasProps {
