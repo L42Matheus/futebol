@@ -69,7 +69,12 @@ export default function Ranking() {
     return [...dados.atletas].sort((a, b) => {
       const va = a.valores[categoria.id]
       const vb = b.valores[categoria.id]
-      if (va === vb) return nomeCurto(a).localeCompare(nomeCurto(b))
+      if (va === vb) {
+        // Algumas categorias trazem um desempate (ex.: destaques pesa o 1º lugar); senão vai pelo nome.
+        const da = a.valores[`${categoria.id}_desempate`] ?? 0
+        const db = b.valores[`${categoria.id}_desempate`] ?? 0
+        return db - da || nomeCurto(a).localeCompare(nomeCurto(b))
+      }
       if (va === null || va === undefined) return 1
       if (vb === null || vb === undefined) return -1
       return vb - va

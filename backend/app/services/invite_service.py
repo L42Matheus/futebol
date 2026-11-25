@@ -58,7 +58,7 @@ def processar_invite(db: Session, user: User, invite: Invite) -> None:
             db.flush()
             publicar(
                 db, invite.racha_id, "novo_atleta",
-                f"{nome_curto(atleta)} entrou no racha", "pelo link de convite", atleta_id=atleta.id,
+                f"{nome_curto(atleta)} entrou no clube", "pelo link de convite", atleta_id=atleta.id,
             )
             if invite.team_id:
                 db.add(TeamMember(team_id=invite.team_id, atleta_id=atleta.id, ativo=True))

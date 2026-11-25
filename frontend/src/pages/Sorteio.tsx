@@ -351,7 +351,7 @@ export default function Sorteio() {
           </label>
           <p className="rounded-xl bg-gray-800/60 px-3 py-2 text-center text-xs font-semibold text-gray-300">
             {quantidade} times de até {porTime}
-            {sobram > 0 ? ` · ${sobram} vão para o banco` : ''}
+            {sobram > 0 ? ` · ${sobram} ${sobram === 1 ? 'vai' : 'vão'} para o banco` : ''}
           </p>
         </section>
 

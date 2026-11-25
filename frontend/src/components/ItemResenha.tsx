@@ -32,7 +32,12 @@ export default function ItemResenha({
 }) {
   const visual = ICONES[noticia.tipo] ?? ICONES.aviso
   const link = destino(noticia, rachaId)
-  const quando = formatDistanceToNowStrict(new Date(noticia.created_at), { locale: ptBR, addSuffix: true })
+  const criada = new Date(noticia.created_at)
+  // Menos de um minuto vira "agora mesmo" em vez de "há 0 segundos".
+  const quando =
+    Date.now() - criada.getTime() < 60_000
+      ? 'agora mesmo'
+      : formatDistanceToNowStrict(criada, { locale: ptBR, addSuffix: true })
   const conteudo = (
     <>
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${visual.cor}`}>{visual.icone}</span>

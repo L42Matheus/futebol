@@ -129,7 +129,8 @@ def _resposta(db: Session, jogo: Jogo, user: User) -> DestaquesResponse:
         meu_atleta_id=eu.id if eu else None,
         meu_voto=meu_voto,
         votantes=votantes,
-        total_participantes=len(lados),
+        # Só quem tem conta no app consegue votar; atleta cadastrado pelo admin não entra na conta.
+        total_participantes=sum(1 for aid in lados if atletas.get(aid) and atletas[aid].user_id),
         time_a_nome=jogo.time_a_nome or "Time A",
         time_b_nome=jogo.time_b_nome or "Time B",
         placar_a=jogo.placar_time_a or 0,

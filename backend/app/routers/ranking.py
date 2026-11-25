@@ -128,9 +128,12 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
 
     # Quantas vezes cada atleta ficou entre os três destaques da partida.
     destaques: dict[int, int] = defaultdict(int)
+    # Desempate: 1º lugar vale 3, 2º vale 2, 3º vale 1. Quem foi o melhor da partida fica na frente.
+    destaques_peso: dict[int, int] = defaultdict(int)
     if ids_jogos:
         for d in db.query(DestaquePartida).filter(DestaquePartida.jogo_id.in_(ids_jogos)):
             destaques[d.atleta_id] += 1
+            destaques_peso[d.atleta_id] += 4 - d.posicao
 
     # Futebol: gols e assistências da artilharia, que soma os lances e os ajustes do admin.
     artilharia = {}
@@ -151,6 +154,7 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
                 "vitorias": vitorias[atleta.id],
                 "aproveitamento": aproveitamento,
                 "destaques": destaques[atleta.id],
+                "destaques_desempate": destaques_peso[atleta.id],
             }
         elif esporte.id == "basquete":
             valores = {
@@ -160,6 +164,7 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
                 "assistencias": assistencias[atleta.id],
                 "vitorias": vitorias[atleta.id],
                 "destaques": destaques[atleta.id],
+                "destaques_desempate": destaques_peso[atleta.id],
             }
         else:
             valores = {
@@ -168,6 +173,7 @@ def ranking(racha_id: int, db: Session = Depends(get_db), current_user: User = D
                 "sets": sets[atleta.id],
                 "aproveitamento": aproveitamento,
                 "destaques": destaques[atleta.id],
+                "destaques_desempate": destaques_peso[atleta.id],
             }
         resultado.append(AtletaRanking(
             atleta_id=atleta.id,
