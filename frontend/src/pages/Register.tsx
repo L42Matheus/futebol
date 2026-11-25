@@ -64,10 +64,21 @@ export default function Register() {
       navigate('/app', { replace: true })
     } catch (err) {
       const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      // Erro de validação vem como lista; diz qual campo está errado em vez da mensagem genérica.
+      const loc = Array.isArray(detail) ? (detail[0] as { loc?: string[] })?.loc : undefined
+      const campo = loc ? loc[loc.length - 1] : null
       setError(
         detail === 'Usuário já existe'
           ? 'Você já tem conta com esse e-mail ou telefone. Toque em "Entrar" para usar o convite.'
-          : 'Falha no cadastro. Verifique os dados.',
+          : campo === 'email'
+            ? 'Esse e-mail não é válido. Confira se digitou certo.'
+            : campo === 'senha'
+              ? 'Senha inválida. Use pelo menos 6 caracteres.'
+              : campo === 'telefone'
+                ? 'Telefone inválido. Use DDD e número, ex.: (11) 99999-9999.'
+                : typeof detail === 'string'
+                  ? detail
+                  : 'Falha no cadastro. Verifique os dados.',
       )
     } finally {
       setLoading(false)

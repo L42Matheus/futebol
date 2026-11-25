@@ -59,7 +59,14 @@ export default function Login() {
       const redirectTo = (location.state as any)?.from?.pathname || '/app'
       navigate(redirectTo, { replace: true })
     } catch (err: any) {
-      setError('Falha no login. Verifique os dados.')
+      const status = err?.response?.status
+      setError(
+        status === 401
+          ? 'E-mail, telefone ou senha incorretos.'
+          : status
+            ? 'Falha no login. Verifique os dados.'
+            : 'Sem conexão com o servidor. Tente de novo.',
+      )
     } finally {
       setLoading(false)
     }
@@ -130,7 +137,7 @@ export default function Login() {
       const url = await authService.getGoogleAuthUrl(redirectUri)
       window.location.href = url
     } catch (err) {
-      setError('Login com Google nao disponivel no momento.')
+      setError('Login com Google não disponível no momento.')
       setGoogleLoading(false)
     }
   }
@@ -278,7 +285,7 @@ export default function Login() {
           </button>
 
           <p className="text-sm text-gray-500 text-center pt-2">
-            Nao tem conta?{' '}
+            Não tem conta?{' '}
             <Link
               className="text-emerald-500 font-medium hover:underline"
               to={
