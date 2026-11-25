@@ -398,7 +398,7 @@ def deletar_racha(racha_id: int, db: Session = Depends(get_db), current_user: Us
 @router.get("/{racha_id}/saldo")
 def obter_saldo(racha_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     verificar_acesso_racha(db, current_user, racha_id)
-    from app.models import Pagamento, StatusPagamento
+    from app.models import Pagamento, StatusPagamento, TipoPagamento
     exists = db.execute(
         text("SELECT 1 FROM rachas WHERE id = :racha_id"),
         {"racha_id": racha_id},
@@ -410,6 +410,20 @@ def obter_saldo(racha_id: int, db: Session = Depends(get_db), current_user: User
     total_pendente = db.query(func.sum(Pagamento.valor)).join(Atleta).filter(
         Atleta.racha_id == racha_id,
         Pagamento.status.in_([StatusPagamento.PENDENTE, StatusPagamento.AGUARDANDO_APROVACAO])).scalar() or 0
+    # A mensalidade do mês só vira pagamento quando alguém marca ou cobra; até lá ela
+    # também é dinheiro a receber, como a tela do caixa já mostra na lista de pendentes.
+    valor_mensalidade = db.query(Racha.valor_mensalidade).filter(Racha.id == racha_id).scalar() or 0
+    if valor_mensalidade > 0:
+        referencia = datetime.utcnow().strftime("%m/%Y")
+        com_lancamento = db.query(Pagamento.atleta_id).join(Atleta).filter(
+            Atleta.racha_id == racha_id,
+            Pagamento.tipo == TipoPagamento.MENSALIDADE,
+            Pagamento.referencia == referencia,
+        )
+        sem_lancamento = db.query(func.count(Atleta.id)).filter(
+            Atleta.racha_id == racha_id, Atleta.ativo.is_(True), ~Atleta.id.in_(com_lancamento)
+        ).scalar() or 0
+        total_pendente += sem_lancamento * valor_mensalidade
     return {
         "racha_id": racha_id, "saldo": total_recebido, "pendente": total_pendente,
         "saldo_formatado": formatar_reais(total_recebido), "pendente_formatado": formatar_reais(total_pendente)
