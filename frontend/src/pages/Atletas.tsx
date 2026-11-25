@@ -188,7 +188,7 @@ export default function Atletas() {
 
       {/* Modal novo atleta */}
       {isAdmin && showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-[60]">
           <div className="bg-gray-900 border border-gray-800 rounded-t-2xl w-full max-w-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Novo Atleta</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -245,7 +245,7 @@ export default function Atletas() {
 
       {/* Modal de convite por link */}
       {isAdmin && inviteLink && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">

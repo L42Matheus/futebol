@@ -248,7 +248,7 @@ export default function AtletaProfile() {
   if (!atleta) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">Atleta nao encontrado</p>
+        <p className="text-gray-500">Atleta não encontrado</p>
       </div>
     )
   }
